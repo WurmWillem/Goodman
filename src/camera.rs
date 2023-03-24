@@ -19,7 +19,7 @@ pub struct Camera {
     is_down_pressed: bool,
 }
 impl Camera {
-    const SPEED: f32 = 0.001;
+    const SPEED: f32 = 0.003;
     pub fn new() -> Self {
         Self {
             uniform: CameraUniform::new(),

@@ -1,9 +1,12 @@
 mod camera;
+mod instances;
 mod state;
 mod texture;
+mod vertices;
 
 use state::State;
 use winit::{
+    dpi::LogicalSize,
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
@@ -14,6 +17,7 @@ pub async fn run() {
 
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
+        .with_inner_size(LogicalSize::new(700., 700.))
         .build(&event_loop)
         .expect("Failed to build window");
 
