@@ -1,4 +1,7 @@
-use winit::{event::WindowEvent, window::Window};
+use winit::{
+    
+    window::Window, event::WindowEvent,
+};
 
 use crate::{
     camera::{self, Camera},
