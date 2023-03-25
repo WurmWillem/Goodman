@@ -1,4 +1,5 @@
 use cgmath::{Deg, Vector4};
+use wgpu::{Device, util::DeviceExt};
 
 use crate::vertices::VERTEX_SCALE;
 
@@ -79,4 +80,13 @@ impl InstanceRaw {
             ],
         }
     }
+}
+
+
+pub fn create_buffer(device: &Device, instance_data: &Vec<InstanceRaw>) -> wgpu::Buffer {
+    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Instance Buffer"),
+        contents: bytemuck::cast_slice(instance_data),
+        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+    })
 }
