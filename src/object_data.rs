@@ -27,7 +27,7 @@ impl Vertex {
     }
 }
 
-pub const VERTEX_SCALE: f32 = 0.08;
+pub const VERTEX_SCALE: f32 = 0.05;
 
 #[rustfmt::skip]
 pub const VERTICES: &[Vertex] = &[
@@ -54,6 +54,6 @@ pub fn create_buffers(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::Buffer) {
         contents: bytemuck::cast_slice(INDICES),
         usage: wgpu::BufferUsages::INDEX,
     });
-    
+
     (vertex_buffer, index_buffer)
 }

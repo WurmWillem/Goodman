@@ -1,9 +1,9 @@
-use cgmath::{Deg, Vector4};
+use cgmath::{Deg, Vector4, Vector2, vec2};
 use wgpu::{util::DeviceExt, Device};
 
 use crate::object_data::VERTEX_SCALE;
 
-const INSTANCES_PER_ROW: u32 = 10;
+const INSTANCES_PER_ROW: u32 = 5;
 const INSTANCE_DISPLACEMENT: f64 = 1.;
 
 pub fn create_instances() -> Vec<Instance> {
@@ -12,11 +12,12 @@ pub fn create_instances() -> Vec<Instance> {
             (0..INSTANCES_PER_ROW).map(move |x| {
                 let position = cgmath::Vector3 {
                     x: x as f64 * VERTEX_SCALE as f64 * 2.3 - INSTANCE_DISPLACEMENT,
-                    y: y as f64 * VERTEX_SCALE as f64 * 2.3 - INSTANCE_DISPLACEMENT,
+                    y: y as f64 * VERTEX_SCALE as f64 * 4.6 - INSTANCE_DISPLACEMENT,
                     z: 0.,
                 };
                 let rotation = 0.;
-                Instance { position, rotation }
+                let scale = vec2(1., 1.);
+                Instance { position, rotation, scale }
             })
         })
         .collect::<Vec<_>>()
@@ -24,12 +25,15 @@ pub fn create_instances() -> Vec<Instance> {
 
 pub struct Instance {
     position: cgmath::Vector3<f64>,
+    pub scale: Vector2<f64>,
     pub rotation: f64,
 }
 impl Instance {
     pub fn to_raw(&self) -> InstanceRaw {
         let matrix4 = cgmath::Matrix4::from_translation(self.position)
-            * cgmath::Matrix4::from_angle_z(Deg(self.rotation));
+            * cgmath::Matrix4::from_angle_z(Deg(self.rotation))
+            * cgmath::Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, 1.);
+
         let x = get_f32_array_from_vec4_f64(matrix4.x);
         let y = get_f32_array_from_vec4_f64(matrix4.y);
         let z = get_f32_array_from_vec4_f64(matrix4.z);

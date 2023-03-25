@@ -3,7 +3,7 @@ use winit::{event::WindowEvent, window::Window};
 use crate::{
     camera::{self, Camera},
     instances::{self, create_instances, Instance},
-    object_data::{INDICES, self},
+    object_data::{self, INDICES},
     state_manager,
     texture::{self, Texture},
 };
@@ -129,6 +129,17 @@ impl State {
             0,
             bytemuck::cast_slice(&[self.camera.uniform]),
         );
+        
+        /*let instance_data = self
+            .instances
+            .iter()
+            .map(Instance::to_raw)
+            .collect::<Vec<_>>();
+        self.queue.write_buffer(
+            &self.instance_buffer,
+            0,
+            bytemuck::cast_slice(&instance_data),
+        );*/
     }
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {

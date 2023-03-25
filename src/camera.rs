@@ -67,16 +67,16 @@ impl Camera {
     }
     pub fn update(&mut self) {
         if self.is_right_pressed {
-            self.uniform.pos[0] += Camera::SPEED;
-        }
-        if self.is_left_pressed {
             self.uniform.pos[0] -= Camera::SPEED;
         }
+        if self.is_left_pressed {
+            self.uniform.pos[0] += Camera::SPEED;
+        }
         if self.is_up_pressed {
-            self.uniform.pos[1] += Camera::SPEED;
+            self.uniform.pos[1] -= Camera::SPEED;
         }
         if self.is_down_pressed {
-            self.uniform.pos[1] -= Camera::SPEED;
+            self.uniform.pos[1] += Camera::SPEED;
         }
     }
 }
