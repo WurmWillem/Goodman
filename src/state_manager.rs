@@ -1,5 +1,8 @@
 use winit::dpi::PhysicalSize;
+use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent, Event};
+use winit::event_loop::{EventLoop, ControlFlow};
 
+use crate::{State, Manager};
 use crate::{instances::InstanceRaw, object_data::Vertex};
 
 pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> wgpu::Adapter {
@@ -108,3 +111,134 @@ pub fn create_render_pipeline(
         multiview: None,
     })
 }
+
+pub struct Input {
+    pub d_pressed: bool,
+    pub a_pressed: bool,
+    pub w_pressed: bool,
+    pub s_pressed: bool,
+    pub right_pressed: bool,
+    pub left_pressed: bool,
+    pub up_pressed: bool,
+    pub down_pressed: bool,
+}
+impl Input {
+    pub fn new() -> Self {
+        Self {
+            d_pressed: false,
+            a_pressed: false,
+            w_pressed: false,
+            s_pressed: false,
+            right_pressed: false,
+            left_pressed: false,
+            up_pressed: false,
+            down_pressed: false,
+        }
+    }
+    pub fn process_events(&mut self, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state,
+                        virtual_keycode: Some(keycode),
+                        ..
+                    },
+                ..
+            } => {
+                let is_pressed = *state == ElementState::Pressed;
+                match keycode {
+                    VirtualKeyCode::W => {
+                        self.w_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::A => {
+                        self.a_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::S => {
+                        self.s_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::D => {
+                        self.d_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Right => {
+                        self.right_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Left => {
+                        self.left_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Up => {
+                        self.up_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Down => {
+                        self.down_pressed = is_pressed;
+                        true
+                    }
+                    _ => false,
+                }
+            }
+            _ => false,
+        }
+    }
+}
+
+pub type Vec2 = cgmath::Vector2<f64>;
+pub type Vec3 = cgmath::Vector3<f64>;
+
+pub fn enter_loop<T>(event_loop: EventLoop<()>, mut state: State, mut manager: T)
+    where
+        T: Manager + 'static,
+    {
+        event_loop.run(move |event, _, control_flow| {
+            match event {
+                Event::WindowEvent {
+                    ref event,
+                    window_id,
+                } if window_id == state.window().id() => {
+                    if !state.input(event) {
+                        match event {
+                            WindowEvent::CloseRequested
+                            | WindowEvent::KeyboardInput {
+                                input:
+                                    KeyboardInput {
+                                        state: ElementState::Pressed,
+                                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                                        ..
+                                    },
+                                ..
+                            } => *control_flow = ControlFlow::Exit,
+                            WindowEvent::Resized(physical_size) => {
+                                state.resize(*physical_size);
+                            }
+                            WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                                state.resize(**new_inner_size);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                Event::RedrawRequested(window_id) if window_id == state.window().id() => {
+                    manager.update(&mut state);
+                    match manager.render(&state) {
+                        Ok(_) => {}
+                        // Reconfigure the surface if lost
+                        Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                        // The system is out of memory, we should probably quit
+                        Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                        // All other errors (Outdated, Timeout) should be resolved by the next frame
+                        Err(e) => eprintln!("{:?}", e),
+                    }
+                }
+                Event::MainEventsCleared => {
+                    state.window().request_redraw();
+                }
+                _ => {}
+            }
+        });
+    }

@@ -1,38 +1,52 @@
-use cgmath::{Deg, Vector4, Vector2, vec2};
+use cgmath::{vec3, Deg, Matrix4, Vector4};
 use wgpu::{util::DeviceExt, Device};
 
-use crate::object_data::VERTEX_SCALE;
+use crate::state_manager::{Vec2, Vec3};
 
-const INSTANCES_PER_ROW: u32 = 5;
-const INSTANCE_DISPLACEMENT: f64 = 1.;
+pub struct CircleInstance {
+    pub pos: Vec3,
+    pub radius: f64,
+}
+impl CircleInstance {
+    pub fn new(pos: Vec2, radius: f64) -> Self {
+        Self {
+            pos: vec3(pos.x, pos.y, 1.),
+            radius,
+        }
+    }
 
-pub fn create_instances() -> Vec<Instance> {
-    (0..INSTANCES_PER_ROW)
-        .flat_map(|y| {
-            (0..INSTANCES_PER_ROW).map(move |x| {
-                let position = cgmath::Vector3 {
-                    x: x as f64 * VERTEX_SCALE as f64 * 2.3 - INSTANCE_DISPLACEMENT,
-                    y: y as f64 * VERTEX_SCALE as f64 * 4.6 - INSTANCE_DISPLACEMENT,
-                    z: 0.,
-                };
-                let rotation = 0.;
-                let scale = vec2(1., 1.);
-                Instance { position, rotation, scale }
-            })
-        })
-        .collect::<Vec<_>>()
+    pub fn to_raw(&self) -> InstanceRaw {
+        let matrix4 = Matrix4::from_translation(self.pos) * Matrix4::from_scale(self.radius);
+
+        let x = get_f32_array_from_vec4_f64(matrix4.x);
+        let y = get_f32_array_from_vec4_f64(matrix4.y);
+        let z = get_f32_array_from_vec4_f64(matrix4.z);
+        let w = get_f32_array_from_vec4_f64(matrix4.w);
+
+        InstanceRaw {
+            model: [x, y, z, w],
+        }
+    }
 }
 
-pub struct Instance {
-    position: cgmath::Vector3<f64>,
-    pub scale: Vector2<f64>,
+pub struct SquareInstance {
+    pub pos: Vec3,
+    pub size: Vec2,
     pub rotation: f64,
 }
-impl Instance {
+impl SquareInstance {
+    pub fn new(pos: Vec2, size: Vec2) -> Self {
+        Self {
+            pos: vec3(pos.x, pos.y, 1.),
+            size,
+            rotation: 0.,
+        }
+    }
+
     pub fn to_raw(&self) -> InstanceRaw {
-        let matrix4 = cgmath::Matrix4::from_translation(self.position)
-            * cgmath::Matrix4::from_angle_z(Deg(self.rotation))
-            * cgmath::Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, 1.);
+        let matrix4 = Matrix4::from_translation(self.pos)
+            * Matrix4::from_angle_z(Deg(self.rotation))
+            * Matrix4::from_nonuniform_scale(self.size.x, self.size.y, 1.);
 
         let x = get_f32_array_from_vec4_f64(matrix4.x);
         let y = get_f32_array_from_vec4_f64(matrix4.y);
@@ -92,4 +106,11 @@ pub fn create_buffer(device: &Device, instance_data: &Vec<InstanceRaw>) -> wgpu:
         contents: bytemuck::cast_slice(instance_data),
         usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
     })
+}
+
+pub trait SquareInstanceT {
+    fn to_square_instance(&self) -> SquareInstance;
+}
+pub trait CircleInstanceT {
+    fn to_circle_instance(&self) -> CircleInstance;
 }
