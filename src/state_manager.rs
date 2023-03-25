@@ -1,4 +1,5 @@
 use winit::dpi::PhysicalSize;
+use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
 
 use crate::{instances::InstanceRaw, object_data::Vertex};
 
@@ -107,4 +108,80 @@ pub fn create_render_pipeline(
         },
         multiview: None,
     })
+}
+
+pub struct Input {
+    pub is_d_pressed: bool,
+    pub is_a_pressed: bool,
+    pub is_w_pressed: bool,
+    pub is_s_pressed: bool,
+    pub is_right_pressed: bool,
+    pub is_left_pressed: bool,
+    pub is_up_pressed: bool,
+    pub is_down_pressed: bool,
+}
+impl Input {
+    pub fn new() -> Self {
+        Self {
+            is_d_pressed: false,
+            is_a_pressed: false,
+            is_w_pressed: false,
+            is_s_pressed: false,
+            is_right_pressed: false,
+            is_left_pressed: false,
+            is_up_pressed: false,
+            is_down_pressed: false,
+        }
+    }
+    pub fn process_events(&mut self, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state,
+                        virtual_keycode: Some(keycode),
+                        ..
+                    },
+                ..
+            } => {
+                let is_pressed = *state == ElementState::Pressed;
+                match keycode {
+                    VirtualKeyCode::W => {
+                        self.is_w_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::A => {
+                        self.is_a_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::S => {
+                        self.is_s_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::D => {
+                        self.is_d_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Right => {
+                        self.is_right_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Left => {
+                        self.is_left_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Up => {
+                        self.is_up_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Down => {
+                        self.is_down_pressed = is_pressed;
+                        true
+                    }
+                    _ => false,
+                }
+            }
+            _ => false,
+        }
+    }
 }

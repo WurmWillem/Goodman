@@ -1,5 +1,6 @@
 use wgpu::{util::DeviceExt, Device};
-use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
+
+use crate::state_manager::Input;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -13,70 +14,29 @@ impl CameraUniform {
 }
 
 pub struct Camera {
+    pub movement_enabled: bool,
     pub uniform: CameraUniform,
-    is_right_pressed: bool,
-    is_left_pressed: bool,
-    is_up_pressed: bool,
-    is_down_pressed: bool,
 }
 impl Camera {
     const SPEED: f32 = 0.003;
-    pub fn new() -> Self {
+    pub fn new(movement_enabled: bool) -> Self {
         Self {
+            movement_enabled,
             uniform: CameraUniform::new(),
-            is_right_pressed: false,
-            is_left_pressed: false,
-            is_up_pressed: false,
-            is_down_pressed: false,
         }
     }
-    pub fn process_events(&mut self, event: &WindowEvent) -> bool {
-        match event {
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state,
-                        virtual_keycode: Some(keycode),
-                        ..
-                    },
-                ..
-            } => {
-                let is_pressed = *state == ElementState::Pressed;
-                match keycode {
-                    VirtualKeyCode::W | VirtualKeyCode::Up => {
-                        self.is_up_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::A | VirtualKeyCode::Left => {
-                        self.is_left_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::S | VirtualKeyCode::Down => {
-                        self.is_down_pressed = is_pressed;
-                        true
-                    }
-                    VirtualKeyCode::D | VirtualKeyCode::Right => {
-                        self.is_right_pressed = is_pressed;
-                        true
-                    }
-                    _ => false,
-                }
-            }
-            _ => false,
-        }
-    }
-    pub fn update(&mut self) {
-        if self.is_right_pressed {
-            self.uniform.pos[0] -= Camera::SPEED;
-        }
-        if self.is_left_pressed {
+    pub fn update(&mut self, input: &Input) {
+        if input.is_d_pressed {
             self.uniform.pos[0] += Camera::SPEED;
         }
-        if self.is_up_pressed {
-            self.uniform.pos[1] -= Camera::SPEED;
+        if input.is_a_pressed {
+            self.uniform.pos[0] -= Camera::SPEED;
         }
-        if self.is_down_pressed {
+        if input.is_w_pressed {
             self.uniform.pos[1] += Camera::SPEED;
+        }
+        if input.is_s_pressed {
+            self.uniform.pos[1] -= Camera::SPEED;
         }
     }
 }
