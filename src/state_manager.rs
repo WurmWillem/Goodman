@@ -111,26 +111,26 @@ pub fn create_render_pipeline(
 }
 
 pub struct Input {
-    pub is_d_pressed: bool,
-    pub is_a_pressed: bool,
-    pub is_w_pressed: bool,
-    pub is_s_pressed: bool,
-    pub is_right_pressed: bool,
-    pub is_left_pressed: bool,
-    pub is_up_pressed: bool,
-    pub is_down_pressed: bool,
+    pub d_pressed: bool,
+    pub a_pressed: bool,
+    pub w_pressed: bool,
+    pub s_pressed: bool,
+    pub right_pressed: bool,
+    pub left_pressed: bool,
+    pub up_pressed: bool,
+    pub down_pressed: bool,
 }
 impl Input {
     pub fn new() -> Self {
         Self {
-            is_d_pressed: false,
-            is_a_pressed: false,
-            is_w_pressed: false,
-            is_s_pressed: false,
-            is_right_pressed: false,
-            is_left_pressed: false,
-            is_up_pressed: false,
-            is_down_pressed: false,
+            d_pressed: false,
+            a_pressed: false,
+            w_pressed: false,
+            s_pressed: false,
+            right_pressed: false,
+            left_pressed: false,
+            up_pressed: false,
+            down_pressed: false,
         }
     }
     pub fn process_events(&mut self, event: &WindowEvent) -> bool {
@@ -147,35 +147,35 @@ impl Input {
                 let is_pressed = *state == ElementState::Pressed;
                 match keycode {
                     VirtualKeyCode::W => {
-                        self.is_w_pressed = is_pressed;
+                        self.w_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::A => {
-                        self.is_a_pressed = is_pressed;
+                        self.a_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::S => {
-                        self.is_s_pressed = is_pressed;
+                        self.s_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::D => {
-                        self.is_d_pressed = is_pressed;
+                        self.d_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::Right => {
-                        self.is_right_pressed = is_pressed;
+                        self.right_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::Left => {
-                        self.is_left_pressed = is_pressed;
+                        self.left_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::Up => {
-                        self.is_up_pressed = is_pressed;
+                        self.up_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::Down => {
-                        self.is_down_pressed = is_pressed;
+                        self.down_pressed = is_pressed;
                         true
                     }
                     _ => false,

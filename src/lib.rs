@@ -1,11 +1,11 @@
 mod camera;
-mod instances;
-mod object_data;
+pub mod instances;
+pub mod object_data;
 mod state;
-mod state_manager;
+pub mod state_manager;
 mod texture;
 
-use state::State;
+pub use state::State;
 use winit::{
     dpi::LogicalSize,
     event::*,
@@ -71,4 +71,10 @@ pub async fn run() {
             _ => {}
         }
     });
+}
+
+pub trait Manager {
+    fn new(state: &mut State) -> Self;
+    fn update(&mut self, state: &mut State);
+    fn render(&self, state: &State) -> Result<(), wgpu::SurfaceError>;
 }

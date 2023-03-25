@@ -26,16 +26,16 @@ impl Camera {
         }
     }
     pub fn update(&mut self, input: &Input) {
-        if input.is_d_pressed {
+        if input.d_pressed {
             self.uniform.pos[0] += Camera::SPEED;
         }
-        if input.is_a_pressed {
+        if input.a_pressed {
             self.uniform.pos[0] -= Camera::SPEED;
         }
-        if input.is_w_pressed {
+        if input.w_pressed {
             self.uniform.pos[1] += Camera::SPEED;
         }
-        if input.is_s_pressed {
+        if input.s_pressed {
             self.uniform.pos[1] -= Camera::SPEED;
         }
     }

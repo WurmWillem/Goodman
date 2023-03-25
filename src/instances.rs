@@ -1,4 +1,4 @@
-use cgmath::{vec2, vec3, Deg, Matrix4, Vector4};
+use cgmath::{vec3, Deg, Matrix4, Vector4};
 use wgpu::{util::DeviceExt, Device};
 
 //use crate::object_data::VERTEX_SCALE;
@@ -133,4 +133,11 @@ pub fn create_buffer(device: &Device, instance_data: &Vec<InstanceRaw>) -> wgpu:
         contents: bytemuck::cast_slice(instance_data),
         usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
     })
+}
+
+pub trait SquareInstanceT {
+    fn to_square_instance(&self) -> SquareInstance;
+}
+pub trait CircleInstanceT {
+    fn to_circle_instance(&self) -> CircleInstance;
 }

@@ -3,7 +3,7 @@ use winit::{event::WindowEvent, window::Window};
 
 use crate::{
     camera::{self, Camera},
-    instances::{self, CircleInstance, SquareInstance},
+    instances::{self, CircleInstance, InstanceRaw, SquareInstance},
     object_data::{self, INDICES, VERTEX_SCALE},
     state_manager::{self, Input},
     texture::{self},
@@ -24,11 +24,11 @@ pub struct State {
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     camera_buffer: wgpu::Buffer,
-    square_instances: Vec<SquareInstance>,
-    circle_instances: Vec<CircleInstance>,
+    pub square_instances: Vec<SquareInstance>,
+    pub circle_instances: Vec<CircleInstance>,
     square_instance_buffer: wgpu::Buffer,
     circle_instance_buffer: wgpu::Buffer,
-    input: Input,
+    pub input: Input,
     window: Window,
     ball_vel: cgmath::Vector2<f64>,
 }
@@ -78,19 +78,19 @@ impl State {
             camera::create_bind_group(&device, &camera_buffer, &camera_bind_group_layout);
 
         //let instances = create_instances();
-        let pos_0 = vec2(-0.8, 0.);
+        /*let pos_0 = vec2(-0.8, 0.);
         let pos_1 = vec2(0.8, 0.);
         let scale_0 = vec2(1., 3.);
 
         let square_instance_0 = SquareInstance::new(pos_0, scale_0);
-        let square_instance_1 = SquareInstance::new(pos_1, scale_0);
+        let square_instance_1 = SquareInstance::new(pos_1, scale_0);*/
 
-        let square_instances = vec![square_instance_0, square_instance_1];
+        let square_instances = vec![]; //square_instance_0, square_instance_1
 
-        let pos = vec2(0., 0.);
-        let circle_instance = CircleInstance::new(pos, 1.);
+        //let pos = vec2(0., 0.);
+        //let circle_instance = CircleInstance::new(pos, 1.);
 
-        let circle_instances = vec![circle_instance];
+        let circle_instances = vec![]; //vec![circle_instance]
 
         let square_instance_data = square_instances
             .iter()
@@ -164,7 +164,7 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        if self.camera.movement_enabled {
+        /*if self.camera.movement_enabled {
             self.camera.update(&self.input);
             self.queue.write_buffer(
                 &self.camera_buffer,
@@ -262,10 +262,10 @@ impl State {
             &self.circle_instance_buffer,
             0,
             bytemuck::cast_slice(&circle_instance_data),
-        );
+        );*/
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    pub fn render(&self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
             .texture
@@ -321,5 +321,44 @@ impl State {
         output.present();
 
         Ok(())
+    }
+
+    pub fn update_square_instances(&mut self) {
+        let square_instance_data = self
+            .square_instances
+            .iter()
+            .map(SquareInstance::to_raw)
+            .collect::<Vec<_>>();
+
+        let data_size = square_instance_data.len() as u64 * 16;
+        if self.square_instance_buffer.size() != data_size {
+            self.square_instance_buffer =
+                instances::create_buffer(&self.device, &square_instance_data);
+        }
+
+        self.queue.write_buffer(
+            &self.square_instance_buffer,
+            0,
+            bytemuck::cast_slice(&square_instance_data),
+        );
+    }
+    pub fn update_circle_instances(&mut self) {
+        let circle_instance_data = self
+            .circle_instances
+            .iter()
+            .map(CircleInstance::to_raw)
+            .collect::<Vec<_>>();
+
+        let data_size = circle_instance_data.len() as u64 * 16;
+        if self.circle_instance_buffer.size() != data_size {
+            self.circle_instance_buffer =
+                instances::create_buffer(&self.device, &circle_instance_data);
+        }
+
+        self.queue.write_buffer(
+            &self.circle_instance_buffer,
+            0,
+            bytemuck::cast_slice(&circle_instance_data),
+        );
     }
 }
