@@ -7,11 +7,14 @@ struct CameraUniform {
 var<uniform> camera: CameraUniform;
 
 struct InstanceInput {
-    @location(2) data: vec3<f32>,
-}
+    @location(5) model_matrix_0: vec4<f32>,
+    @location(6) model_matrix_1: vec4<f32>,
+    @location(7) model_matrix_2: vec4<f32>,
+    @location(8) model_matrix_3: vec4<f32>,
+};
 
 struct VertexInput {
-    @location(0) position: vec3<f32>,
+    @location(0) pos: vec3<f32>,
     @location(1) tex_coords: vec2<f32>,
 };
 
@@ -25,11 +28,20 @@ fn vs_main(
     model: VertexInput,
     instance: InstanceInput,
 ) -> VertexOutput {
+
     var out: VertexOutput;
     out.tex_coords = model.tex_coords;
 
-    let updated_pos = vec2<f32>(model.position.x + camera.pos.x + instance.data.x, model.position.y + camera.pos.y + instance.data.y);
-    out.clip_position = vec4<f32>(updated_pos, model.position.z + instance.data.z, 1.0);
+    let model_matrix = mat4x4<f32>(
+        instance.model_matrix_0,
+        instance.model_matrix_1,
+        instance.model_matrix_2,
+        instance.model_matrix_3,
+    );    
+
+    let updated_pos = model_matrix * vec4<f32>(model.pos.x, model.pos.y, model.pos.z, 1.0);
+    let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);
+    out.clip_position = updated_model;
 
     return out;
 }

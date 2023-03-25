@@ -162,7 +162,7 @@ impl State {
         let instance_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Instance Buffer"),
             contents: bytemuck::cast_slice(&instance_data),
-            usage: wgpu::BufferUsages::VERTEX,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
@@ -267,6 +267,20 @@ impl State {
             &self.camera_buffer,
             0,
             bytemuck::cast_slice(&[self.camera.uniform]),
+        );
+
+        for instance in &mut self.instances {
+            instance.rotation += 0.1;
+        }
+        let instance_data = self
+            .instances
+            .iter()
+            .map(Instance::to_raw)
+            .collect::<Vec<_>>();
+        self.queue.write_buffer(
+            &self.instance_buffer,
+            0,
+            bytemuck::cast_slice(&instance_data),
         );
     }
 
