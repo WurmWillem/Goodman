@@ -6,7 +6,7 @@ use crate::{
     instances::{self, CircleInstance, SquareInstance},
     object_data::{self, INDICES, VERTEX_SCALE},
     state_manager::{self, Input},
-    texture::{self, Texture},
+    texture::{self},
 };
 
 pub struct State {
@@ -30,6 +30,7 @@ pub struct State {
     circle_instance_buffer: wgpu::Buffer,
     input: Input,
     window: Window,
+    ball_vel: cgmath::Vector2<f64>,
 }
 
 impl State {
@@ -141,6 +142,7 @@ impl State {
             square_instances,
             circle_instances,
             input: Input::new(),
+            ball_vel: vec2(0.003, 0.0017),
         }
     }
 
@@ -171,33 +173,75 @@ impl State {
             );
         }
 
-        let speed = 0.005;
-
         let mut paddle_0 = &mut self.square_instances[0];
-        if self.input.is_w_pressed
-            && paddle_0.pos.y + paddle_0.size.y * VERTEX_SCALE as f64 * 0.5 + speed + 0.07 < 1.
-        {
+        let speed = 0.005;
+        let size_scaled_y = paddle_0.size.y * VERTEX_SCALE as f64 * 0.5 + speed + 0.07;
+
+        if self.input.is_w_pressed && paddle_0.pos.y + size_scaled_y < 1. {
             paddle_0.pos.y += speed;
         }
-        if self.input.is_s_pressed
-            && paddle_0.pos.y - paddle_0.size.y * VERTEX_SCALE as f64 * 0.5 - speed - 0.07 > -1.
-        {
+        if self.input.is_s_pressed && paddle_0.pos.y - size_scaled_y > -1. {
             paddle_0.pos.y -= speed;
         }
 
         let mut paddle_1 = &mut self.square_instances[1];
-        if self.input.is_up_pressed
-            && paddle_1.pos.y + paddle_1.size.y * VERTEX_SCALE as f64 * 0.5 + speed + 0.07 < 1.
-        {
+        if self.input.is_up_pressed && paddle_1.pos.y + size_scaled_y < 1. {
             paddle_1.pos.y += speed;
         }
-        if self.input.is_down_pressed
-            && paddle_1.pos.y - paddle_1.size.y * VERTEX_SCALE as f64 * 0.5 - speed - 0.07 > -1.
-        {
+        if self.input.is_down_pressed && paddle_1.pos.y - size_scaled_y > -1. {
             paddle_1.pos.y -= speed;
         }
 
-        let instance_data = self
+        let ball = &self.circle_instances[0];
+        let radius_scaled = ball.radius * (VERTEX_SCALE as f64);
+
+        let new_pos = vec2(ball.pos.x + self.ball_vel.x, ball.pos.y + self.ball_vel.y);
+        if new_pos.x + radius_scaled > 1. || new_pos.x - radius_scaled < -1. {
+            let pos_0 = vec2(-0.8, 0.);
+            let pos_1 = vec2(0.8, 0.);
+            let scale_0 = vec2(1., 3.);
+
+            let square_instance_0 = SquareInstance::new(pos_0, scale_0);
+            let square_instance_1 = SquareInstance::new(pos_1, scale_0);
+
+            self.square_instances = vec![square_instance_0, square_instance_1];
+
+            let pos = vec2(0., 0.);
+            let circle_instance = CircleInstance::new(pos, 1.);
+
+            self.circle_instances = vec![circle_instance];
+        }
+
+        let mut ball = &mut self.circle_instances[0];
+        if new_pos.y + radius_scaled > 1. {
+            self.ball_vel.y *= -1.;
+            ball.pos.y = 1. - radius_scaled;
+        }
+        if new_pos.y - radius_scaled < -1. {
+            self.ball_vel.y *= -1.;
+            ball.pos.y = -1. + radius_scaled;
+        }
+        let paddle_0 = &self.square_instances[0];
+        let paddle_1 = &self.square_instances[1];
+        let size_scaled_x = paddle_0.size.x * VERTEX_SCALE as f64 * 0.5 + 0.02;
+        let size_scaled_y = paddle_0.size.y * VERTEX_SCALE as f64 * 0.5 + 0.02;
+
+        if (new_pos.x + radius_scaled > paddle_1.pos.x - size_scaled_x
+            && new_pos.y + radius_scaled > paddle_1.pos.y - size_scaled_y
+            && new_pos.y - radius_scaled < paddle_1.pos.y + size_scaled_y
+            && self.ball_vel.x > 0.)
+            || (new_pos.x - radius_scaled < paddle_0.pos.x + size_scaled_x
+                && new_pos.y + radius_scaled > paddle_0.pos.y - size_scaled_y
+                && new_pos.y - radius_scaled < paddle_0.pos.y + size_scaled_y
+                && self.ball_vel.x < 0.)
+        {
+            self.ball_vel.x *= -1.;
+        }
+
+        ball.pos.x += self.ball_vel.x;
+        ball.pos.y += self.ball_vel.y;
+
+        let square_instance_data = self
             .square_instances
             .iter()
             .map(SquareInstance::to_raw)
@@ -205,7 +249,19 @@ impl State {
         self.queue.write_buffer(
             &self.square_instance_buffer,
             0,
-            bytemuck::cast_slice(&instance_data),
+            bytemuck::cast_slice(&square_instance_data),
+        );
+
+        let circle_instance_data = self
+            .circle_instances
+            .iter()
+            .map(CircleInstance::to_raw)
+            .collect::<Vec<_>>();
+
+        self.queue.write_buffer(
+            &self.circle_instance_buffer,
+            0,
+            bytemuck::cast_slice(&circle_instance_data),
         );
     }
 

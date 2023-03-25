@@ -1,15 +1,15 @@
 use cgmath::{vec2, vec3, Deg, Matrix4, Vector4};
 use wgpu::{util::DeviceExt, Device};
 
-use crate::object_data::VERTEX_SCALE;
+//use crate::object_data::VERTEX_SCALE;
 
-const INSTANCES_PER_ROW: u32 = 5;
-const INSTANCE_DISPLACEMENT: f64 = 1.;
+//const INSTANCES_PER_ROW: u32 = 5;
+//const INSTANCE_DISPLACEMENT: f64 = 1.;
 
 type Vec2 = cgmath::Vector2<f64>;
 type Vec3 = cgmath::Vector3<f64>;
 
-pub fn create_instances() -> Vec<SquareInstance> {
+/*pub fn create_instances() -> Vec<SquareInstance> {
     (0..INSTANCES_PER_ROW)
         .flat_map(|y| {
             (0..INSTANCES_PER_ROW).map(move |x| {
@@ -28,7 +28,7 @@ pub fn create_instances() -> Vec<SquareInstance> {
             })
         })
         .collect::<Vec<_>>()
-}
+}*/
 
 pub struct CircleInstance {
     pub pos: Vec3,
@@ -62,18 +62,18 @@ pub struct SquareInstance {
     pub rotation: f64,
 }
 impl SquareInstance {
-    pub fn new(pos: Vec2, scale: Vec2) -> Self {
+    pub fn new(pos: Vec2, size: Vec2) -> Self {
         Self {
             pos: vec3(pos.x, pos.y, 1.),
-            size: scale,
+            size,
             rotation: 0.,
         }
     }
 
     pub fn to_raw(&self) -> InstanceRaw {
-        let matrix4 = cgmath::Matrix4::from_translation(self.pos)
-            * cgmath::Matrix4::from_angle_z(Deg(self.rotation))
-            * cgmath::Matrix4::from_nonuniform_scale(self.size.x, self.size.y, 1.);
+        let matrix4 = Matrix4::from_translation(self.pos)
+            * Matrix4::from_angle_z(Deg(self.rotation))
+            * Matrix4::from_nonuniform_scale(self.size.x, self.size.y, 1.);
 
         let x = get_f32_array_from_vec4_f64(matrix4.x);
         let y = get_f32_array_from_vec4_f64(matrix4.y);
