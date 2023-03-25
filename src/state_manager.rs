@@ -185,3 +185,6 @@ impl Input {
         }
     }
 }
+
+pub type Vec2 = cgmath::Vector2<f64>;
+pub type Vec3 = cgmath::Vector3<f64>;

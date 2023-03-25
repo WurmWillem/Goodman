@@ -1,34 +1,7 @@
 use cgmath::{vec3, Deg, Matrix4, Vector4};
 use wgpu::{util::DeviceExt, Device};
 
-//use crate::object_data::VERTEX_SCALE;
-
-//const INSTANCES_PER_ROW: u32 = 5;
-//const INSTANCE_DISPLACEMENT: f64 = 1.;
-
-type Vec2 = cgmath::Vector2<f64>;
-type Vec3 = cgmath::Vector3<f64>;
-
-/*pub fn create_instances() -> Vec<SquareInstance> {
-    (0..INSTANCES_PER_ROW)
-        .flat_map(|y| {
-            (0..INSTANCES_PER_ROW).map(move |x| {
-                let position = cgmath::Vector3 {
-                    x: x as f64 * VERTEX_SCALE as f64 * 2.3 - INSTANCE_DISPLACEMENT,
-                    y: y as f64 * VERTEX_SCALE as f64 * 4.6 - INSTANCE_DISPLACEMENT,
-                    z: 0.,
-                };
-                let rotation = 0.;
-                let scale = vec2(1., 1.);
-                SquareInstance {
-                    pos: position,
-                    rotation,
-                    size: scale,
-                }
-            })
-        })
-        .collect::<Vec<_>>()
-}*/
+use crate::state_manager::{Vec2, Vec3};
 
 pub struct CircleInstance {
     pub pos: Vec3,

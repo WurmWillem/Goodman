@@ -1,16 +1,18 @@
-use cgmath::vec2;
 use winit::{event::WindowEvent, window::Window};
 
 use crate::{
     camera::{self, Camera},
-    instances::{self, CircleInstance, InstanceRaw, SquareInstance},
-    object_data::{self, INDICES, VERTEX_SCALE},
+    instances::{self, CircleInstance, SquareInstance},
+    object_data::{self, INDICES},
     state_manager::{self, Input},
     texture::{self},
 };
 
 pub struct State {
     pub size: winit::dpi::PhysicalSize<u32>,
+    pub square_instances: Vec<SquareInstance>,
+    pub circle_instances: Vec<CircleInstance>,
+    pub input: Input,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -20,17 +22,12 @@ pub struct State {
     index_buffer: wgpu::Buffer,
     diffuse_bind_group_0: wgpu::BindGroup,
     diffuse_bind_group_1: wgpu::BindGroup,
-    //diffuse_texture: Texture,
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     camera_buffer: wgpu::Buffer,
-    pub square_instances: Vec<SquareInstance>,
-    pub circle_instances: Vec<CircleInstance>,
     square_instance_buffer: wgpu::Buffer,
     circle_instance_buffer: wgpu::Buffer,
-    pub input: Input,
     window: Window,
-    ball_vel: cgmath::Vector2<f64>,
 }
 
 impl State {
@@ -77,20 +74,8 @@ impl State {
         let camera_bind_group =
             camera::create_bind_group(&device, &camera_buffer, &camera_bind_group_layout);
 
-        //let instances = create_instances();
-        /*let pos_0 = vec2(-0.8, 0.);
-        let pos_1 = vec2(0.8, 0.);
-        let scale_0 = vec2(1., 3.);
-
-        let square_instance_0 = SquareInstance::new(pos_0, scale_0);
-        let square_instance_1 = SquareInstance::new(pos_1, scale_0);*/
-
-        let square_instances = vec![]; //square_instance_0, square_instance_1
-
-        //let pos = vec2(0., 0.);
-        //let circle_instance = CircleInstance::new(pos, 1.);
-
-        let circle_instances = vec![]; //vec![circle_instance]
+        let square_instances = vec![];
+        let circle_instances = vec![];
 
         let square_instance_data = square_instances
             .iter()
@@ -133,7 +118,6 @@ impl State {
             index_buffer,
             diffuse_bind_group_0,
             diffuse_bind_group_1,
-            //diffuse_texture: diffuse_texture_1,
             camera,
             camera_bind_group,
             camera_buffer,
@@ -142,7 +126,6 @@ impl State {
             square_instances,
             circle_instances,
             input: Input::new(),
-            ball_vel: vec2(0.003, 0.0017),
         }
     }
 
@@ -164,7 +147,7 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        /*if self.camera.movement_enabled {
+        if self.camera.movement_enabled {
             self.camera.update(&self.input);
             self.queue.write_buffer(
                 &self.camera_buffer,
@@ -172,97 +155,6 @@ impl State {
                 bytemuck::cast_slice(&[self.camera.uniform]),
             );
         }
-
-        let mut paddle_0 = &mut self.square_instances[0];
-        let speed = 0.005;
-        let size_scaled_y = paddle_0.size.y * VERTEX_SCALE as f64 * 0.5 + speed + 0.07;
-
-        if self.input.is_w_pressed && paddle_0.pos.y + size_scaled_y < 1. {
-            paddle_0.pos.y += speed;
-        }
-        if self.input.is_s_pressed && paddle_0.pos.y - size_scaled_y > -1. {
-            paddle_0.pos.y -= speed;
-        }
-
-        let mut paddle_1 = &mut self.square_instances[1];
-        if self.input.is_up_pressed && paddle_1.pos.y + size_scaled_y < 1. {
-            paddle_1.pos.y += speed;
-        }
-        if self.input.is_down_pressed && paddle_1.pos.y - size_scaled_y > -1. {
-            paddle_1.pos.y -= speed;
-        }
-
-        let ball = &self.circle_instances[0];
-        let radius_scaled = ball.radius * (VERTEX_SCALE as f64);
-
-        let new_pos = vec2(ball.pos.x + self.ball_vel.x, ball.pos.y + self.ball_vel.y);
-        if new_pos.x + radius_scaled > 1. || new_pos.x - radius_scaled < -1. {
-            let pos_0 = vec2(-0.8, 0.);
-            let pos_1 = vec2(0.8, 0.);
-            let scale_0 = vec2(1., 3.);
-
-            let square_instance_0 = SquareInstance::new(pos_0, scale_0);
-            let square_instance_1 = SquareInstance::new(pos_1, scale_0);
-
-            self.square_instances = vec![square_instance_0, square_instance_1];
-
-            let pos = vec2(0., 0.);
-            let circle_instance = CircleInstance::new(pos, 1.);
-
-            self.circle_instances = vec![circle_instance];
-        }
-
-        let mut ball = &mut self.circle_instances[0];
-        if new_pos.y + radius_scaled > 1. {
-            self.ball_vel.y *= -1.;
-            ball.pos.y = 1. - radius_scaled;
-        }
-        if new_pos.y - radius_scaled < -1. {
-            self.ball_vel.y *= -1.;
-            ball.pos.y = -1. + radius_scaled;
-        }
-        let paddle_0 = &self.square_instances[0];
-        let paddle_1 = &self.square_instances[1];
-        let size_scaled_x = paddle_0.size.x * VERTEX_SCALE as f64 * 0.5 + 0.02;
-        let size_scaled_y = paddle_0.size.y * VERTEX_SCALE as f64 * 0.5 + 0.02;
-
-        if (new_pos.x + radius_scaled > paddle_1.pos.x - size_scaled_x
-            && new_pos.y + radius_scaled > paddle_1.pos.y - size_scaled_y
-            && new_pos.y - radius_scaled < paddle_1.pos.y + size_scaled_y
-            && self.ball_vel.x > 0.)
-            || (new_pos.x - radius_scaled < paddle_0.pos.x + size_scaled_x
-                && new_pos.y + radius_scaled > paddle_0.pos.y - size_scaled_y
-                && new_pos.y - radius_scaled < paddle_0.pos.y + size_scaled_y
-                && self.ball_vel.x < 0.)
-        {
-            self.ball_vel.x *= -1.;
-        }
-
-        ball.pos.x += self.ball_vel.x;
-        ball.pos.y += self.ball_vel.y;
-
-        let square_instance_data = self
-            .square_instances
-            .iter()
-            .map(SquareInstance::to_raw)
-            .collect::<Vec<_>>();
-        self.queue.write_buffer(
-            &self.square_instance_buffer,
-            0,
-            bytemuck::cast_slice(&square_instance_data),
-        );
-
-        let circle_instance_data = self
-            .circle_instances
-            .iter()
-            .map(CircleInstance::to_raw)
-            .collect::<Vec<_>>();
-
-        self.queue.write_buffer(
-            &self.circle_instance_buffer,
-            0,
-            bytemuck::cast_slice(&circle_instance_data),
-        );*/
     }
 
     pub fn render(&self) -> Result<(), wgpu::SurfaceError> {

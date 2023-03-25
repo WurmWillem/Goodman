@@ -68,3 +68,24 @@ impl Run for Manager {
         });
     }
 }
+
+pub fn create_instances() -> Vec<SquareInstance> {
+    (0..INSTANCES_PER_ROW)
+        .flat_map(|y| {
+            (0..INSTANCES_PER_ROW).map(move |x| {
+                let position = cgmath::Vector3 {
+                    x: x as f64 * VERTEX_SCALE as f64 * 2.3 - INSTANCE_DISPLACEMENT,
+                    y: y as f64 * VERTEX_SCALE as f64 * 4.6 - INSTANCE_DISPLACEMENT,
+                    z: 0.,
+                };
+                let rotation = 0.;
+                let scale = vec2(1., 1.);
+                SquareInstance {
+                    pos: position,
+                    rotation,
+                    size: scale,
+                }
+            })
+        })
+        .collect::<Vec<_>>()
+}
