@@ -1,7 +1,7 @@
 use cgmath::{Deg, Vector4};
-use wgpu::{Device, util::DeviceExt};
+use wgpu::{util::DeviceExt, Device};
 
-use crate::vertices::VERTEX_SCALE;
+use crate::object_data::VERTEX_SCALE;
 
 const INSTANCES_PER_ROW: u32 = 10;
 const INSTANCE_DISPLACEMENT: f64 = 1.;
@@ -81,7 +81,6 @@ impl InstanceRaw {
         }
     }
 }
-
 
 pub fn create_buffer(device: &Device, instance_data: &Vec<InstanceRaw>) -> wgpu::Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

@@ -1,8 +1,9 @@
 mod camera;
 mod instances;
+mod object_data;
 mod state;
+mod state_manager;
 mod texture;
-mod vertices;
 
 use state::State;
 use winit::{
