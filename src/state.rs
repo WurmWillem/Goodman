@@ -32,7 +32,9 @@ pub struct State {
     window: Window,
     last_frame: Instant,
     frames_passed: u32,
-    total_frame_time: f32,
+    total_frame_time: f64,
+    pub time_since_last_render: f64,
+    pub target_fps: usize,
 }
 
 impl State {
@@ -136,6 +138,8 @@ impl State {
             last_frame: Instant::now(),
             total_frame_time: 0.,
             frames_passed: 0,
+            time_since_last_render: 0.,
+            target_fps: 144,
         }
     }
 
@@ -265,17 +269,25 @@ impl State {
     }
 
     pub fn update_time(&mut self) {
-        self.total_frame_time += self.last_frame.elapsed().as_secs_f32();
+        let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
         self.last_frame = std::time::Instant::now();
+
+        self.total_frame_time += time_since_last_frame;
+        self.time_since_last_render += time_since_last_frame;
+
+        if self.total_frame_time > 3. && self.total_frame_time < 3.1 {
+            self.get_average_fps();
+        }
+        
         self.frames_passed += 1;
     }
 
-    pub fn get_frame_time(&self) -> f32 {
-        self.last_frame.elapsed().as_secs_f32()
+    pub fn get_frame_time(&self) -> f64 {
+        self.last_frame.elapsed().as_secs_f64()
     }
 
-    pub fn get_fps(&mut self) -> f32 {
-        let fps = self.frames_passed as f32 / self.total_frame_time;
+    pub fn get_average_fps(&mut self) -> usize {
+        let fps = (self.frames_passed as f32 / self.total_frame_time as f32) as usize;
         self.frames_passed = 0;
         self.total_frame_time = 0.;
         fps

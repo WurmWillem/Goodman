@@ -5,9 +5,8 @@ fn main() {
 }
 
 pub async fn run() {
-    env_logger::init();
-
     let event_loop = EventLoop::new();
+
     let window = WindowBuilder::new()
         .with_inner_size(LogicalSize::new(700., 700.))
         .build(&event_loop)
@@ -15,6 +14,8 @@ pub async fn run() {
 
     let mut state = State::new(window).await;
     let pong = Pong::new(&mut state);
+
+    state.target_fps = 144;
 
     enter_loop(event_loop, state, pong);
 }
@@ -76,7 +77,7 @@ impl Ball {
             radius: 1.,
         }
     }
-    fn update(&mut self, paddle_0: &Paddle, paddle_1: &Paddle, frame_time: f32) {
+    fn update(&mut self, paddle_0: &Paddle, paddle_1: &Paddle, frame_time: f64) {
         let radius_scaled = self.radius * (VERTEX_SCALE as f64);
 
         let new_pos = self.pos + self.vel * frame_time as f64;
@@ -109,7 +110,7 @@ impl Ball {
             self.vel.x *= -1.;
         }
 
-        self.pos += self.vel * frame_time as f64;
+        self.pos += self.vel * frame_time;
     }
 }
 impl CircleInstanceT for Ball {
@@ -124,7 +125,7 @@ struct Paddle {
     size: Vec2,
 }
 impl Paddle {
-    const PADDLE_SPEED: f32 = 2.5;
+    const PADDLE_SPEED: f64 = 2.5;
     const PADDLE_SIZE: Vec2 = vec2(1., 3.);
     fn new(pos: Vec2) -> Self {
         Self {
@@ -132,15 +133,15 @@ impl Paddle {
             size: Self::PADDLE_SIZE,
         }
     }
-    fn update(&mut self, up_pressed: bool, down_pressed: bool, frame_time: f32) {
+    fn update(&mut self, up_pressed: bool, down_pressed: bool, frame_time: f64) {
         let speed = Self::PADDLE_SPEED * frame_time;
-        let size_scaled_y = self.size.y as f32 * VERTEX_SCALE * 0.5 + speed + 0.07;
+        let size_scaled_y = self.size.y * VERTEX_SCALE as f64 * 0.5 + speed + 0.07;
 
-        if up_pressed && self.pos.y as f32 + size_scaled_y < 1. {
-            self.pos.y += speed as f64;
+        if up_pressed && self.pos.y + size_scaled_y < 1. {
+            self.pos.y += speed;
         }
-        if down_pressed && self.pos.y as f32 - size_scaled_y > -1. {
-            self.pos.y -= speed as f64;
+        if down_pressed && self.pos.y - size_scaled_y > -1. {
+            self.pos.y -= speed;
         }
     }
 }
