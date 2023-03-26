@@ -1,7 +1,4 @@
-use winit::{
-    
-    window::Window, event::WindowEvent,
-};
+use winit::{event::WindowEvent, window::Window};
 
 use crate::{
     camera::{self, Camera},
@@ -55,13 +52,13 @@ impl State {
         let config = state_manager::create_config(&surface_format, size, &surface_caps);
         surface.configure(&device, &config);
 
-        let diffuse_bytes = include_bytes!("paddle.png");
+        let diffuse_bytes = include_bytes!("assets/paddle.png");
         let diffuse_texture_0 =
-            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "paddle.png").unwrap();
+            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "assets/paddle.png").unwrap();
 
-        let diffuse_bytes = include_bytes!("ball.png");
+        let diffuse_bytes = include_bytes!("assets/ball.png");
         let diffuse_texture_1 =
-            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "ball.png").unwrap();
+            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "assets/ball.png").unwrap();
 
         let texture_bind_group_layout = texture::create_bind_group_layout(&device);
 

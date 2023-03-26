@@ -1,15 +1,4 @@
-use cgmath::vec2;
-use goodman::{
-    instances::{CircleInstance, CircleInstanceT, SquareInstance, SquareInstanceT},
-    object_data::VERTEX_SCALE,
-    state_manager::{Vec2, enter_loop},
-    Manager, State,
-};
-use winit::{
-    dpi::LogicalSize,
-    event_loop::EventLoop,
-    window::WindowBuilder,
-};
+use goodman::prelude::*;
 
 fn main() {
     pollster::block_on(run());
@@ -57,6 +46,7 @@ impl Manager for Pong {
     fn update(&mut self, state: &mut State) {
         let paddle_0 = &mut self.paddle_0;
         let paddle_1 = &mut self.paddle_1;
+        
         paddle_0.update(state.input.w_pressed, state.input.s_pressed);
         paddle_1.update(state.input.up_pressed, state.input.down_pressed);
         self.ball.update(paddle_0, paddle_1);
