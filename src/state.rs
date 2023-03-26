@@ -1,7 +1,6 @@
-use winit::{
-    
-    window::Window, event::WindowEvent,
-};
+use std::time::Instant;
+
+use winit::{event::WindowEvent, window::Window};
 
 use crate::{
     camera::{self, Camera},
@@ -31,6 +30,9 @@ pub struct State {
     square_instance_buffer: wgpu::Buffer,
     circle_instance_buffer: wgpu::Buffer,
     window: Window,
+    last_frame: Instant,
+    frames_passed: u32,
+    total_frame_time: f32,
 }
 
 impl State {
@@ -55,13 +57,15 @@ impl State {
         let config = state_manager::create_config(&surface_format, size, &surface_caps);
         surface.configure(&device, &config);
 
-        let diffuse_bytes = include_bytes!("paddle.png");
+        let diffuse_bytes = include_bytes!("assets/paddle.png");
         let diffuse_texture_0 =
-            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "paddle.png").unwrap();
+            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "assets/paddle.png")
+                .unwrap();
 
-        let diffuse_bytes = include_bytes!("ball.png");
+        let diffuse_bytes = include_bytes!("assets/ball.png");
         let diffuse_texture_1 =
-            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "ball.png").unwrap();
+            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "assets/ball.png")
+                .unwrap();
 
         let texture_bind_group_layout = texture::create_bind_group_layout(&device);
 
@@ -129,6 +133,9 @@ impl State {
             square_instances,
             circle_instances,
             input: Input::new(),
+            last_frame: Instant::now(),
+            total_frame_time: 0.,
+            frames_passed: 0,
         }
     }
 
@@ -255,5 +262,22 @@ impl State {
             0,
             bytemuck::cast_slice(&circle_instance_data),
         );
+    }
+
+    pub fn update_time(&mut self) {
+        self.total_frame_time += self.last_frame.elapsed().as_secs_f32();
+        self.last_frame = std::time::Instant::now();
+        self.frames_passed += 1;
+    }
+
+    pub fn get_frame_time(&self) -> f32 {
+        self.last_frame.elapsed().as_secs_f32()
+    }
+
+    pub fn get_fps(&mut self) -> f32 {
+        let fps = self.frames_passed as f32 / self.total_frame_time;
+        self.frames_passed = 0;
+        self.total_frame_time = 0.;
+        fps
     }
 }

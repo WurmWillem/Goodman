@@ -1,17 +1,14 @@
 mod camera;
-pub mod instances;
-pub mod object_data;
+mod instances;
+mod object_data;
+pub mod prelude;
 mod state;
-pub mod state_manager;
+mod state_manager;
 mod texture;
 
-pub use state::State;
-use winit::{
-    dpi::LogicalSize,
-    event::*,
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-};
+use prelude::Manager;
+use state::State;
+use winit::{dpi::LogicalSize, event_loop::EventLoop, window::WindowBuilder};
 
 pub async fn run() {
     env_logger::init();
@@ -23,58 +20,17 @@ pub async fn run() {
         .expect("Failed to build window");
 
     let mut state = State::new(window).await;
+    let manager = StateManager::new(&mut state);
 
-    event_loop.run(move |event, _, control_flow| {
-        match event {
-            Event::WindowEvent {
-                ref event,
-                window_id,
-            } if window_id == state.window().id() => {
-                if !state.input(event) {
-                    // UPDATED!
-                    match event {
-                        WindowEvent::CloseRequested
-                        | WindowEvent::KeyboardInput {
-                            input:
-                                KeyboardInput {
-                                    state: ElementState::Pressed,
-                                    virtual_keycode: Some(VirtualKeyCode::Escape),
-                                    ..
-                                },
-                            ..
-                        } => *control_flow = ControlFlow::Exit,
-                        WindowEvent::Resized(physical_size) => {
-                            state.resize(*physical_size);
-                        }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            state.resize(**new_inner_size);
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            Event::RedrawRequested(window_id) if window_id == state.window().id() => {
-                state.update();
-                match state.render() {
-                    Ok(_) => {}
-                    // Reconfigure the surface if lost
-                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    // All other errors (Outdated, Timeout) should be resolved by the next frame
-                    Err(e) => eprintln!("{:?}", e),
-                }
-            }
-            Event::MainEventsCleared => {
-                state.window().request_redraw();
-            }
-            _ => {}
-        }
-    });
+    state_manager::enter_loop(event_loop, state, manager)
 }
 
-pub trait Manager {
-    fn new(state: &mut State) -> Self;
-    fn update(&mut self, state: &mut State);
-    fn render(&self, state: &State) -> Result<(), wgpu::SurfaceError>;
+struct StateManager;
+impl Manager for StateManager {
+    fn new(_state: &mut State) -> Self {
+        Self {}
+    }
+    fn update(&mut self, state: &mut State) {
+        state.update();
+    }
 }
