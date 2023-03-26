@@ -1,5 +1,5 @@
 use winit::dpi::PhysicalSize;
-use winit::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
+use winit::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 
 use crate::state::State;
@@ -8,7 +8,9 @@ use crate::{instances::InstanceRaw, object_data::Vertex};
 pub trait Manager {
     fn new(state: &mut State) -> Self;
     fn update(&mut self, state: &mut State);
-    fn render(&self, state: &State) -> Result<(), wgpu::SurfaceError>;
+    fn render(&self, state: &State) -> Result<(), wgpu::SurfaceError> {
+        state.render()
+    }
 }
 
 pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> wgpu::Adapter {
@@ -119,6 +121,7 @@ pub fn create_render_pipeline(
 }
 
 pub struct Input {
+    pub left_mouse_button_pressed: bool,
     pub d_pressed: bool,
     pub a_pressed: bool,
     pub w_pressed: bool,
@@ -131,6 +134,7 @@ pub struct Input {
 impl Input {
     pub fn new() -> Self {
         Self {
+            left_mouse_button_pressed: false,
             d_pressed: false,
             a_pressed: false,
             w_pressed: false,
@@ -189,7 +193,22 @@ impl Input {
                     _ => false,
                 }
             }
+            WindowEvent::MouseInput { state, button, .. } => {
+                let is_pressed = *state == ElementState::Pressed;
+                match button {
+                    MouseButton::Left => {
+                        self.left_mouse_button_pressed = is_pressed;
+                        true
+                    }
+                    _ => false,
+                }
+            }
             _ => false,
+        }
+    }
+    pub fn reset_buttons(&mut self) {
+        if self.left_mouse_button_pressed {
+            self.left_mouse_button_pressed = false;
         }
     }
 }
@@ -231,6 +250,13 @@ where
             }
             Event::RedrawRequested(window_id) if window_id == state.window().id() => {
                 manager.update(&mut state);
+                if state.input.left_mouse_button_pressed {
+                    println!("{}", state.get_fps());
+                }
+
+                state.update_time();
+                state.input.reset_buttons();
+
                 match manager.render(&state) {
                     Ok(_) => {}
                     // Reconfigure the surface if lost

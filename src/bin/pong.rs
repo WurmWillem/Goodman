@@ -46,10 +46,12 @@ impl Manager for Pong {
     fn update(&mut self, state: &mut State) {
         let paddle_0 = &mut self.paddle_0;
         let paddle_1 = &mut self.paddle_1;
-        
-        paddle_0.update(state.input.w_pressed, state.input.s_pressed);
-        paddle_1.update(state.input.up_pressed, state.input.down_pressed);
-        self.ball.update(paddle_0, paddle_1);
+
+        let frame_time = state.get_frame_time();
+
+        paddle_0.update(state.input.w_pressed, state.input.s_pressed, frame_time);
+        paddle_1.update(state.input.up_pressed, state.input.down_pressed, frame_time);
+        self.ball.update(paddle_0, paddle_1, frame_time);
 
         state.square_instances[0] = paddle_0.to_square_instance();
         state.square_instances[1] = paddle_1.to_square_instance();
@@ -57,10 +59,6 @@ impl Manager for Pong {
 
         state.circle_instances[0] = self.ball.to_circle_instance();
         state.update_circle_instances();
-    }
-
-    fn render(&self, state: &State) -> Result<(), wgpu::SurfaceError> {
-        state.render()
     }
 }
 
@@ -74,16 +72,17 @@ impl Ball {
     fn new() -> Self {
         Self {
             pos: vec2(0., 0.),
-            vel: vec2(0.003, 0.0017),
+            vel: vec2(2., 2.),
             radius: 1.,
         }
     }
-    fn update(&mut self, paddle_0: &Paddle, paddle_1: &Paddle) {
+    fn update(&mut self, paddle_0: &Paddle, paddle_1: &Paddle, frame_time: f32) {
         let radius_scaled = self.radius * (VERTEX_SCALE as f64);
 
-        let new_pos = vec2(self.pos.x + self.vel.x, self.pos.y + self.vel.y);
+        let new_pos = self.pos + self.vel * frame_time as f64;
         if new_pos.x + radius_scaled > 1. || new_pos.x - radius_scaled < -1. {
             *self = Ball::new();
+            return;
         }
 
         if new_pos.y + radius_scaled > 1. {
@@ -110,7 +109,7 @@ impl Ball {
             self.vel.x *= -1.;
         }
 
-        self.pos += self.vel;
+        self.pos += self.vel * frame_time as f64;
     }
 }
 impl CircleInstanceT for Ball {
@@ -125,7 +124,7 @@ struct Paddle {
     size: Vec2,
 }
 impl Paddle {
-    const PADDLE_SPEED: f64 = 0.005;
+    const PADDLE_SPEED: f32 = 2.5;
     const PADDLE_SIZE: Vec2 = vec2(1., 3.);
     fn new(pos: Vec2) -> Self {
         Self {
@@ -133,13 +132,15 @@ impl Paddle {
             size: Self::PADDLE_SIZE,
         }
     }
-    fn update(&mut self, up_pressed: bool, down_pressed: bool) {
-        let size_scaled_y = self.size.y * VERTEX_SCALE as f64 * 0.5 + Self::PADDLE_SPEED + 0.07;
-        if up_pressed && self.pos.y + size_scaled_y < 1. {
-            self.pos.y += Self::PADDLE_SPEED;
+    fn update(&mut self, up_pressed: bool, down_pressed: bool, frame_time: f32) {
+        let speed = Self::PADDLE_SPEED * frame_time;
+        let size_scaled_y = self.size.y as f32 * VERTEX_SCALE * 0.5 + speed + 0.07;
+
+        if up_pressed && self.pos.y as f32 + size_scaled_y < 1. {
+            self.pos.y += speed as f64;
         }
-        if down_pressed && self.pos.y - size_scaled_y > -1. {
-            self.pos.y -= Self::PADDLE_SPEED;
+        if down_pressed && self.pos.y as f32 - size_scaled_y > -1. {
+            self.pos.y -= speed as f64;
         }
     }
 }
