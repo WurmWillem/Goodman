@@ -1,19 +1,18 @@
-use std::time::Instant;
+use std::{collections::HashMap, time::Instant};
 
 use winit::{event::WindowEvent, window::Window};
 
 use crate::{
     camera::{self, Camera},
-    instances::{self, CircleInstance, SquareInstance},
+    instances::{self, Instance, Rect},
     object_data::{self, INDICES},
     state_manager::{self, Input},
-    texture::{self},
+    texture::{self, Texture},
 };
 
 pub struct State {
     pub size: winit::dpi::PhysicalSize<u32>,
-    pub square_instances: Vec<SquareInstance>,
-    pub circle_instances: Vec<CircleInstance>,
+    instances: Vec<Instance>,
     pub input: Input,
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -22,17 +21,19 @@ pub struct State {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    diffuse_bind_group_0: wgpu::BindGroup,
-    diffuse_bind_group_1: wgpu::BindGroup,
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     camera_buffer: wgpu::Buffer,
-    square_instance_buffer: wgpu::Buffer,
-    circle_instance_buffer: wgpu::Buffer,
+    instance_buffer: wgpu::Buffer,
     window: Window,
     last_frame: Instant,
     frames_passed: u32,
-    total_frame_time: f32,
+    total_frame_time: f64,
+    pub time_since_last_render: f64,
+    pub target_fps: u32,
+    instances_drawn: usize,
+    instance_indexes: HashMap<String, Vec<usize>>,
+    texture_bind_groups: HashMap<String, wgpu::BindGroup>,
 }
 
 impl State {
@@ -57,44 +58,18 @@ impl State {
         let config = state_manager::create_config(&surface_format, size, &surface_caps);
         surface.configure(&device, &config);
 
-        let diffuse_bytes = include_bytes!("assets/paddle.png");
-        let diffuse_texture_0 =
-            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "assets/paddle.png")
-                .unwrap();
-
-        let diffuse_bytes = include_bytes!("assets/ball.png");
-        let diffuse_texture_1 =
-            texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "assets/ball.png")
-                .unwrap();
-
         let texture_bind_group_layout = texture::create_bind_group_layout(&device);
-
-        let diffuse_bind_group_0 =
-            texture::create_bind_group(&device, &texture_bind_group_layout, &diffuse_texture_0);
-        let diffuse_bind_group_1 =
-            texture::create_bind_group(&device, &texture_bind_group_layout, &diffuse_texture_1);
+        let texture_bind_groups = HashMap::new();
 
         let camera = Camera::new(false);
-
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
         let camera_bind_group_layout = camera::create_bind_group_layout(&device);
         let camera_bind_group =
             camera::create_bind_group(&device, &camera_buffer, &camera_bind_group_layout);
 
-        let square_instances = vec![];
-        let circle_instances = vec![];
-
-        let square_instance_data = square_instances
-            .iter()
-            .map(SquareInstance::to_raw)
-            .collect::<Vec<_>>();
-        let square_instance_buffer = instances::create_buffer(&device, &square_instance_data);
-
-        let circle_instance_data = circle_instances
-            .iter()
-            .map(CircleInstance::to_raw)
-            .collect::<Vec<_>>();
-        let circle_instance_buffer = instances::create_buffer(&device, &circle_instance_data);
+        let instances = vec![];
+        let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+        let instance_buffer = instances::create_buffer(&device, &instance_data);
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
@@ -103,7 +78,6 @@ impl State {
             &texture_bind_group_layout,
             &camera_bind_group_layout,
         );
-
         let render_pipeline = state_manager::create_render_pipeline(
             &device,
             &render_pipeline_layout,
@@ -123,19 +97,20 @@ impl State {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            diffuse_bind_group_0,
-            diffuse_bind_group_1,
             camera,
             camera_bind_group,
             camera_buffer,
-            square_instance_buffer,
-            circle_instance_buffer,
-            square_instances,
-            circle_instances,
+            instance_buffer,
+            instances,
             input: Input::new(),
             last_frame: Instant::now(),
             total_frame_time: 0.,
             frames_passed: 0,
+            time_since_last_render: 0.,
+            target_fps: 144,
+            instances_drawn: 0,
+            instance_indexes: HashMap::new(),
+            texture_bind_groups,
         }
     }
 
@@ -167,7 +142,7 @@ impl State {
         }
     }
 
-    pub fn render(&self) -> Result<(), wgpu::SurfaceError> {
+    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
             .texture
@@ -198,86 +173,130 @@ impl State {
 
         render_pass.set_pipeline(&self.render_pipeline);
 
-        render_pass.set_bind_group(0, &self.diffuse_bind_group_0, &[]);
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_vertex_buffer(1, self.square_instance_buffer.slice(..));
+        render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-        render_pass.draw_indexed(
-            0..INDICES.len() as u32,
-            0,
-            0..self.square_instances.len() as u32,
-        );
 
-        render_pass.set_bind_group(0, &self.diffuse_bind_group_1, &[]);
-        render_pass.set_vertex_buffer(1, self.circle_instance_buffer.slice(..));
-        render_pass.draw_indexed(
-            0..INDICES.len() as u32,
-            0,
-            0..self.circle_instances.len() as u32,
-        );
+        for (bind_group_label, bind_group) in &self.texture_bind_groups {
+            if !self.instance_indexes.contains_key(bind_group_label) {
+                continue;
+            }
+
+            render_pass.set_bind_group(0, bind_group, &[]);
+
+            for (instance_label, inst_vec) in &mut self.instance_indexes {
+                if *instance_label != *bind_group_label {
+                    continue;
+                }
+
+                inst_vec.into_iter().for_each(|i| {
+                    let i = *i as u64;
+
+                    render_pass.draw_indexed(
+                        0..INDICES.len() as u32,
+                        0,
+                        (i as u32)..(i + 1) as u32,
+                    );
+                });
+                inst_vec.clear();
+            }
+        }
 
         drop(render_pass);
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
+        self.instances_drawn = 0;
+
         Ok(())
     }
 
-    pub fn update_square_instances(&mut self) {
+    pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
+        let inst = Instance::new(rect);
+
+        self.instances[self.instances_drawn] = inst;
+
+        if self.instance_indexes.contains_key(&texture.label) {
+            for (label, index_vec) in &mut self.instance_indexes {
+                if *label == texture.label {
+                    index_vec.push(self.instances_drawn);
+                }
+            }
+        } else {
+            self.instance_indexes
+                .insert(texture.label.to_string(), vec![self.instances_drawn]);
+        }
+
+        self.instances_drawn += 1;
+        self.update_instance_buffer();
+    }
+
+    pub fn update_instance_buffer(&mut self) {
         let square_instance_data = self
-            .square_instances
+            .instances
             .iter()
-            .map(SquareInstance::to_raw)
+            .map(Instance::to_raw)
             .collect::<Vec<_>>();
 
         let data_size = square_instance_data.len() as u64 * 16;
-        if self.square_instance_buffer.size() != data_size {
-            self.square_instance_buffer =
-                instances::create_buffer(&self.device, &square_instance_data);
+        if self.instance_buffer.size() != data_size {
+            self.instance_buffer = instances::create_buffer(&self.device, &square_instance_data);
         }
 
         self.queue.write_buffer(
-            &self.square_instance_buffer,
+            &self.instance_buffer,
             0,
             bytemuck::cast_slice(&square_instance_data),
         );
     }
-    pub fn update_circle_instances(&mut self) {
-        let circle_instance_data = self
-            .circle_instances
-            .iter()
-            .map(CircleInstance::to_raw)
-            .collect::<Vec<_>>();
 
-        let data_size = circle_instance_data.len() as u64 * 16;
-        if self.circle_instance_buffer.size() != data_size {
-            self.circle_instance_buffer =
-                instances::create_buffer(&self.device, &circle_instance_data);
-        }
-
-        self.queue.write_buffer(
-            &self.circle_instance_buffer,
-            0,
-            bytemuck::cast_slice(&circle_instance_data),
-        );
+    pub fn update_instances(&mut self, rects: Vec<Rect>) {
+        self.instances = rects.iter().map(|rect| Instance::new(*rect)).collect();
+        self.update_instance_buffer();
     }
 
     pub fn update_time(&mut self) {
-        self.total_frame_time += self.last_frame.elapsed().as_secs_f32();
+        let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
         self.last_frame = std::time::Instant::now();
+
+        self.total_frame_time += time_since_last_frame;
+        self.time_since_last_render += time_since_last_frame;
+
+        if self.total_frame_time > 4. && self.total_frame_time < 4.1 {
+            self.frames_passed = 0;
+            self.total_frame_time = 0.;
+        }
+
         self.frames_passed += 1;
     }
 
-    pub fn get_frame_time(&self) -> f32 {
-        self.last_frame.elapsed().as_secs_f32()
+    pub fn get_frame_time(&self) -> f64 {
+        self.last_frame.elapsed().as_secs_f64()
     }
 
-    pub fn get_fps(&mut self) -> f32 {
-        let fps = self.frames_passed as f32 / self.total_frame_time;
+    pub fn get_average_tps(&mut self) -> u32 {
+        let fps = (self.frames_passed as f32 / self.total_frame_time as f32) as u32;
         self.frames_passed = 0;
         self.total_frame_time = 0.;
         fps
+    }
+
+    pub fn set_fps(&mut self, fps: u32) {
+        self.target_fps = fps;
+    }
+
+    pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
+        let tex = Texture::from_bytes(&self.device, &self.queue, bytes, label)
+            .expect(&format!("Could not create {} texture", label));
+
+        let texture_bind_group_layout = texture::create_bind_group_layout(&self.device);
+        let texture_bind_group =
+            texture::create_bind_group(&self.device, &texture_bind_group_layout, &tex);
+
+        self.texture_bind_groups
+            .insert(tex.label.clone(), texture_bind_group);
+        tex
     }
 }

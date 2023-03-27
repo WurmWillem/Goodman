@@ -5,16 +5,23 @@ fn main() {
 }
 
 pub async fn run() {
-    env_logger::init();
-
     let event_loop = EventLoop::new();
+
     let window = WindowBuilder::new()
         .with_inner_size(LogicalSize::new(700., 700.))
         .build(&event_loop)
         .expect("Failed to build window");
 
     let mut state = State::new(window).await;
-    let pong = Pong::new(&mut state);
+    state.set_fps(144);
+
+    let paddle_bytes = include_bytes!("assets/paddle.png");
+    let paddle_tex = state.create_texture(paddle_bytes, "paddle.png");
+
+    let ball_bytes = include_bytes!("assets/ball.png");
+    let ball_tex = state.create_texture(ball_bytes, "ball.png");
+
+    let pong = Pong::new(&mut state, vec![paddle_tex, ball_tex]);
 
     enter_loop(event_loop, state, pong);
 }
@@ -23,23 +30,22 @@ struct Pong {
     paddle_0: Paddle,
     paddle_1: Paddle,
     ball: Ball,
+    textures: Vec<Texture>,
 }
 impl Manager for Pong {
-    fn new(state: &mut State) -> Self {
+    fn new(state: &mut State, textures: Vec<Texture>) -> Self {
         let paddle_0 = Paddle::new(vec2(-0.8, 0.));
         let paddle_1 = Paddle::new(vec2(0.8, 0.));
         let ball = Ball::new();
 
-        state.square_instances = vec![paddle_0.to_square_instance(), paddle_1.to_square_instance()];
-        state.circle_instances = vec![ball.to_circle_instance()];
-
-        state.update_square_instances();
-        state.update_circle_instances();
+        let rects = vec![paddle_0.rect, paddle_1.rect, ball.to_rect()];
+        state.update_instances(rects);
 
         Self {
             paddle_0,
             paddle_1,
             ball,
+            textures,
         }
     }
 
@@ -52,13 +58,12 @@ impl Manager for Pong {
         paddle_0.update(state.input.w_pressed, state.input.s_pressed, frame_time);
         paddle_1.update(state.input.up_pressed, state.input.down_pressed, frame_time);
         self.ball.update(paddle_0, paddle_1, frame_time);
+    }
 
-        state.square_instances[0] = paddle_0.to_square_instance();
-        state.square_instances[1] = paddle_1.to_square_instance();
-        state.update_square_instances();
-
-        state.circle_instances[0] = self.ball.to_circle_instance();
-        state.update_circle_instances();
+    fn render(&self, state: &mut State) {
+        state.draw_texture(self.paddle_0.rect, &self.textures[0]);
+        state.draw_texture(self.paddle_1.rect, &self.textures[0]);
+        state.draw_texture(self.ball.to_rect(), &self.textures[1]);
     }
 }
 
@@ -66,18 +71,17 @@ impl Manager for Pong {
 struct Ball {
     pos: Vec2,
     vel: Vec2,
-    radius: f64,
 }
 impl Ball {
+    const RADIUS: f64 = 1.;
     fn new() -> Self {
         Self {
             pos: vec2(0., 0.),
             vel: vec2(2., 2.),
-            radius: 1.,
         }
     }
-    fn update(&mut self, paddle_0: &Paddle, paddle_1: &Paddle, frame_time: f32) {
-        let radius_scaled = self.radius * (VERTEX_SCALE as f64);
+    fn update(&mut self, paddle_0: &Paddle, paddle_1: &Paddle, frame_time: f64) {
+        let radius_scaled = Self::RADIUS * (VERTEX_SCALE as f64);
 
         let new_pos = self.pos + self.vel * frame_time as f64;
         if new_pos.x + radius_scaled > 1. || new_pos.x - radius_scaled < -1. {
@@ -94,58 +98,52 @@ impl Ball {
             self.pos.y = -1. + radius_scaled;
         }
 
-        let size_scaled_x = paddle_0.size.x * VERTEX_SCALE as f64 * 0.5 + 0.02;
-        let size_scaled_y = paddle_0.size.y * VERTEX_SCALE as f64 * 0.5 + 0.02;
+        let size_scaled_x = paddle_0.rect.x * VERTEX_SCALE as f64 * 0.5 + 0.02;
+        let size_scaled_y = paddle_0.rect.y * VERTEX_SCALE as f64 * 0.5 + 0.02;
 
-        if (new_pos.x + radius_scaled > paddle_1.pos.x - size_scaled_x
-            && new_pos.y + radius_scaled > paddle_1.pos.y - size_scaled_y
-            && new_pos.y - radius_scaled < paddle_1.pos.y + size_scaled_y
+        if (new_pos.x + radius_scaled > paddle_1.rect.x - size_scaled_x
+            && new_pos.y + radius_scaled > paddle_1.rect.y - size_scaled_y
+            && new_pos.y - radius_scaled < paddle_1.rect.y + size_scaled_y
             && self.vel.x > 0.)
-            || (new_pos.x - radius_scaled < paddle_0.pos.x + size_scaled_x
-                && new_pos.y + radius_scaled > paddle_0.pos.y - size_scaled_y
-                && new_pos.y - radius_scaled < paddle_0.pos.y + size_scaled_y
+            || (new_pos.x - radius_scaled < paddle_0.rect.x + size_scaled_x
+                && new_pos.y + radius_scaled > paddle_0.rect.y - size_scaled_y
+                && new_pos.y - radius_scaled < paddle_0.rect.y + size_scaled_y
                 && self.vel.x < 0.)
         {
             self.vel.x *= -1.;
         }
 
-        self.pos += self.vel * frame_time as f64;
+        self.pos += self.vel * frame_time;
     }
-}
-impl CircleInstanceT for Ball {
-    fn to_circle_instance(&self) -> CircleInstance {
-        CircleInstance::new(self.pos, self.radius)
+
+    fn to_rect(&self) -> Rect {
+        rect(self.pos, vec2(Ball::RADIUS, Ball::RADIUS))
     }
 }
 
 #[derive(Debug, Clone, Copy)]
 struct Paddle {
-    pos: Vec2,
-    size: Vec2,
+    rect: Rect,
 }
 impl Paddle {
-    const PADDLE_SPEED: f32 = 2.5;
-    const PADDLE_SIZE: Vec2 = vec2(1., 3.);
+    const SPEED: f64 = 2.5;
+    const SIZE: Vec2 = vec2(1., 3.);
+
     fn new(pos: Vec2) -> Self {
         Self {
-            pos,
-            size: Self::PADDLE_SIZE,
+            rect: rect(pos, Self::SIZE),
         }
     }
-    fn update(&mut self, up_pressed: bool, down_pressed: bool, frame_time: f32) {
-        let speed = Self::PADDLE_SPEED * frame_time;
-        let size_scaled_y = self.size.y as f32 * VERTEX_SCALE * 0.5 + speed + 0.07;
 
-        if up_pressed && self.pos.y as f32 + size_scaled_y < 1. {
-            self.pos.y += speed as f64;
+    fn update(&mut self, up_pressed: bool, down_pressed: bool, frame_time: f64) {
+        let speed = Self::SPEED * frame_time;
+        let size_scaled_y = self.rect.y * VERTEX_SCALE as f64 * 0.5 + speed + 0.07;
+
+        if up_pressed && self.rect.y + size_scaled_y < 1. {
+            self.rect.y += speed;
         }
-        if down_pressed && self.pos.y as f32 - size_scaled_y > -1. {
-            self.pos.y -= speed as f64;
+        if down_pressed && self.rect.y - size_scaled_y > -1. {
+            self.rect.y -= speed;
         }
-    }
-}
-impl SquareInstanceT for Paddle {
-    fn to_square_instance(&self) -> SquareInstance {
-        SquareInstance::new(self.pos, Self::PADDLE_SIZE)
     }
 }

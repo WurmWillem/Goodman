@@ -1,44 +1,19 @@
-use cgmath::{vec3, Deg, Matrix4, Vector4};
+use cgmath::{vec2, vec3, Deg, Matrix4, Vector2, Vector4};
 use wgpu::{util::DeviceExt, Device};
 
 use crate::state_manager::{Vec2, Vec3};
 
-pub struct CircleInstance {
-    pub pos: Vec3,
-    pub radius: f64,
-}
-impl CircleInstance {
-    pub fn new(pos: Vec2, radius: f64) -> Self {
-        Self {
-            pos: vec3(pos.x, pos.y, 1.),
-            radius,
-        }
-    }
-
-    pub fn to_raw(&self) -> InstanceRaw {
-        let matrix4 = Matrix4::from_translation(self.pos) * Matrix4::from_scale(self.radius);
-
-        let x = get_f32_array_from_vec4_f64(matrix4.x);
-        let y = get_f32_array_from_vec4_f64(matrix4.y);
-        let z = get_f32_array_from_vec4_f64(matrix4.z);
-        let w = get_f32_array_from_vec4_f64(matrix4.w);
-
-        InstanceRaw {
-            model: [x, y, z, w],
-        }
-    }
-}
-
-pub struct SquareInstance {
+#[derive(Debug, Clone, Copy)]
+pub struct Instance {
     pub pos: Vec3,
     pub size: Vec2,
     pub rotation: f64,
 }
-impl SquareInstance {
-    pub fn new(pos: Vec2, size: Vec2) -> Self {
+impl Instance {
+    pub fn new(rect: Rect) -> Self {
         Self {
-            pos: vec3(pos.x, pos.y, 1.),
-            size,
+            pos: vec3(rect.x, rect.y, 1.),
+            size: vec2(rect.width, rect.height),
             rotation: 0.,
         }
     }
@@ -108,9 +83,29 @@ pub fn create_buffer(device: &Device, instance_data: &Vec<InstanceRaw>) -> wgpu:
     })
 }
 
-pub trait SquareInstanceT {
-    fn to_square_instance(&self) -> SquareInstance;
+#[derive(Debug, Clone, Copy)]
+pub struct Rect {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
 }
-pub trait CircleInstanceT {
-    fn to_circle_instance(&self) -> CircleInstance;
+impl Rect {
+    pub fn new(pos: Vector2<f64>, size: Vector2<f64>) -> Self {
+        Self {
+            x: pos.x,
+            y: pos.y,
+            width: size.x,
+            height: size.y,
+        }
+    }
+}
+
+pub fn rect(pos: Vector2<f64>, size: Vector2<f64>) -> Rect {
+    Rect {
+        x: pos.x,
+        y: pos.y,
+        width: size.x,
+        height: size.y,
+    }
 }

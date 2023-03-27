@@ -6,7 +6,7 @@ mod state;
 mod state_manager;
 mod texture;
 
-use prelude::Manager;
+use prelude::{Manager, Texture};
 use state::State;
 use winit::{dpi::LogicalSize, event_loop::EventLoop, window::WindowBuilder};
 
@@ -20,17 +20,18 @@ pub async fn run() {
         .expect("Failed to build window");
 
     let mut state = State::new(window).await;
-    let manager = StateManager::new(&mut state);
+    let manager = StateManager::new(&mut state, vec![]);
 
     state_manager::enter_loop(event_loop, state, manager)
 }
 
 struct StateManager;
 impl Manager for StateManager {
-    fn new(_state: &mut State) -> Self {
+    fn new(_state: &mut State, _textures: Vec<Texture>) -> Self {
         Self {}
     }
     fn update(&mut self, state: &mut State) {
         state.update();
     }
+    fn render(&self, _state: &mut State) {}
 }
