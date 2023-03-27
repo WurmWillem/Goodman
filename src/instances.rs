@@ -109,7 +109,7 @@ pub fn create_buffer(device: &Device, instance_data: &Vec<InstanceRaw>) -> wgpu:
 }
 
 pub trait SquareInstanceT {
-    fn to_square_instance(&self) -> SquareInstance;
+    fn to_instance(&self) -> SquareInstance;
 }
 pub trait CircleInstanceT {
     fn to_circle_instance(&self) -> CircleInstance;

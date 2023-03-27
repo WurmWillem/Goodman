@@ -12,7 +12,7 @@ pub async fn run() {
         .expect("Failed to build window");
 
     let mut state = State::new(window).await;
-    let game_manager = GameManager::new(&mut state);
+    let game_manager = GameManager::new(&mut state, vec![]);
 
     state.target_fps = 144;
 
@@ -23,14 +23,18 @@ struct GameManager {
     square: Square,
 }
 impl Manager for GameManager {
-    fn new(state: &mut State) -> Self {
+    fn new(state: &mut State, _textures: Vec<Texture>) -> Self {
         let square = Square::new();
-        state.square_instances = vec![square.to_square_instance()];
+        state.instances = vec![square.to_instance()];
         state.update_square_instances();
 
         Self { square }
     }
     fn update(&mut self, _state: &mut State) {}
+
+    fn render(&self, state: &mut State) -> Result<(), wgpu::SurfaceError> {
+        state.render()
+    }
 }
 
 struct Square {
@@ -46,7 +50,7 @@ impl Square {
     }
 }
 impl SquareInstanceT for Square {
-    fn to_square_instance(&self) -> SquareInstance {
+    fn to_instance(&self) -> SquareInstance {
         SquareInstance::new(self.pos, self.size)
     }
 }

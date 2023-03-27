@@ -9,11 +9,9 @@ pub type Vec2 = cgmath::Vector2<f64>;
 pub type Vec3 = cgmath::Vector3<f64>;
 
 pub trait Manager {
-    fn new(state: &mut State) -> Self;
+    fn new(state: &mut State, textures: Vec<crate::Texture>) -> Self;
     fn update(&mut self, state: &mut State);
-    fn render(&self, state: &State) -> Result<(), wgpu::SurfaceError> {
-        state.render()
-    }
+    fn render(&self, state: &mut State) -> Result<(), wgpu::SurfaceError>;
 }
 
 pub fn enter_loop<T>(event_loop: EventLoop<()>, mut state: State, mut manager: T)
@@ -60,7 +58,7 @@ where
 
                 if state.time_since_last_render > 1. / state.target_fps as f64 {
                     state.time_since_last_render = 0.;
-                    match manager.render(&state) {
+                    match manager.render(&mut state) {
                         Ok(_) => {}
                         // Reconfigure the surface if lost
                         Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
