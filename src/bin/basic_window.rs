@@ -12,45 +12,42 @@ pub async fn run() {
         .expect("Failed to build window");
 
     let mut state = State::new(window).await;
-    let game_manager = GameManager::new(&mut state, vec![]);
+    state.set_fps(144);
 
-    state.target_fps = 144;
+    let paddle_bytes = include_bytes!("assets/paddle.png");
+    let paddle_tex = state.create_texture(paddle_bytes, "paddle.png");
+
+    let game_manager = GameManager::new(&mut state, vec![paddle_tex]);
 
     enter_loop(event_loop, state, game_manager);
 }
 
 struct GameManager {
     square: Square,
+    textures: Vec<Texture>,
 }
 impl Manager for GameManager {
-    fn new(state: &mut State, _textures: Vec<Texture>) -> Self {
+    fn new(state: &mut State, textures: Vec<Texture>) -> Self {
         let square = Square::new();
-        state.instances = vec![square.to_instance()];
-        state.update_square_instances();
 
-        Self { square }
+        state.update_instances(vec![square.rect]);
+
+        Self { square, textures }
     }
     fn update(&mut self, _state: &mut State) {}
 
-    fn render(&self, state: &mut State) -> Result<(), wgpu::SurfaceError> {
-        state.render()
+    fn render(&self, state: &mut State) {
+        state.draw_texture(self.square.rect, &self.textures[0]);
     }
 }
 
 struct Square {
-    pos: Vec2,
-    size: Vec2,
+    rect: Rect,
 }
 impl Square {
     fn new() -> Self {
         Self {
-            pos: vec2(0., 0.), // Center of the screen
-            size: vec2(1., 3.),
+            rect: rect(vec2(0., 0.), vec2(1., 3.)),
         }
-    }
-}
-impl SquareInstanceT for Square {
-    fn to_instance(&self) -> SquareInstance {
-        SquareInstance::new(self.pos, self.size)
     }
 }

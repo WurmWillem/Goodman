@@ -33,7 +33,5 @@ impl Manager for StateManager {
     fn update(&mut self, state: &mut State) {
         state.update();
     }
-    fn render(&self, state: &mut State) -> Result<(), wgpu::SurfaceError> {
-        state.render()
-    }
+    fn render(&self, _state: &mut State) {}
 }

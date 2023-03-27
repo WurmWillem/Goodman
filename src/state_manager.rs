@@ -11,7 +11,7 @@ pub type Vec3 = cgmath::Vector3<f64>;
 pub trait Manager {
     fn new(state: &mut State, textures: Vec<crate::Texture>) -> Self;
     fn update(&mut self, state: &mut State);
-    fn render(&self, state: &mut State) -> Result<(), wgpu::SurfaceError>;
+    fn render(&self, state: &mut State);
 }
 
 pub fn enter_loop<T>(event_loop: EventLoop<()>, mut state: State, mut manager: T)
@@ -19,6 +19,7 @@ where
     T: Manager + 'static,
 {
     env_logger::init();
+
     event_loop.run(move |event, _, control_flow| {
         match event {
             Event::WindowEvent {
@@ -48,29 +49,33 @@ where
                 }
             }
             Event::RedrawRequested(window_id) if window_id == state.window().id() => {
+                state.time_since_last_render = 0.;
+                manager.render(&mut state);
+                match state.render() {
+                    Ok(_) => {}
+                    // Reconfigure the surface if lost
+                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
+                    // The system is out of memory, we should probably quit
+                    Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                    // All other errors (Outdated, Timeout) should be resolved by the next frame
+                    Err(e) => eprintln!("{:?}", e),
+                }
+            }
+
+            Event::MainEventsCleared => {
+                state.update();
                 manager.update(&mut state);
+
                 if state.input.left_mouse_button_pressed {
-                    println!("{}", state.get_average_fps());
+                    println!("{}", state.get_average_tps());
                 }
 
                 state.update_time();
                 state.input.reset_buttons();
 
                 if state.time_since_last_render > 1. / state.target_fps as f64 {
-                    state.time_since_last_render = 0.;
-                    match manager.render(&mut state) {
-                        Ok(_) => {}
-                        // Reconfigure the surface if lost
-                        Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
-                        // The system is out of memory, we should probably quit
-                        Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                        // All other errors (Outdated, Timeout) should be resolved by the next frame
-                        Err(e) => eprintln!("{:?}", e),
-                    }
+                    state.window().request_redraw();
                 }
-            }
-            Event::MainEventsCleared => {
-                state.window().request_redraw();
             }
             _ => {}
         }
