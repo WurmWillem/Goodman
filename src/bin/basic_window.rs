@@ -34,7 +34,7 @@ impl Manager for GameManager {
 
         Self { square, textures }
     }
-    fn update(&mut self, _state: &mut State) {}
+    fn update(&mut self, _state: &State) {}
 
     fn render(&self, state: &mut State) {
         state.draw_texture(self.square.rect, &self.textures[0]);
