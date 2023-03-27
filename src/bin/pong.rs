@@ -49,7 +49,7 @@ impl Manager for Pong {
         }
     }
 
-    fn update(&mut self, state: &mut State) {
+    fn update(&mut self, state: &State) {
         let paddle_0 = &mut self.paddle_0;
         let paddle_1 = &mut self.paddle_1;
 
@@ -98,8 +98,8 @@ impl Ball {
             self.pos.y = -1. + radius_scaled;
         }
 
-        let size_scaled_x = paddle_0.rect.x * VERTEX_SCALE as f64 * 0.5 + 0.02;
-        let size_scaled_y = paddle_0.rect.y * VERTEX_SCALE as f64 * 0.5 + 0.02;
+        let size_scaled_x = paddle_0.rect.width * VERTEX_SCALE as f64 * 0.5 + 0.02;
+        let size_scaled_y = paddle_0.rect.height * VERTEX_SCALE as f64 * 0.5 + 0.02;
 
         if (new_pos.x + radius_scaled > paddle_1.rect.x - size_scaled_x
             && new_pos.y + radius_scaled > paddle_1.rect.y - size_scaled_y
@@ -137,7 +137,7 @@ impl Paddle {
 
     fn update(&mut self, up_pressed: bool, down_pressed: bool, frame_time: f64) {
         let speed = Self::SPEED * frame_time;
-        let size_scaled_y = self.rect.y * VERTEX_SCALE as f64 * 0.5 + speed + 0.07;
+        let size_scaled_y = self.rect.height * VERTEX_SCALE as f64 * 0.5 + speed + 0.07;
 
         if up_pressed && self.rect.y + size_scaled_y < 1. {
             self.rect.y += speed;

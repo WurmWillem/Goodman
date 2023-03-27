@@ -10,7 +10,7 @@ pub type Vec3 = cgmath::Vector3<f64>;
 
 pub trait Manager {
     fn new(state: &mut State, textures: Vec<crate::Texture>) -> Self;
-    fn update(&mut self, state: &mut State);
+    fn update(&mut self, state: &State);
     fn render(&self, state: &mut State);
 }
 
@@ -48,19 +48,6 @@ where
                     }
                 }
             }
-            Event::RedrawRequested(window_id) if window_id == state.window().id() => {
-                state.time_since_last_render = 0.;
-                manager.render(&mut state);
-                match state.render() {
-                    Ok(_) => {}
-                    // Reconfigure the surface if lost
-                    Err(wgpu::SurfaceError::Lost) => state.resize(state.size),
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    // All other errors (Outdated, Timeout) should be resolved by the next frame
-                    Err(e) => eprintln!("{:?}", e),
-                }
-            }
 
             Event::MainEventsCleared => {
                 state.update();
@@ -73,8 +60,21 @@ where
                 state.update_time();
                 state.input.reset_buttons();
 
-                if state.time_since_last_render > 1. / state.target_fps as f64 {
+                if state.get_time_since_last_render() > 1. / state.get_target_fps() as f64 {
                     state.window().request_redraw();
+                }
+            }
+
+            Event::RedrawRequested(window_id) if window_id == state.window().id() => {
+                manager.render(&mut state);
+                match state.render() {
+                    Ok(_) => {}
+                    // Reconfigure the surface if lost
+                    Err(wgpu::SurfaceError::Lost) => state.resize(state.get_size()),
+                    // The system is out of memory, we should probably quit
+                    Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                    // All other errors (Outdated, Timeout) should be resolved by the next frame
+                    Err(e) => eprintln!("{:?}", e),
                 }
             }
             _ => {}

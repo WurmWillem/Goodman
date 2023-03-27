@@ -11,29 +11,29 @@ use crate::{
 };
 
 pub struct State {
-    pub size: winit::dpi::PhysicalSize<u32>,
-    instances: Vec<Instance>,
     pub input: Input,
+    window: Window,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
+    size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    camera: Camera,
-    camera_bind_group: wgpu::BindGroup,
-    camera_buffer: wgpu::Buffer,
     instance_buffer: wgpu::Buffer,
-    window: Window,
-    last_frame: Instant,
-    frames_passed: u32,
-    total_frame_time: f64,
-    pub time_since_last_render: f64,
-    pub target_fps: u32,
+    camera_buffer: wgpu::Buffer,
+    instances: Vec<Instance>,
     instances_drawn: usize,
     instance_indexes: HashMap<String, Vec<usize>>,
     texture_bind_groups: HashMap<String, wgpu::BindGroup>,
+    camera: Camera,
+    camera_bind_group: wgpu::BindGroup,
+    last_frame: Instant,
+    target_fps: u32,
+    frames_passed: u64,
+    total_frame_time: f64,
+    time_since_last_render: f64,
 }
 
 impl State {
@@ -209,13 +209,27 @@ impl State {
         output.present();
 
         self.instances_drawn = 0;
+        self.time_since_last_render = 0.;
 
         Ok(())
     }
 
+    pub fn update_time(&mut self) {
+        let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
+        self.last_frame = std::time::Instant::now();
+
+        self.total_frame_time += time_since_last_frame;
+        self.time_since_last_render += time_since_last_frame;
+
+        if self.total_frame_time > 4. && self.total_frame_time < 4.1 {
+            self.frames_passed = 0;
+            self.total_frame_time = 0.;
+        }
+        self.frames_passed += 1;
+    }
+
     pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
         let inst = Instance::new(rect);
-
         self.instances[self.instances_drawn] = inst;
 
         if self.instance_indexes.contains_key(&texture.label) {
@@ -233,7 +247,12 @@ impl State {
         self.update_instance_buffer();
     }
 
-    pub fn update_instance_buffer(&mut self) {
+    pub fn update_instances(&mut self, rects: Vec<Rect>) {
+        self.instances = rects.iter().map(|rect| Instance::new(*rect)).collect();
+        self.update_instance_buffer();
+    }
+
+    fn update_instance_buffer(&mut self) {
         let square_instance_data = self
             .instances
             .iter()
@@ -252,41 +271,6 @@ impl State {
         );
     }
 
-    pub fn update_instances(&mut self, rects: Vec<Rect>) {
-        self.instances = rects.iter().map(|rect| Instance::new(*rect)).collect();
-        self.update_instance_buffer();
-    }
-
-    pub fn update_time(&mut self) {
-        let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
-        self.last_frame = std::time::Instant::now();
-
-        self.total_frame_time += time_since_last_frame;
-        self.time_since_last_render += time_since_last_frame;
-
-        if self.total_frame_time > 4. && self.total_frame_time < 4.1 {
-            self.frames_passed = 0;
-            self.total_frame_time = 0.;
-        }
-
-        self.frames_passed += 1;
-    }
-
-    pub fn get_frame_time(&self) -> f64 {
-        self.last_frame.elapsed().as_secs_f64()
-    }
-
-    pub fn get_average_tps(&mut self) -> u32 {
-        let fps = (self.frames_passed as f32 / self.total_frame_time as f32) as u32;
-        self.frames_passed = 0;
-        self.total_frame_time = 0.;
-        fps
-    }
-
-    pub fn set_fps(&mut self, fps: u32) {
-        self.target_fps = fps;
-    }
-
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
         let tex = Texture::from_bytes(&self.device, &self.queue, bytes, label)
             .expect(&format!("Could not create {} texture", label));
@@ -298,5 +282,32 @@ impl State {
         self.texture_bind_groups
             .insert(tex.label.clone(), texture_bind_group);
         tex
+    }
+
+    pub fn get_frame_time(&self) -> f64 {
+        self.last_frame.elapsed().as_secs_f64()
+    }
+
+    pub fn get_average_tps(&mut self) -> u32 {
+        let fps = (self.frames_passed as f64 / self.total_frame_time) as u32;
+        self.frames_passed = 0;
+        self.total_frame_time = 0.;
+        fps
+    }
+
+    pub fn get_target_fps(&self) -> u32 {
+        self.target_fps
+    }
+
+    pub fn set_fps(&mut self, fps: u32) {
+        self.target_fps = fps;
+    }
+
+    pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
+        self.size
+    }
+
+    pub fn get_time_since_last_render(&self) -> f64 {
+        self.time_since_last_render
     }
 }
