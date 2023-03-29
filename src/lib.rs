@@ -30,7 +30,6 @@ impl Manager for StateManager {
     fn new(_state: &mut State, _textures: Vec<Texture>) -> Self {
         Self {}
     }
-    fn update(&mut self, _state: &State) {
-    }
+    fn update(&mut self, _state: &State) {}
     fn render(&self, _state: &mut State) {}
 }

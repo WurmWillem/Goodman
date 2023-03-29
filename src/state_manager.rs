@@ -56,9 +56,9 @@ where
                 if state.input.left_mouse_button_pressed {
                     println!("{}", state.get_average_tps());
                 }
+                state.input.reset_buttons();
 
                 state.update_time();
-                state.input.reset_buttons();
 
                 if state.get_time_since_last_render() > 1. / state.get_target_fps() as f64 {
                     state.window().request_redraw();
@@ -256,7 +256,7 @@ pub fn create_render_pipeline(
             entry_point: "fs_main",
             targets: &[Some(wgpu::ColorTargetState {
                 format: config.format,
-                blend: Some(wgpu::BlendState::REPLACE),
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                 write_mask: wgpu::ColorWrites::ALL,
             })],
         }),

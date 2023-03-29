@@ -57,7 +57,10 @@ impl Manager for Pong {
 
         paddle_0.update(state.input.w_pressed, state.input.s_pressed, frame_time);
         paddle_1.update(state.input.up_pressed, state.input.down_pressed, frame_time);
-        self.ball.update(paddle_0, paddle_1, frame_time);
+        self.ball.update(frame_time);
+
+        self.ball.resolve_collisions(paddle_0);
+        self.ball.resolve_collisions(paddle_1);
     }
 
     fn render(&self, state: &mut State) {
@@ -77,43 +80,49 @@ impl Ball {
     fn new() -> Self {
         Self {
             pos: vec2(0., 0.),
-            vel: vec2(2., 2.),
+            vel: vec2(2., 2.) * 0.4,
         }
     }
-    fn update(&mut self, paddle_0: &Paddle, paddle_1: &Paddle, frame_time: f64) {
+    fn update(&mut self, frame_time: f64) {
+        self.pos += self.vel * frame_time;
         let radius_scaled = Self::RADIUS * (VERTEX_SCALE as f64);
 
-        let new_pos = self.pos + self.vel * frame_time as f64;
-        if new_pos.x + radius_scaled > 1. || new_pos.x - radius_scaled < -1. {
-            *self = Ball::new();
-            return;
+        if self.pos.x + radius_scaled > 1. {
+            self.pos.x = 1. - radius_scaled;
+            self.vel.x *= -1.;
+        } else if self.pos.x - radius_scaled < -1. {
+            self.pos.x = -1. + radius_scaled;
+            self.vel.x *= -1.;
         }
-
-        if new_pos.y + radius_scaled > 1. {
+        if self.pos.y + radius_scaled > 1. {
             self.vel.y *= -1.;
             self.pos.y = 1. - radius_scaled;
-        }
-        if new_pos.y - radius_scaled < -1. {
+        } else if self.pos.y - radius_scaled < -1. {
             self.vel.y *= -1.;
             self.pos.y = -1. + radius_scaled;
         }
+    }
 
-        let size_scaled_x = paddle_0.rect.width * VERTEX_SCALE as f64 * 0.5 + 0.02;
-        let size_scaled_y = paddle_0.rect.height * VERTEX_SCALE as f64 * 0.5 + 0.02;
+    fn resolve_collisions(&mut self, paddle: &Paddle) {
+        let paddle_size_x = paddle.rect.width * VERTEX_SCALE as f64 * 0.5 + 0.02;
+        let paddle_size_y = paddle.rect.height * VERTEX_SCALE as f64 * 0.5 + 0.02;
+        let radius_scaled = Self::RADIUS * (VERTEX_SCALE as f64);
 
-        if (new_pos.x + radius_scaled > paddle_1.rect.x - size_scaled_x
-            && new_pos.y + radius_scaled > paddle_1.rect.y - size_scaled_y
-            && new_pos.y - radius_scaled < paddle_1.rect.y + size_scaled_y
-            && self.vel.x > 0.)
-            || (new_pos.x - radius_scaled < paddle_0.rect.x + size_scaled_x
-                && new_pos.y + radius_scaled > paddle_0.rect.y - size_scaled_y
-                && new_pos.y - radius_scaled < paddle_0.rect.y + size_scaled_y
-                && self.vel.x < 0.)
+        if self.pos.x < paddle.rect.x
+            && self.pos.x > paddle.rect.x - paddle_size_x - radius_scaled
+            && self.pos.y > paddle.rect.y - paddle_size_y - radius_scaled
+            && self.pos.y < paddle.rect.y + paddle_size_y + radius_scaled
         {
+            self.pos.x = paddle.rect.x - paddle_size_x - radius_scaled;
+            self.vel.x *= -1.;
+        } else if self.pos.x > paddle.rect.x
+            && self.pos.x - radius_scaled < paddle.rect.x + paddle_size_x
+            && self.pos.y + radius_scaled > paddle.rect.y - paddle_size_y
+            && self.pos.y - radius_scaled < paddle.rect.y + paddle_size_y
+        {
+            self.pos.x = paddle.rect.x + paddle_size_x + radius_scaled;
             self.vel.x *= -1.;
         }
-
-        self.pos += self.vel * frame_time;
     }
 
     fn to_rect(&self) -> Rect {
@@ -127,7 +136,7 @@ struct Paddle {
 }
 impl Paddle {
     const SPEED: f64 = 2.5;
-    const SIZE: Vec2 = vec2(1., 3.);
+    const SIZE: Vec2 = vec2(1., 6.);
 
     fn new(pos: Vec2) -> Self {
         Self {

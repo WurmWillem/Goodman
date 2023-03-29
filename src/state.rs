@@ -25,14 +25,15 @@ pub struct State {
     camera_buffer: wgpu::Buffer,
     instances: Vec<Instance>,
     instances_drawn: usize,
-    instance_indexes: HashMap<String, Vec<usize>>,
+    bind_group_indexes: HashMap<String, Vec<usize>>,
     texture_bind_groups: HashMap<String, wgpu::BindGroup>,
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     last_frame: Instant,
     target_fps: u32,
-    frames_passed: u64,
-    total_frame_time: f64,
+    //pub target_tps: u32,
+    frames_passed_this_sec: u64,
+    frame_time_this_sec: f64,
     time_since_last_render: f64,
 }
 
@@ -104,12 +105,13 @@ impl State {
             instances,
             input: Input::new(),
             last_frame: Instant::now(),
-            total_frame_time: 0.,
-            frames_passed: 0,
+            frame_time_this_sec: 0.,
+            frames_passed_this_sec: 0,
             time_since_last_render: 0.,
             target_fps: 144,
+            //target_tps: 5700,
             instances_drawn: 0,
-            instance_indexes: HashMap::new(),
+            bind_group_indexes: HashMap::new(),
             texture_bind_groups,
         }
     }
@@ -172,7 +174,6 @@ impl State {
         });
 
         render_pass.set_pipeline(&self.render_pipeline);
-
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
@@ -180,27 +181,15 @@ impl State {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         for (bind_group_label, bind_group) in &self.texture_bind_groups {
-            if !self.instance_indexes.contains_key(bind_group_label) {
-                continue;
-            }
-
-            render_pass.set_bind_group(0, bind_group, &[]);
-
-            for (instance_label, inst_vec) in &mut self.instance_indexes {
-                if *instance_label != *bind_group_label {
-                    continue;
-                }
-
-                inst_vec.into_iter().for_each(|i| {
-                    let i = *i as u64;
-
+            if let Some(inst_vec) = self.bind_group_indexes.get_mut(bind_group_label) {
+                render_pass.set_bind_group(0, bind_group, &[]);
+                for i in inst_vec.drain(..) {
                     render_pass.draw_indexed(
                         0..INDICES.len() as u32,
                         0,
                         (i as u32)..(i + 1) as u32,
                     );
-                });
-                inst_vec.clear();
+                }
             }
         }
 
@@ -218,28 +207,28 @@ impl State {
         let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
         self.last_frame = std::time::Instant::now();
 
-        self.total_frame_time += time_since_last_frame;
+        self.frame_time_this_sec += time_since_last_frame;
         self.time_since_last_render += time_since_last_frame;
+        self.frames_passed_this_sec += 1;
 
-        if self.total_frame_time > 4. && self.total_frame_time < 4.1 {
-            self.frames_passed = 0;
-            self.total_frame_time = 0.;
+        if self.frame_time_this_sec > 1. {
+            self.frames_passed_this_sec = 0;
+            self.frame_time_this_sec = 0.;
         }
-        self.frames_passed += 1;
     }
 
     pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
         let inst = Instance::new(rect);
         self.instances[self.instances_drawn] = inst;
 
-        if self.instance_indexes.contains_key(&texture.label) {
-            for (label, index_vec) in &mut self.instance_indexes {
+        if self.bind_group_indexes.contains_key(&texture.label) {
+            for (label, index_vec) in &mut self.bind_group_indexes {
                 if *label == texture.label {
                     index_vec.push(self.instances_drawn);
                 }
             }
         } else {
-            self.instance_indexes
+            self.bind_group_indexes
                 .insert(texture.label.to_string(), vec![self.instances_drawn]);
         }
 
@@ -289,10 +278,7 @@ impl State {
     }
 
     pub fn get_average_tps(&mut self) -> u32 {
-        let fps = (self.frames_passed as f64 / self.total_frame_time) as u32;
-        self.frames_passed = 0;
-        self.total_frame_time = 0.;
-        fps
+        (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
     }
 
     pub fn get_target_fps(&self) -> u32 {

@@ -89,3 +89,26 @@ pub fn create_instances() -> Vec<SquareInstance> {
         })
         .collect::<Vec<_>>()
 }
+
+fn old_render_code() {
+    for (bind_group_label, bind_group) in &self.texture_bind_groups {
+        if !self.bind_group_indexes.contains_key(bind_group_label) {
+            continue;
+        }
+        render_pass.set_bind_group(0, bind_group, &[]);
+        for (instance_label, inst_vec) in &mut self.bind_group_indexes {
+            if *instance_label != *bind_group_label {
+                continue;
+            }
+            inst_vec.iter().for_each(|i| {
+                let i = *i as u64;
+                render_pass.draw_indexed(
+                    0..INDICES.len() as u32,
+                    0,
+                    (i as u32)..(i + 1) as u32,
+                );
+            });
+            inst_vec.clear();
+        }
+    }
+}
