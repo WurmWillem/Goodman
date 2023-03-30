@@ -80,7 +80,7 @@ impl Ball {
     fn new() -> Self {
         Self {
             pos: vec2(0., 0.),
-            vel: vec2(2., 2.) * 0.4,
+            vel: vec2(2., 2.),
         }
     }
     fn update(&mut self, frame_time: f64) {
@@ -136,7 +136,7 @@ struct Paddle {
 }
 impl Paddle {
     const SPEED: f64 = 2.5;
-    const SIZE: Vec2 = vec2(1., 6.);
+    const SIZE: Vec2 = vec2(1., 3.);
 
     fn new(pos: Vec2) -> Self {
         Self {

@@ -225,6 +225,7 @@ impl State {
             for (label, index_vec) in &mut self.bind_group_indexes {
                 if *label == texture.label {
                     index_vec.push(self.instances_drawn);
+                    break;
                 }
             }
         } else {
@@ -251,13 +252,13 @@ impl State {
         let data_size = square_instance_data.len() as u64 * 16;
         if self.instance_buffer.size() != data_size {
             self.instance_buffer = instances::create_buffer(&self.device, &square_instance_data);
+        } else {
+            self.queue.write_buffer(
+                &self.instance_buffer,
+                0,
+                bytemuck::cast_slice(&square_instance_data),
+            );
         }
-
-        self.queue.write_buffer(
-            &self.instance_buffer,
-            0,
-            bytemuck::cast_slice(&square_instance_data),
-        );
     }
 
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
