@@ -17,11 +17,12 @@ async fn run() {
 
     let paddle_bytes = include_bytes!("assets/paddle.png");
     let paddle_tex = state.create_texture(paddle_bytes, "paddle.png");
-
     let ball_bytes = include_bytes!("assets/ball.png");
     let ball_tex = state.create_texture(ball_bytes, "ball.png");
+    let block_bytes = include_bytes!("assets/block.png");
+    let block_tex = state.create_texture(block_bytes, "block.png");
 
-    let breakout = Breakout::new(&mut state, vec![paddle_tex, ball_tex]);
+    let breakout = Breakout::new(&mut state, vec![paddle_tex, ball_tex, block_tex]);
 
     enter_loop(event_loop, state, breakout);
 }
@@ -29,6 +30,7 @@ async fn run() {
 struct Breakout {
     ball: Ball,
     paddle: Paddle,
+    blocks: Vec<Vec<Block>>,
     textures: Vec<Texture>,
 }
 impl Manager for Breakout {
@@ -36,12 +38,25 @@ impl Manager for Breakout {
         let paddle = Paddle::new(vec2(0., -0.9));
         let ball = Ball::new(vec2(0., 0.));
 
-        let rects = vec![paddle.rect, ball.to_rect()];
-        state.update_instances(rects);
+        let mut rects = vec![paddle.rect, ball.to_rect()];
+
+        let mut blocks = Vec::new();
+        for j in 0..5 {
+            let mut row = Vec::new();
+            for i in 0..8 {
+                let block = Block::new(vec2(i as f64 * 0.21 - 0.75, j as f64 * 0.11));
+                rects.push(block.rect);
+                row.push(block);
+            }
+            blocks.push(row);
+        }
+
+        state.initialize_instances(rects);
 
         Self {
             ball,
             paddle,
+            blocks,
             textures,
         }
     }
@@ -58,6 +73,24 @@ impl Manager for Breakout {
     fn render(&self, state: &mut State) {
         state.draw_texture(self.paddle.rect, &self.textures[0]);
         state.draw_texture(self.ball.to_rect(), &self.textures[1]);
+
+        self.blocks.iter().for_each(|row| {
+            row.iter().for_each(|block| {
+                state.draw_texture(block.rect, &self.textures[2]);
+            })
+        });
+    }
+}
+
+struct Block {
+    rect: Rect,
+}
+impl Block {
+    const SIZE: Vec2 = vec2(2., 1.);
+    pub fn new(pos: Vec2) -> Self {
+        Self {
+            rect: Rect::new(pos, Self::SIZE),
+        }
     }
 }
 

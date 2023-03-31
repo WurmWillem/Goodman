@@ -67,6 +67,7 @@ where
 
             Event::RedrawRequested(window_id) if window_id == state.window().id() => {
                 manager.render(&mut state);
+                state.update_instance_buffer();
                 match state.render() {
                     Ok(_) => {}
                     // Reconfigure the surface if lost

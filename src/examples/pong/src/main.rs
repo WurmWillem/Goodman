@@ -44,7 +44,7 @@ impl Manager for Pong {
         let ball = Ball::new();
 
         let rects = vec![paddle_0.rect, paddle_1.rect, ball.to_rect()];
-        state.update_instances(rects);
+        state.initialize_instances(rects);
 
         Self {
             paddle_0,
@@ -74,5 +74,3 @@ impl Manager for Pong {
         state.draw_texture(self.ball.to_rect(), &self.textures[1]);
     }
 }
-
-

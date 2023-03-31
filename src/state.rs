@@ -4,7 +4,7 @@ use winit::{event::WindowEvent, window::Window};
 
 use crate::{
     camera::{self, Camera},
-    instances::{self, Instance, Rect},
+    instances::{self, Instance, InstanceRaw, Rect},
     object_data::{self, INDICES},
     state_manager::{self, Input},
     texture::{self, Texture},
@@ -24,6 +24,7 @@ pub struct State {
     instance_buffer: wgpu::Buffer,
     camera_buffer: wgpu::Buffer,
     instances: Vec<Instance>,
+    instances_raw: Vec<InstanceRaw>,
     instances_drawn: usize,
     bind_group_indexes: HashMap<String, Vec<usize>>,
     texture_bind_groups: HashMap<String, wgpu::BindGroup>,
@@ -103,6 +104,7 @@ impl State {
             camera_buffer,
             instance_buffer,
             instances,
+            instances_raw: instance_data,
             input: Input::new(),
             last_frame: Instant::now(),
             frame_time_this_sec: 0.,
@@ -205,7 +207,7 @@ impl State {
 
     pub fn update_time(&mut self) {
         let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
-        self.last_frame = std::time::Instant::now();
+        self.last_frame = Instant::now();
 
         self.frame_time_this_sec += time_since_last_frame;
         self.time_since_last_render += time_since_last_frame;
@@ -219,7 +221,10 @@ impl State {
 
     pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
         let inst = Instance::new(rect);
-        self.instances[self.instances_drawn] = inst;
+        if self.instances[self.instances_drawn] != inst {
+            self.instances[self.instances_drawn] = inst;
+            self.instances_raw[self.instances_drawn] = inst.to_raw();
+        }
 
         if self.bind_group_indexes.contains_key(&texture.label) {
             for (label, index_vec) in &mut self.bind_group_indexes {
@@ -234,29 +239,28 @@ impl State {
         }
 
         self.instances_drawn += 1;
-        self.update_instance_buffer();
     }
 
-    pub fn update_instances(&mut self, rects: Vec<Rect>) {
+    pub fn initialize_instances(&mut self, rects: Vec<Rect>) {
         self.instances = rects.iter().map(|rect| Instance::new(*rect)).collect();
-        self.update_instance_buffer();
-    }
-
-    fn update_instance_buffer(&mut self) {
-        let square_instance_data = self
+        self.instances_raw = self
             .instances
             .iter()
             .map(Instance::to_raw)
             .collect::<Vec<_>>();
 
-        let data_size = square_instance_data.len() as u64 * 16;
+        self.update_instance_buffer();
+    }
+
+    pub fn update_instance_buffer(&mut self) {
+        let data_size = self.instances_raw.len() as u64 * 64;
         if self.instance_buffer.size() != data_size {
-            self.instance_buffer = instances::create_buffer(&self.device, &square_instance_data);
+            self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
         } else {
             self.queue.write_buffer(
                 &self.instance_buffer,
                 0,
-                bytemuck::cast_slice(&square_instance_data),
+                bytemuck::cast_slice(&self.instances_raw),
             );
         }
     }
