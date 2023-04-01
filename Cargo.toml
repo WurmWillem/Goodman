@@ -19,3 +19,10 @@ cgmath = "0.18"
 version = "0.24"
 default-features = false
 features = ["png", "jpeg"]
+
+[[bin]]
+name = "pong"
+path = "src/examples/pong/src/main.rs"
+[[bin]]
+name = "breakout"
+path = "src/examples/breakout/src/main.rs"

@@ -3,7 +3,7 @@ use wgpu::{util::DeviceExt, Device};
 
 use crate::state_manager::{Vec2, Vec3};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Instance {
     pub pos: Vec3,
     pub size: Vec2,

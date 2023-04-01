@@ -1,12 +1,16 @@
 use std::{collections::HashMap, time::Instant};
 
-use winit::{event::WindowEvent, window::Window};
+use winit::{
+    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::Window,
+};
 
 use crate::{
     camera::{self, Camera},
-    instances::{self, Instance, Rect},
+    instances::{self, Instance, InstanceRaw, Rect},
     object_data::{self, INDICES},
-    state_manager::{self, Input},
+    state_manager::{self, Input, Manager},
     texture::{self, Texture},
 };
 
@@ -24,15 +28,17 @@ pub struct State {
     instance_buffer: wgpu::Buffer,
     camera_buffer: wgpu::Buffer,
     instances: Vec<Instance>,
+    instances_raw: Vec<InstanceRaw>,
     instances_drawn: usize,
-    instance_indexes: HashMap<String, Vec<usize>>,
+    bind_group_indexes: HashMap<String, Vec<usize>>,
     texture_bind_groups: HashMap<String, wgpu::BindGroup>,
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     last_frame: Instant,
     target_fps: u32,
-    frames_passed: u64,
-    total_frame_time: f64,
+    //pub target_tps: u32,
+    frames_passed_this_sec: u64,
+    frame_time_this_sec: f64,
     time_since_last_render: f64,
 }
 
@@ -102,23 +108,21 @@ impl State {
             camera_buffer,
             instance_buffer,
             instances,
+            instances_raw: instance_data,
             input: Input::new(),
             last_frame: Instant::now(),
-            total_frame_time: 0.,
-            frames_passed: 0,
+            frame_time_this_sec: 0.,
+            frames_passed_this_sec: 0,
             time_since_last_render: 0.,
             target_fps: 144,
+            //target_tps: 5700,
             instances_drawn: 0,
-            instance_indexes: HashMap::new(),
+            bind_group_indexes: HashMap::new(),
             texture_bind_groups,
         }
     }
 
-    pub fn window(&self) -> &Window {
-        &self.window
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
             self.config.width = new_size.width;
@@ -127,11 +131,11 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, event: &WindowEvent) -> bool {
+    fn input(&mut self, event: &WindowEvent) -> bool {
         self.input.process_events(event)
     }
 
-    pub fn update(&mut self) {
+    fn update(&mut self) {
         if self.camera.movement_enabled {
             self.camera.update(&self.input);
             self.queue.write_buffer(
@@ -142,7 +146,7 @@ impl State {
         }
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
             .texture
@@ -172,7 +176,6 @@ impl State {
         });
 
         render_pass.set_pipeline(&self.render_pipeline);
-
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
@@ -180,27 +183,15 @@ impl State {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         for (bind_group_label, bind_group) in &self.texture_bind_groups {
-            if !self.instance_indexes.contains_key(bind_group_label) {
-                continue;
-            }
-
-            render_pass.set_bind_group(0, bind_group, &[]);
-
-            for (instance_label, inst_vec) in &mut self.instance_indexes {
-                if *instance_label != *bind_group_label {
-                    continue;
-                }
-
-                inst_vec.into_iter().for_each(|i| {
-                    let i = *i as u64;
-
+            if let Some(inst_vec) = self.bind_group_indexes.get_mut(bind_group_label) {
+                render_pass.set_bind_group(0, bind_group, &[]);
+                for i in inst_vec.drain(..) {
                     render_pass.draw_indexed(
                         0..INDICES.len() as u32,
                         0,
                         (i as u32)..(i + 1) as u32,
                     );
-                });
-                inst_vec.clear();
+                }
             }
         }
 
@@ -210,65 +201,134 @@ impl State {
 
         self.instances_drawn = 0;
         self.time_since_last_render = 0.;
-
         Ok(())
     }
 
-    pub fn update_time(&mut self) {
+    fn update_time(&mut self) {
         let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
-        self.last_frame = std::time::Instant::now();
+        self.last_frame = Instant::now();
 
-        self.total_frame_time += time_since_last_frame;
+        self.frame_time_this_sec += time_since_last_frame;
         self.time_since_last_render += time_since_last_frame;
+        self.frames_passed_this_sec += 1;
 
-        if self.total_frame_time > 4. && self.total_frame_time < 4.1 {
-            self.frames_passed = 0;
-            self.total_frame_time = 0.;
+        if self.frame_time_this_sec > 1. {
+            self.frames_passed_this_sec = 0;
+            self.frame_time_this_sec = 0.;
         }
-        self.frames_passed += 1;
     }
 
     pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
         let inst = Instance::new(rect);
-        self.instances[self.instances_drawn] = inst;
+        if self.instances[self.instances_drawn] != inst {
+            self.instances[self.instances_drawn] = inst;
+            self.instances_raw[self.instances_drawn] = inst.to_raw();
+        }
 
-        if self.instance_indexes.contains_key(&texture.label) {
-            for (label, index_vec) in &mut self.instance_indexes {
+        if self.bind_group_indexes.contains_key(&texture.label) {
+            for (label, index_vec) in &mut self.bind_group_indexes {
                 if *label == texture.label {
                     index_vec.push(self.instances_drawn);
+                    break;
                 }
             }
         } else {
-            self.instance_indexes
+            self.bind_group_indexes
                 .insert(texture.label.to_string(), vec![self.instances_drawn]);
         }
-
         self.instances_drawn += 1;
-        self.update_instance_buffer();
     }
 
-    pub fn update_instances(&mut self, rects: Vec<Rect>) {
+    pub fn initialize_instances(&mut self, rects: Vec<Rect>) {
         self.instances = rects.iter().map(|rect| Instance::new(*rect)).collect();
-        self.update_instance_buffer();
-    }
-
-    fn update_instance_buffer(&mut self) {
-        let square_instance_data = self
+        self.instances_raw = self
             .instances
             .iter()
             .map(Instance::to_raw)
             .collect::<Vec<_>>();
 
-        let data_size = square_instance_data.len() as u64 * 16;
-        if self.instance_buffer.size() != data_size {
-            self.instance_buffer = instances::create_buffer(&self.device, &square_instance_data);
-        }
+        self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
+    }
 
-        self.queue.write_buffer(
-            &self.instance_buffer,
-            0,
-            bytemuck::cast_slice(&square_instance_data),
-        );
+    pub fn update_instance_buffer(&mut self) {
+        if self.instance_buffer.size() == self.instances_raw.len() as u64 * 64 {
+            self.queue.write_buffer(
+                &self.instance_buffer,
+                0,
+                bytemuck::cast_slice(&self.instances_raw),
+            );
+        } else {
+            self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
+        }
+    }
+
+    pub fn enter_loop<T>(mut self, event_loop: EventLoop<()>, mut manager: T)
+    where
+        T: Manager + 'static,
+    {
+        env_logger::init();
+
+        event_loop.run(move |event, _, control_flow| {
+            match event {
+                Event::WindowEvent {
+                    ref event,
+                    window_id,
+                } if window_id == self.window.id() => {
+                    if !self.input(event) {
+                        match event {
+                            WindowEvent::CloseRequested
+                            | WindowEvent::KeyboardInput {
+                                input:
+                                    KeyboardInput {
+                                        state: ElementState::Pressed,
+                                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                                        ..
+                                    },
+                                ..
+                            } => *control_flow = ControlFlow::Exit,
+                            WindowEvent::Resized(physical_size) => {
+                                self.resize(*physical_size);
+                            }
+                            WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                                self.resize(**new_inner_size);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                Event::MainEventsCleared => {
+                    self.update();
+                    manager.update(&mut self);
+
+                    if self.input.left_mouse_button_pressed {
+                        println!("{}", self.get_average_tps());
+                    }
+                    self.input.reset_buttons();
+
+                    self.update_time();
+
+                    if self.get_time_since_last_render() > 1. / self.get_target_fps() as f64 {
+                        self.window.request_redraw();
+                    }
+                }
+
+                Event::RedrawRequested(window_id) if window_id == self.window.id() => {
+                    manager.render(&mut self);
+                    self.update_instance_buffer();
+                    match self.render() {
+                        Ok(_) => {}
+                        // Reconfigure the surface if lost
+                        Err(wgpu::SurfaceError::Lost) => self.resize(self.get_size()),
+                        // The system is out of memory, we should probably quit
+                        Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                        // All other errors (Outdated, Timeout) should be resolved by the next frame
+                        Err(e) => eprintln!("{:?}", e),
+                    }
+                }
+                _ => {}
+            }
+        });
     }
 
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
@@ -287,27 +347,20 @@ impl State {
     pub fn get_frame_time(&self) -> f64 {
         self.last_frame.elapsed().as_secs_f64()
     }
-
     pub fn get_average_tps(&mut self) -> u32 {
-        let fps = (self.frames_passed as f64 / self.total_frame_time) as u32;
-        self.frames_passed = 0;
-        self.total_frame_time = 0.;
-        fps
+        (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
     }
-
     pub fn get_target_fps(&self) -> u32 {
         self.target_fps
+    }
+    pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
+        self.size
+    }
+    pub fn get_time_since_last_render(&self) -> f64 {
+        self.time_since_last_render
     }
 
     pub fn set_fps(&mut self, fps: u32) {
         self.target_fps = fps;
-    }
-
-    pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.size
-    }
-
-    pub fn get_time_since_last_render(&self) -> f64 {
-        self.time_since_last_render
     }
 }

@@ -1,6 +1,5 @@
 use winit::dpi::PhysicalSize;
-use winit::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop};
+use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
 use crate::state::State;
 use crate::{instances::InstanceRaw, object_data::Vertex};
@@ -12,74 +11,6 @@ pub trait Manager {
     fn new(state: &mut State, textures: Vec<crate::Texture>) -> Self;
     fn update(&mut self, state: &State);
     fn render(&self, state: &mut State);
-}
-
-pub fn enter_loop<T>(event_loop: EventLoop<()>, mut state: State, mut manager: T)
-where
-    T: Manager + 'static,
-{
-    env_logger::init();
-
-    event_loop.run(move |event, _, control_flow| {
-        match event {
-            Event::WindowEvent {
-                ref event,
-                window_id,
-            } if window_id == state.window().id() => {
-                if !state.input(event) {
-                    match event {
-                        WindowEvent::CloseRequested
-                        | WindowEvent::KeyboardInput {
-                            input:
-                                KeyboardInput {
-                                    state: ElementState::Pressed,
-                                    virtual_keycode: Some(VirtualKeyCode::Escape),
-                                    ..
-                                },
-                            ..
-                        } => *control_flow = ControlFlow::Exit,
-                        WindowEvent::Resized(physical_size) => {
-                            state.resize(*physical_size);
-                        }
-                        WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            state.resize(**new_inner_size);
-                        }
-                        _ => {}
-                    }
-                }
-            }
-
-            Event::MainEventsCleared => {
-                state.update();
-                manager.update(&mut state);
-
-                if state.input.left_mouse_button_pressed {
-                    println!("{}", state.get_average_tps());
-                }
-
-                state.update_time();
-                state.input.reset_buttons();
-
-                if state.get_time_since_last_render() > 1. / state.get_target_fps() as f64 {
-                    state.window().request_redraw();
-                }
-            }
-
-            Event::RedrawRequested(window_id) if window_id == state.window().id() => {
-                manager.render(&mut state);
-                match state.render() {
-                    Ok(_) => {}
-                    // Reconfigure the surface if lost
-                    Err(wgpu::SurfaceError::Lost) => state.resize(state.get_size()),
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    // All other errors (Outdated, Timeout) should be resolved by the next frame
-                    Err(e) => eprintln!("{:?}", e),
-                }
-            }
-            _ => {}
-        }
-    });
 }
 
 pub struct Input {
@@ -256,7 +187,7 @@ pub fn create_render_pipeline(
             entry_point: "fs_main",
             targets: &[Some(wgpu::ColorTargetState {
                 format: config.format,
-                blend: Some(wgpu::BlendState::REPLACE),
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                 write_mask: wgpu::ColorWrites::ALL,
             })],
         }),

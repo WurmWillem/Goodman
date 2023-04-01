@@ -22,7 +22,7 @@ pub async fn run() {
     let mut state = State::new(window).await;
     let manager = StateManager::new(&mut state, vec![]);
 
-    state_manager::enter_loop(event_loop, state, manager)
+    state.enter_loop(event_loop, manager)
 }
 
 struct StateManager;
@@ -30,7 +30,6 @@ impl Manager for StateManager {
     fn new(_state: &mut State, _textures: Vec<Texture>) -> Self {
         Self {}
     }
-    fn update(&mut self, _state: &State) {
-    }
+    fn update(&mut self, _state: &State) {}
     fn render(&self, _state: &mut State) {}
 }

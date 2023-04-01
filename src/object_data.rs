@@ -27,14 +27,15 @@ impl Vertex {
     }
 }
 
-pub const VERTEX_SCALE: f32 = 0.05;
+const VERTEX_SCALED: f32 = 0.05;
+pub const VERTEX_SCALE: f64 = VERTEX_SCALED as f64;
 
 #[rustfmt::skip]
 pub const VERTICES: &[Vertex] = &[
-    Vertex { position: [-1. * VERTEX_SCALE, -1. * VERTEX_SCALE, 0.0], tex_coords: [0.0, 1.0], },
-    Vertex { position: [1. * VERTEX_SCALE, -1. * VERTEX_SCALE, 0.0], tex_coords: [1.0, 1.0], },
-    Vertex { position: [1. * VERTEX_SCALE, 1. * VERTEX_SCALE, 0.0], tex_coords: [1.0, 0.0], },
-    Vertex { position: [-1. * VERTEX_SCALE, 1. * VERTEX_SCALE, 0.0], tex_coords: [0.0, 0.0], },
+    Vertex { position: [-1. * VERTEX_SCALED, -1. * VERTEX_SCALED, 0.0], tex_coords: [0.0, 1.0], },
+    Vertex { position: [1. * VERTEX_SCALED, -1. * VERTEX_SCALED, 0.0], tex_coords: [1.0, 1.0], },
+    Vertex { position: [1. * VERTEX_SCALED, 1. * VERTEX_SCALED, 0.0], tex_coords: [1.0, 0.0], },
+    Vertex { position: [-1. * VERTEX_SCALED, 1. * VERTEX_SCALED, 0.0], tex_coords: [0.0, 0.0], },
 ];
 
 #[rustfmt::skip]
