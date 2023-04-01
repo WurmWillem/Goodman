@@ -24,7 +24,7 @@ async fn run() {
 
     let breakout = Breakout::new(&mut state, vec![paddle_tex, ball_tex, block_tex]);
 
-    enter_loop(event_loop, state, breakout);
+    state.enter_loop(event_loop, breakout);
 }
 
 struct Breakout {
@@ -89,7 +89,7 @@ impl Block {
     const SIZE: Vec2 = vec2(2., 1.);
     pub fn new(pos: Vec2) -> Self {
         Self {
-            rect: Rect::new(pos, Self::SIZE),
+            rect: rect(pos, Self::SIZE),
         }
     }
 }

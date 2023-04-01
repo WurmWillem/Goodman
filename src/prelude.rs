@@ -1,7 +1,7 @@
 pub use crate::instances::{rect, Rect};
 pub use crate::object_data::VERTEX_SCALE;
 pub use crate::state::State;
-pub use crate::state_manager::{enter_loop, Input, Manager, Vec2, Vec3};
+pub use crate::state_manager::{Input, Manager, Vec2, Vec3};
 pub use crate::texture::Texture;
 
 pub use cgmath::vec2;

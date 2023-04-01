@@ -22,7 +22,7 @@ pub async fn run() {
     let mut state = State::new(window).await;
     let manager = StateManager::new(&mut state, vec![]);
 
-    state_manager::enter_loop(event_loop, state, manager)
+    state.enter_loop(event_loop, manager)
 }
 
 struct StateManager;

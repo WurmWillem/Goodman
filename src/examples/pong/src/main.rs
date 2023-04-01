@@ -28,7 +28,7 @@ async fn run() {
 
     let pong = Pong::new(&mut state, vec![paddle_tex, ball_tex]);
 
-    enter_loop(event_loop, state, pong);
+    state.enter_loop(event_loop, pong);
 }
 
 struct Pong {

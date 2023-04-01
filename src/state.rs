@@ -1,12 +1,16 @@
 use std::{collections::HashMap, time::Instant};
 
-use winit::{event::WindowEvent, window::Window};
+use winit::{
+    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::Window,
+};
 
 use crate::{
     camera::{self, Camera},
     instances::{self, Instance, InstanceRaw, Rect},
     object_data::{self, INDICES},
-    state_manager::{self, Input},
+    state_manager::{self, Input, Manager},
     texture::{self, Texture},
 };
 
@@ -118,11 +122,7 @@ impl State {
         }
     }
 
-    pub fn window(&self) -> &Window {
-        &self.window
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
             self.size = new_size;
             self.config.width = new_size.width;
@@ -131,11 +131,11 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, event: &WindowEvent) -> bool {
+    fn input(&mut self, event: &WindowEvent) -> bool {
         self.input.process_events(event)
     }
 
-    pub fn update(&mut self) {
+    fn update(&mut self) {
         if self.camera.movement_enabled {
             self.camera.update(&self.input);
             self.queue.write_buffer(
@@ -146,7 +146,7 @@ impl State {
         }
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
             .texture
@@ -201,11 +201,10 @@ impl State {
 
         self.instances_drawn = 0;
         self.time_since_last_render = 0.;
-
         Ok(())
     }
 
-    pub fn update_time(&mut self) {
+    fn update_time(&mut self) {
         let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
         self.last_frame = Instant::now();
 
@@ -237,7 +236,6 @@ impl State {
             self.bind_group_indexes
                 .insert(texture.label.to_string(), vec![self.instances_drawn]);
         }
-
         self.instances_drawn += 1;
     }
 
@@ -249,20 +247,88 @@ impl State {
             .map(Instance::to_raw)
             .collect::<Vec<_>>();
 
-        self.update_instance_buffer();
+        self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
     }
 
     pub fn update_instance_buffer(&mut self) {
-        let data_size = self.instances_raw.len() as u64 * 64;
-        if self.instance_buffer.size() != data_size {
-            self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
-        } else {
+        if self.instance_buffer.size() == self.instances_raw.len() as u64 * 64 {
             self.queue.write_buffer(
                 &self.instance_buffer,
                 0,
                 bytemuck::cast_slice(&self.instances_raw),
             );
+        } else {
+            self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
         }
+    }
+
+    pub fn enter_loop<T>(mut self, event_loop: EventLoop<()>, mut manager: T)
+    where
+        T: Manager + 'static,
+    {
+        env_logger::init();
+
+        event_loop.run(move |event, _, control_flow| {
+            match event {
+                Event::WindowEvent {
+                    ref event,
+                    window_id,
+                } if window_id == self.window.id() => {
+                    if !self.input(event) {
+                        match event {
+                            WindowEvent::CloseRequested
+                            | WindowEvent::KeyboardInput {
+                                input:
+                                    KeyboardInput {
+                                        state: ElementState::Pressed,
+                                        virtual_keycode: Some(VirtualKeyCode::Escape),
+                                        ..
+                                    },
+                                ..
+                            } => *control_flow = ControlFlow::Exit,
+                            WindowEvent::Resized(physical_size) => {
+                                self.resize(*physical_size);
+                            }
+                            WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
+                                self.resize(**new_inner_size);
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
+                Event::MainEventsCleared => {
+                    self.update();
+                    manager.update(&mut self);
+
+                    if self.input.left_mouse_button_pressed {
+                        println!("{}", self.get_average_tps());
+                    }
+                    self.input.reset_buttons();
+
+                    self.update_time();
+
+                    if self.get_time_since_last_render() > 1. / self.get_target_fps() as f64 {
+                        self.window.request_redraw();
+                    }
+                }
+
+                Event::RedrawRequested(window_id) if window_id == self.window.id() => {
+                    manager.render(&mut self);
+                    self.update_instance_buffer();
+                    match self.render() {
+                        Ok(_) => {}
+                        // Reconfigure the surface if lost
+                        Err(wgpu::SurfaceError::Lost) => self.resize(self.get_size()),
+                        // The system is out of memory, we should probably quit
+                        Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                        // All other errors (Outdated, Timeout) should be resolved by the next frame
+                        Err(e) => eprintln!("{:?}", e),
+                    }
+                }
+                _ => {}
+            }
+        });
     }
 
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
@@ -281,24 +347,20 @@ impl State {
     pub fn get_frame_time(&self) -> f64 {
         self.last_frame.elapsed().as_secs_f64()
     }
-
     pub fn get_average_tps(&mut self) -> u32 {
         (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
     }
-
     pub fn get_target_fps(&self) -> u32 {
         self.target_fps
+    }
+    pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
+        self.size
+    }
+    pub fn get_time_since_last_render(&self) -> f64 {
+        self.time_since_last_render
     }
 
     pub fn set_fps(&mut self, fps: u32) {
         self.target_fps = fps;
-    }
-
-    pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.size
-    }
-
-    pub fn get_time_since_last_render(&self) -> f64 {
-        self.time_since_last_render
     }
 }
