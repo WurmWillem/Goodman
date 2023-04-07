@@ -1,6 +1,8 @@
 use goodman::prelude::*;
 
-use crate::Paddle;
+use crate::{Paddle, SCREEN_SIZE};
+
+const RADIUS: f64 = 20.;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ball {
@@ -8,58 +10,54 @@ pub struct Ball {
     vel: Vec2,
 }
 impl Ball {
-    const RADIUS: f64 = 1.;
-
     pub fn new() -> Self {
         Self {
-            pos: vec2(0., 0.),
-            vel: vec2(2., 2.),
+            pos: vec2(350., 350.),
+            vel: vec2(300., 300.),
         }
     }
 
     pub fn update(&mut self, frame_time: f64) {
         self.pos += self.vel * frame_time;
-        let radius_scaled = Self::RADIUS * VERTEX_SCALE;
 
-        if self.pos.x + radius_scaled > 1. {
-            self.pos.x = 1. - radius_scaled;
+        if self.pos.x + RADIUS > SCREEN_SIZE.x {
+            self.pos.x = SCREEN_SIZE.x - RADIUS;
             self.vel.x *= -1.;
-        } else if self.pos.x - radius_scaled < -1. {
-            self.pos.x = -1. + radius_scaled;
+        } else if self.pos.x - RADIUS < 0. {
+            self.pos.x = RADIUS;
             self.vel.x *= -1.;
         }
-        if self.pos.y + radius_scaled > 1. {
+        if self.pos.y + RADIUS > SCREEN_SIZE.y {
             self.vel.y *= -1.;
-            self.pos.y = 1. - radius_scaled;
-        } else if self.pos.y - radius_scaled < -1. {
+            self.pos.y = SCREEN_SIZE.y - RADIUS;
+        } else if self.pos.y - RADIUS < 0. {
             self.vel.y *= -1.;
-            self.pos.y = -1. + radius_scaled;
+            self.pos.y = RADIUS;
         }
     }
 
     pub fn resolve_collisions(&mut self, paddle: &Paddle) {
-        let paddle_size_x = paddle.rect.width * VERTEX_SCALE;
-        let paddle_size_y = paddle.rect.height * VERTEX_SCALE;
-        let radius_scaled = Self::RADIUS * VERTEX_SCALE;
+        let paddle_size_x = paddle.rect.w * 0.5;
+        let paddle_size_y = paddle.rect.h * 0.5;
 
         if self.pos.x < paddle.rect.x
-            && self.pos.x > paddle.rect.x - paddle_size_x - radius_scaled
-            && self.pos.y > paddle.rect.y - paddle_size_y - radius_scaled
-            && self.pos.y < paddle.rect.y + paddle_size_y + radius_scaled
+            && self.pos.x > paddle.rect.x - paddle_size_x - RADIUS
+            && self.pos.y > paddle.rect.y - paddle_size_y - RADIUS
+            && self.pos.y < paddle.rect.y + paddle_size_y + RADIUS
         {
-            self.pos.x = paddle.rect.x - paddle_size_x - radius_scaled;
+            self.pos.x = paddle.rect.x - paddle_size_x - RADIUS;
             self.vel.x *= -1.;
         } else if self.pos.x > paddle.rect.x
-            && self.pos.x - radius_scaled < paddle.rect.x + paddle_size_x
-            && self.pos.y + radius_scaled > paddle.rect.y - paddle_size_y
-            && self.pos.y - radius_scaled < paddle.rect.y + paddle_size_y
+            && self.pos.x - RADIUS < paddle.rect.x + paddle_size_x
+            && self.pos.y + RADIUS > paddle.rect.y - paddle_size_y
+            && self.pos.y - RADIUS < paddle.rect.y + paddle_size_y
         {
-            self.pos.x = paddle.rect.x + paddle_size_x + radius_scaled;
+            self.pos.x = paddle.rect.x + paddle_size_x + RADIUS;
             self.vel.x *= -1.;
         }
     }
 
     pub fn to_rect(&self) -> Rect {
-        rect(self.pos, vec2(Ball::RADIUS, Ball::RADIUS))
+        rect(self.pos, vec2(RADIUS * 2., RADIUS * 2.))
     }
 }

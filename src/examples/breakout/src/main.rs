@@ -7,8 +7,8 @@ fn main() {
 async fn run() {
     let event_loop = EventLoop::new();
 
-    let window = WindowBuilder::new()
-        .with_inner_size(LogicalSize::new(700., 700.))
+    let window = WindowBuilder::new() //350 - 1;
+        .with_inner_size(LogicalSize::new(700., 700.)) 
         .build(&event_loop)
         .expect("Failed to build window");
 
@@ -68,6 +68,15 @@ impl Manager for Breakout {
         self.ball.update(frame_time);
 
         self.ball.resolve_collisions(&self.paddle);
+
+        self.blocks.iter_mut().for_each(|row| {
+            row.iter_mut().for_each(|mut block| {
+                if resolve_collision(&mut self.ball.to_rect(), &mut self.ball.vel, block.rect) {
+                    block.lives -= 1;
+                }
+            });
+            row.retain(|block| block.lives > 0);
+        });
     }
 
     fn render(&self, state: &mut State) {
@@ -82,14 +91,38 @@ impl Manager for Breakout {
     }
 }
 
+fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: Rect) -> bool {
+    // early exit
+    let intersection = match a.intersect(b) {
+        Some(intersection) => intersection,
+        None => return false,
+    };
+    //println!("colliding");
+
+    let to = b.center() - a.center();
+    let to_signum = vec2(to.x.signum(), to.y.signum());
+    if intersection.w > intersection.h {
+        // bounce on y
+        a.y -= to_signum.y * intersection.h;
+        vel.y = -to_signum.y * vel.y.abs();
+    } else {
+        // bounce on x
+        a.x -= to_signum.x * intersection.w;
+        vel.x = -to_signum.x * vel.x.abs();
+    }
+    true
+}
+
 struct Block {
     rect: Rect,
+    lives: usize,
 }
 impl Block {
     const SIZE: Vec2 = vec2(2., 1.);
     pub fn new(pos: Vec2) -> Self {
         Self {
             rect: rect(pos, Self::SIZE),
+            lives: 1,
         }
     }
 }
@@ -109,7 +142,7 @@ impl Ball {
     }
     fn update(&mut self, frame_time: f64) {
         self.pos += self.vel * frame_time;
-        let radius_scaled = Self::RADIUS * VERTEX_SCALE;
+        let radius_scaled = Self::RADIUS;
 
         if self.pos.x + radius_scaled > 1. {
             self.pos.x = 1. - radius_scaled;
@@ -128,9 +161,9 @@ impl Ball {
     }
 
     fn resolve_collisions(&mut self, paddle: &Paddle) {
-        let paddle_width = paddle.rect.width * VERTEX_SCALE;
-        let paddle_height = paddle.rect.height * VERTEX_SCALE;
-        let radius_scaled = Self::RADIUS * VERTEX_SCALE;
+        let paddle_width = paddle.rect.w;
+        let paddle_height = paddle.rect.h;
+        let radius_scaled = Self::RADIUS;
 
         if self.pos.x > paddle.rect.x - paddle_width - radius_scaled
             && self.pos.x < paddle.rect.x + paddle_width + radius_scaled
@@ -162,7 +195,7 @@ impl Paddle {
 
     fn update(&mut self, input: &Input, frame_time: f64) {
         let speed = Self::SPEED * frame_time;
-        let size_scaled_x = self.rect.width * VERTEX_SCALE + speed;
+        let size_scaled_x = self.rect.w + speed;
 
         if input.d_pressed && self.rect.x + size_scaled_x < 1. {
             self.rect.x += speed;

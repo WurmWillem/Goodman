@@ -4,6 +4,9 @@ mod ball;
 use ball::Ball;
 mod paddle;
 use paddle::Paddle;
+use winit::dpi::PhysicalSize;
+
+pub const SCREEN_SIZE: Vec2 = vec2(800., 800.);
 
 fn main() {
     block_on(run());
@@ -13,7 +16,8 @@ async fn run() {
     let event_loop = EventLoop::new();
 
     let window = WindowBuilder::new()
-        .with_inner_size(LogicalSize::new(700., 700.))
+        .with_inner_size(PhysicalSize::new(SCREEN_SIZE.x, SCREEN_SIZE.y))
+        .with_resizable(false)
         .build(&event_loop)
         .expect("Failed to build window");
 
@@ -39,8 +43,8 @@ struct Pong {
 }
 impl Manager for Pong {
     fn new(state: &mut State, textures: Vec<Texture>) -> Self {
-        let paddle_0 = Paddle::new(vec2(-0.8, 0.));
-        let paddle_1 = Paddle::new(vec2(0.8, 0.));
+        let paddle_0 = Paddle::new(80., SCREEN_SIZE.y * 0.5);
+        let paddle_1 = Paddle::new(SCREEN_SIZE.x - 80., SCREEN_SIZE.y * 0.5);
         let ball = Ball::new();
 
         let rects = vec![paddle_0.rect, paddle_1.rect, ball.to_rect()];
@@ -57,7 +61,6 @@ impl Manager for Pong {
     fn update(&mut self, state: &State) {
         let paddle_0 = &mut self.paddle_0;
         let paddle_1 = &mut self.paddle_1;
-
         let frame_time = state.get_frame_time();
 
         paddle_0.update(state.input.w_pressed, state.input.s_pressed, frame_time);

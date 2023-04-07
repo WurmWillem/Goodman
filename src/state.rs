@@ -8,10 +8,10 @@ use winit::{
 
 use crate::{
     camera::{self, Camera},
-    instances::{self, Instance, InstanceRaw, Rect},
+    instances::{self, Instance, InstanceRaw},
     object_data::{self, INDICES},
     state_manager::{self, Input, Manager},
-    texture::{self, Texture},
+    texture::{self, Texture}, math::Rect,
 };
 
 pub struct State {
@@ -218,7 +218,12 @@ impl State {
         }
     }
 
-    pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
+    pub fn draw_texture(&mut self, mut rect: Rect, texture: &Texture) {
+        rect.x = rect.x / (self.window.inner_size().width as f64 * 0.5) - 1.;
+        rect.y = rect.y / (self.window.inner_size().height as f64 * 0.5) - 1.;
+        rect.w /= self.window.inner_size().width as f64;
+        rect.h /= self.window.inner_size().height as f64;
+
         let inst = Instance::new(rect);
         if self.instances[self.instances_drawn] != inst {
             self.instances[self.instances_drawn] = inst;
@@ -240,7 +245,7 @@ impl State {
     }
 
     pub fn initialize_instances(&mut self, rects: Vec<Rect>) {
-        self.instances = rects.iter().map(|rect| Instance::new(*rect)).collect();
+        self.instances = rects.iter().map(|rect| Instance::new(*rect / 350. - 1.)).collect();
         self.instances_raw = self
             .instances
             .iter()

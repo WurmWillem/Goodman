@@ -1,10 +1,11 @@
+mod state;
+mod state_manager;
 mod camera;
 mod instances;
 mod object_data;
-pub mod prelude;
-mod state;
-mod state_manager;
 mod texture;
+mod math;
+pub mod prelude;
 
 use prelude::{Manager, Texture};
 use state::State;

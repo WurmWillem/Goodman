@@ -1,7 +1,7 @@
-use cgmath::{vec2, vec3, Deg, Matrix4, Vector2, Vector4};
+use cgmath::{vec2, vec3, Deg, Matrix4, Vector4};
 use wgpu::{util::DeviceExt, Device};
 
-use crate::state_manager::{Vec2, Vec3};
+use crate::{state_manager::{Vec2, Vec3}, math::Rect};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Instance {
@@ -13,7 +13,7 @@ impl Instance {
     pub fn new(rect: Rect) -> Self {
         Self {
             pos: vec3(rect.x, rect.y, 1.),
-            size: vec2(rect.width, rect.height),
+            size: vec2(rect.w, rect.h),
             rotation: 0.,
         }
     }
@@ -81,31 +81,4 @@ pub fn create_buffer(device: &Device, instance_data: &Vec<InstanceRaw>) -> wgpu:
         contents: bytemuck::cast_slice(instance_data),
         usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
     })
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Rect {
-    pub x: f64,
-    pub y: f64,
-    pub width: f64,
-    pub height: f64,
-}
-impl Rect {
-    pub fn new(pos: Vector2<f64>, size: Vector2<f64>) -> Self {
-        Self {
-            x: pos.x,
-            y: pos.y,
-            width: size.x,
-            height: size.y,
-        }
-    }
-}
-
-pub fn rect(pos: Vector2<f64>, size: Vector2<f64>) -> Rect {
-    Rect {
-        x: pos.x,
-        y: pos.y,
-        width: size.x,
-        height: size.y,
-    }
 }
