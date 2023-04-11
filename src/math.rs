@@ -1,7 +1,6 @@
-use cgmath::vec2;
-use std::ops::{Div, Mul, Sub, Add, DivAssign};
 use crate::state_manager::Vec2;
-
+use cgmath::vec2;
+use std::ops::{Add, Div, DivAssign, Mul, Sub};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Rect {
@@ -47,7 +46,10 @@ impl Rect {
 impl Div<f64> for Rect {
     #[inline]
     fn div(self, rhs: f64) -> Rect {
-        rect(vec2(self.x / rhs, self.y / rhs), vec2(self.w / rhs, self.h / rhs))
+        rect(
+            vec2(self.x / rhs, self.y / rhs),
+            vec2(self.w / rhs, self.h / rhs),
+        )
     }
     type Output = Rect;
 }
@@ -63,21 +65,30 @@ impl DivAssign<f64> for Rect {
 impl Mul<f64> for Rect {
     #[inline]
     fn mul(self, rhs: f64) -> Rect {
-        rect(vec2(self.x * rhs, self.y * rhs), vec2(self.w * rhs, self.h * rhs))
+        rect(
+            vec2(self.x * rhs, self.y * rhs),
+            vec2(self.w * rhs, self.h * rhs),
+        )
     }
     type Output = Rect;
 }
 impl Sub<f64> for Rect {
     #[inline]
     fn sub(self, rhs: f64) -> Rect {
-        rect(vec2(self.x - rhs, self.y - rhs), vec2(self.w - rhs, self.h - rhs))
+        rect(
+            vec2(self.x - rhs, self.y - rhs),
+            vec2(self.w - rhs, self.h - rhs),
+        )
     }
     type Output = Rect;
 }
 impl Add<f64> for Rect {
     #[inline]
     fn add(self, rhs: f64) -> Rect {
-        rect(vec2(self.x + rhs, self.y + rhs), vec2(self.w + rhs, self.h + rhs))
+        rect(
+            vec2(self.x + rhs, self.y + rhs),
+            vec2(self.w + rhs, self.h + rhs),
+        )
     }
     type Output = Rect;
 }

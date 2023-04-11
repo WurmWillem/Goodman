@@ -4,7 +4,6 @@ mod ball;
 use ball::Ball;
 mod paddle;
 use paddle::Paddle;
-use winit::dpi::PhysicalSize;
 
 pub const SCREEN_SIZE: Vec2 = vec2(800., 800.);
 
@@ -14,14 +13,8 @@ fn main() {
 
 async fn run() {
     let event_loop = EventLoop::new();
-
-    let window = WindowBuilder::new()
-        .with_inner_size(PhysicalSize::new(SCREEN_SIZE.x, SCREEN_SIZE.y))
-        .with_resizable(false)
-        .build(&event_loop)
-        .expect("Failed to build window");
-
-    let mut state = State::new(window).await;
+    let mut state = State::new(SCREEN_SIZE, &event_loop).await;
+    
     state.set_fps(144);
 
     let paddle_bytes = include_bytes!("assets/paddle.png");
@@ -32,7 +25,7 @@ async fn run() {
 
     let pong = Pong::new(&mut state, vec![paddle_tex, ball_tex]);
 
-    state.enter_loop(event_loop, pong);
+    state.enter_loop(pong, event_loop);
 }
 
 struct Pong {

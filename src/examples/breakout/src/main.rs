@@ -4,15 +4,12 @@ fn main() {
     block_on(run());
 }
 
+const SCREEN_SIZE: Vec2 = vec2(700., 700.);
+
 async fn run() {
     let event_loop = EventLoop::new();
+    let mut state = State::new(SCREEN_SIZE, &event_loop).await;
 
-    let window = WindowBuilder::new() //350 - 1;
-        .with_inner_size(LogicalSize::new(700., 700.)) 
-        .build(&event_loop)
-        .expect("Failed to build window");
-
-    let mut state = State::new(window).await;
     state.set_fps(144);
 
     let paddle_bytes = include_bytes!("assets/paddle.png");
@@ -24,7 +21,7 @@ async fn run() {
 
     let breakout = Breakout::new(&mut state, vec![paddle_tex, ball_tex, block_tex]);
 
-    state.enter_loop(event_loop, breakout);
+    state.enter_loop(breakout, event_loop);
 }
 
 struct Breakout {
@@ -44,7 +41,7 @@ impl Manager for Breakout {
         for j in 0..5 {
             let mut row = Vec::new();
             for i in 0..8 {
-                let block = Block::new(vec2(i as f64 * 0.21 - 0.75, j as f64 * 0.11));
+                let block = Block::new(i as f64 * 100., j as f64 * 100.);
                 rects.push(block.rect);
                 row.push(block);
             }
@@ -62,7 +59,7 @@ impl Manager for Breakout {
     }
 
     fn update(&mut self, state: &State) {
-        let frame_time = state.get_frame_time();
+        /*let frame_time = state.get_frame_time();
 
         self.paddle.update(&state.input, frame_time);
         self.ball.update(frame_time);
@@ -76,7 +73,7 @@ impl Manager for Breakout {
                 }
             });
             row.retain(|block| block.lives > 0);
-        });
+        });*/
     }
 
     fn render(&self, state: &mut State) {
@@ -118,10 +115,10 @@ struct Block {
     lives: usize,
 }
 impl Block {
-    const SIZE: Vec2 = vec2(2., 1.);
-    pub fn new(pos: Vec2) -> Self {
+    const SIZE: Vec2 = vec2(200., 100.);
+    pub fn new(x: f64, y: f64) -> Self {
         Self {
-            rect: rect(pos, Self::SIZE),
+            rect: rect(vec2(x, y), Self::SIZE),
             lives: 1,
         }
     }
@@ -185,7 +182,7 @@ struct Paddle {
 }
 impl Paddle {
     const SPEED: f64 = 2.5;
-    const SIZE: Vec2 = vec2(3., 1.);
+    const SIZE: Vec2 = vec2(300., 100.);
 
     fn new(pos: Vec2) -> Self {
         Self {

@@ -1,17 +1,19 @@
 use std::{collections::HashMap, time::Instant};
 
 use winit::{
+    dpi::LogicalSize,
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::Window,
+    window::{Window, WindowBuilder},
 };
 
 use crate::{
     camera::{self, Camera},
     instances::{self, Instance, InstanceRaw},
+    math::Rect,
     object_data::{self, INDICES},
-    state_manager::{self, Input, Manager},
-    texture::{self, Texture}, math::Rect,
+    state_manager::{self, Input, Manager, Vec2},
+    texture::{self, Texture},
 };
 
 pub struct State {
@@ -43,7 +45,12 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: Window) -> Self {
+    pub async fn new(size: Vec2, event_loop: &EventLoop<()>) -> Self {
+        let window = WindowBuilder::new() //350 - 1;
+            .with_inner_size(LogicalSize::new(size.x, size.y))
+            .build(event_loop)
+            .expect("Failed to build window");
+
         let size = window.inner_size();
 
         // Backends::all => Vulkan + Metal + DX12 + Browser WebGPU
@@ -156,6 +163,7 @@ impl State {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
+        //encoder.
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
@@ -245,7 +253,10 @@ impl State {
     }
 
     pub fn initialize_instances(&mut self, rects: Vec<Rect>) {
-        self.instances = rects.iter().map(|rect| Instance::new(*rect / 350. - 1.)).collect();
+        self.instances = rects
+            .iter()
+            .map(|rect| Instance::new(*rect / 350. - 1.))
+            .collect();
         self.instances_raw = self
             .instances
             .iter()
@@ -267,12 +278,11 @@ impl State {
         }
     }
 
-    pub fn enter_loop<T>(mut self, event_loop: EventLoop<()>, mut manager: T)
+    pub fn enter_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
         T: Manager + 'static,
     {
         env_logger::init();
-
         event_loop.run(move |event, _, control_flow| {
             match event {
                 Event::WindowEvent {

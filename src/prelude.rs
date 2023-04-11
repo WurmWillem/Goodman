@@ -1,9 +1,9 @@
-pub use crate::math::{Rect, rect};
+pub use crate::math::{rect, Rect};
 pub use crate::state::State;
-pub use crate::state_manager::{Input, Manager, Vec2, Vec3};
+pub use crate::state_manager::{Input, Manager, Vec2};
 pub use crate::texture::Texture;
 
 pub use cgmath::vec2;
 pub use pollster::block_on;
-pub use winit::{dpi::LogicalSize, event_loop::EventLoop, window::WindowBuilder};
+pub use winit::event_loop::EventLoop;
 //pub use wgpu::Color;
