@@ -1,28 +1,23 @@
 mod camera;
 mod instances;
+mod math;
 mod object_data;
 pub mod prelude;
 mod state;
 mod state_manager;
 mod texture;
 
+use cgmath::vec2;
 use prelude::{Manager, Texture};
 use state::State;
-use winit::{dpi::LogicalSize, event_loop::EventLoop, window::WindowBuilder};
+use winit::event_loop::EventLoop;
 
 pub async fn run() {
-    env_logger::init();
-
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_inner_size(LogicalSize::new(700., 700.))
-        .build(&event_loop)
-        .expect("Failed to build window");
-
-    let mut state = State::new(window).await;
+    let mut state = State::new(vec2(700., 700.), &event_loop).await;
     let manager = StateManager::new(&mut state, vec![]);
 
-    state.enter_loop(event_loop, manager)
+    state.enter_loop(manager, event_loop);
 }
 
 struct StateManager;

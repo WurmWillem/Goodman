@@ -1,28 +1,27 @@
 use goodman::prelude::*;
 
+use crate::SCREEN_SIZE;
+
+const SPEED: f64 = 1000.;
+const SIZE: Vec2 = vec2(40., 120.);
+
 #[derive(Debug, Clone, Copy)]
 pub struct Paddle {
     pub rect: Rect,
 }
 impl Paddle {
-    const SPEED: f64 = 2.5;
-    const SIZE: Vec2 = vec2(1., 3.);
-
-    pub fn new(pos: Vec2) -> Self {
+    pub fn new(x: f64, y: f64) -> Self {
         Self {
-            rect: rect(pos, Self::SIZE),
+            rect: rect(vec2(x, y), SIZE),
         }
     }
 
     pub fn update(&mut self, up_pressed: bool, down_pressed: bool, frame_time: f64) {
-        let speed = Self::SPEED * frame_time;
-        let size_scaled_y = self.rect.height * VERTEX_SCALE + speed;
-
-        if up_pressed && self.rect.y + size_scaled_y < 1. {
-            self.rect.y += speed;
+        if up_pressed && self.rect.y + self.rect.h * 0.5 < SCREEN_SIZE.y {
+            self.rect.y += SPEED * frame_time;
         }
-        if down_pressed && self.rect.y - size_scaled_y > -1. {
-            self.rect.y -= speed;
+        if down_pressed && self.rect.y - self.rect.h * 0.5 > 0. {
+            self.rect.y -= SPEED * frame_time;
         }
     }
 }

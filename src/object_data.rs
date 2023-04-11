@@ -27,8 +27,8 @@ impl Vertex {
     }
 }
 
-const VERTEX_SCALED: f32 = 0.05;
-pub const VERTEX_SCALE: f64 = VERTEX_SCALED as f64;
+const VERTEX_SCALED: f32 = 1.;
+//pub const VERTEX_SCALE: f64 = VERTEX_SCALED as f64;
 
 #[rustfmt::skip]
 pub const VERTICES: &[Vertex] = &[
