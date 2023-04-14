@@ -93,6 +93,7 @@ impl Add<f64> for Rect {
     type Output = Rect;
 }
 
+#[inline]
 pub fn rect(pos: Vec2, size: Vec2) -> Rect {
     Rect {
         x: pos.x,

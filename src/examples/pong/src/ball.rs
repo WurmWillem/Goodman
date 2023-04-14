@@ -13,7 +13,7 @@ impl Ball {
     pub fn new() -> Self {
         Self {
             pos: vec2(350., 350.),
-            vel: vec2(300., 300.),
+            vel: vec2(600., 600.),
         }
     }
 
@@ -57,7 +57,7 @@ impl Ball {
         }
     }
 
-    pub fn to_rect(&self) -> Rect {
+    pub fn to_rect(self) -> Rect {
         rect(self.pos, vec2(RADIUS * 2., RADIUS * 2.))
     }
 }

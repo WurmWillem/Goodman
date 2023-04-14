@@ -69,7 +69,7 @@ pub fn create_bind_group(
     camera_bind_group_layout: &wgpu::BindGroupLayout,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &camera_bind_group_layout,
+        layout: camera_bind_group_layout,
         entries: &[wgpu::BindGroupEntry {
             binding: 0,
             resource: camera_buffer.as_entire_binding(),

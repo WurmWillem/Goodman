@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Instant};
 
 use winit::{
-    dpi::LogicalSize,
+    dpi::PhysicalSize,
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
@@ -47,7 +47,7 @@ pub struct State {
 impl State {
     pub async fn new(size: Vec2, event_loop: &EventLoop<()>) -> Self {
         let window = WindowBuilder::new() //350 - 1;
-            .with_inner_size(LogicalSize::new(size.x, size.y))
+            .with_inner_size(PhysicalSize::new(size.x, size.y))
             .build(event_loop)
             .expect("Failed to build window");
 
@@ -314,7 +314,7 @@ impl State {
 
                 Event::MainEventsCleared => {
                     self.update();
-                    manager.update(&mut self);
+                    manager.update(&self);
 
                     if self.input.left_mouse_button_pressed {
                         println!("{}", self.get_average_tps());
@@ -338,7 +338,7 @@ impl State {
                         // The system is out of memory, we should probably quit
                         Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
                         // All other errors (Outdated, Timeout) should be resolved by the next frame
-                        Err(e) => eprintln!("{:?}", e),
+                        Err(e) => eprintln!("{e:?}"),
                     }
                 }
                 _ => {}
@@ -348,7 +348,7 @@ impl State {
 
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
         let tex = Texture::from_bytes(&self.device, &self.queue, bytes, label)
-            .expect(&format!("Could not create {} texture", label));
+            .unwrap_or_else(|_| panic!("Could not create {label} texture"));
 
         let texture_bind_group_layout = texture::create_bind_group_layout(&self.device);
         let texture_bind_group =

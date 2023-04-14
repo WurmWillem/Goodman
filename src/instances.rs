@@ -78,7 +78,7 @@ impl InstanceRaw {
     }
 }
 
-pub fn create_buffer(device: &Device, instance_data: &Vec<InstanceRaw>) -> wgpu::Buffer {
+pub fn create_buffer(device: &Device, instance_data: &[InstanceRaw]) -> wgpu::Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Instance Buffer"),
         contents: bytemuck::cast_slice(instance_data),
