@@ -37,7 +37,7 @@ pub struct State {
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     last_frame: Instant,
-    target_fps: u32,
+    target_fps: Option<u32>,
     //pub target_tps: u32,
     frames_passed_this_sec: u64,
     frame_time_this_sec: f64,
@@ -121,7 +121,7 @@ impl State {
             frame_time_this_sec: 0.,
             frames_passed_this_sec: 0,
             time_since_last_render: 0.,
-            target_fps: 144,
+            target_fps: None,
             //target_tps: 5700,
             instances_drawn: 0,
             bind_group_indexes: HashMap::new(),
@@ -163,7 +163,6 @@ impl State {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
-        //encoder.
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
@@ -322,9 +321,13 @@ impl State {
                     self.input.reset_buttons();
 
                     self.update_time();
-
-                    if self.get_time_since_last_render() > 1. / self.get_target_fps() as f64 {
-                        self.window.request_redraw();
+                    match self.get_target_fps() {
+                        Some(fps) => {
+                            if self.get_time_since_last_render() > 1. / fps as f64 {
+                                self.window.request_redraw();
+                            }
+                        }
+                        None => self.window.request_redraw(),
                     }
                 }
 
@@ -365,7 +368,7 @@ impl State {
     pub fn get_average_tps(&mut self) -> u32 {
         (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
     }
-    pub fn get_target_fps(&self) -> u32 {
+    pub fn get_target_fps(&self) -> Option<u32> {
         self.target_fps
     }
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
@@ -375,7 +378,7 @@ impl State {
         self.time_since_last_render
     }
 
-    pub fn set_fps(&mut self, fps: u32) {
+    pub fn set_fps(&mut self, fps: Option<u32>) {
         self.target_fps = fps;
     }
 }

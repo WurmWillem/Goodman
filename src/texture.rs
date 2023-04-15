@@ -123,6 +123,6 @@ pub fn create_bind_group(
                 resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
             },
         ],
-        label: Some("diffuse_bind_group"),
+        label: Some("texture_bind_group"),
     })
 }
