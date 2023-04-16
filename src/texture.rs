@@ -112,7 +112,7 @@ pub fn create_bind_group(
     diffuse_texture: &Texture,
 ) -> wgpu::BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &texture_bind_group_layout,
+        layout: texture_bind_group_layout,
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -123,6 +123,6 @@ pub fn create_bind_group(
                 resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
             },
         ],
-        label: Some("diffuse_bind_group"),
+        label: Some("texture_bind_group"),
     })
 }

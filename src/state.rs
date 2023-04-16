@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Instant};
 
 use winit::{
-    dpi::LogicalSize,
+    dpi::PhysicalSize,
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
@@ -37,7 +37,7 @@ pub struct State {
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     last_frame: Instant,
-    target_fps: u32,
+    target_fps: Option<u32>,
     //pub target_tps: u32,
     frames_passed_this_sec: u64,
     frame_time_this_sec: f64,
@@ -47,7 +47,7 @@ pub struct State {
 impl State {
     pub async fn new(size: Vec2, event_loop: &EventLoop<()>) -> Self {
         let window = WindowBuilder::new() //350 - 1;
-            .with_inner_size(LogicalSize::new(size.x, size.y))
+            .with_inner_size(PhysicalSize::new(size.x, size.y))
             .build(event_loop)
             .expect("Failed to build window");
 
@@ -121,7 +121,7 @@ impl State {
             frame_time_this_sec: 0.,
             frames_passed_this_sec: 0,
             time_since_last_render: 0.,
-            target_fps: 144,
+            target_fps: None,
             //target_tps: 5700,
             instances_drawn: 0,
             bind_group_indexes: HashMap::new(),
@@ -163,7 +163,6 @@ impl State {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
-        //encoder.
 
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
@@ -314,7 +313,7 @@ impl State {
 
                 Event::MainEventsCleared => {
                     self.update();
-                    manager.update(&mut self);
+                    manager.update(&self);
 
                     if self.input.left_mouse_button_pressed {
                         println!("{}", self.get_average_tps());
@@ -322,9 +321,13 @@ impl State {
                     self.input.reset_buttons();
 
                     self.update_time();
-
-                    if self.get_time_since_last_render() > 1. / self.get_target_fps() as f64 {
-                        self.window.request_redraw();
+                    match self.get_target_fps() {
+                        Some(fps) => {
+                            if self.get_time_since_last_render() > 1. / fps as f64 {
+                                self.window.request_redraw();
+                            }
+                        }
+                        None => self.window.request_redraw(),
                     }
                 }
 
@@ -338,7 +341,7 @@ impl State {
                         // The system is out of memory, we should probably quit
                         Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
                         // All other errors (Outdated, Timeout) should be resolved by the next frame
-                        Err(e) => eprintln!("{:?}", e),
+                        Err(e) => eprintln!("{e:?}"),
                     }
                 }
                 _ => {}
@@ -348,7 +351,7 @@ impl State {
 
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
         let tex = Texture::from_bytes(&self.device, &self.queue, bytes, label)
-            .expect(&format!("Could not create {} texture", label));
+            .unwrap_or_else(|_| panic!("Could not create {label} texture"));
 
         let texture_bind_group_layout = texture::create_bind_group_layout(&self.device);
         let texture_bind_group =
@@ -365,7 +368,7 @@ impl State {
     pub fn get_average_tps(&mut self) -> u32 {
         (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
     }
-    pub fn get_target_fps(&self) -> u32 {
+    pub fn get_target_fps(&self) -> Option<u32> {
         self.target_fps
     }
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
@@ -375,7 +378,7 @@ impl State {
         self.time_since_last_render
     }
 
-    pub fn set_fps(&mut self, fps: u32) {
+    pub fn set_fps(&mut self, fps: Option<u32>) {
         self.target_fps = fps;
     }
 }

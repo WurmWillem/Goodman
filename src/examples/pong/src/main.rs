@@ -5,7 +5,7 @@ use ball::Ball;
 mod paddle;
 use paddle::Paddle;
 
-pub const SCREEN_SIZE: Vec2 = vec2(800., 800.);
+pub const SCREEN_SIZE: Vec2 = vec2(1200., 800.);
 
 fn main() {
     block_on(run());
@@ -14,8 +14,8 @@ fn main() {
 async fn run() {
     let event_loop = EventLoop::new();
     let mut state = State::new(SCREEN_SIZE, &event_loop).await;
-    
-    state.set_fps(144);
+
+    state.set_fps(Some(144));
 
     let paddle_bytes = include_bytes!("assets/paddle.png");
     let paddle_tex = state.create_texture(paddle_bytes, "paddle.png");

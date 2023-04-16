@@ -111,7 +111,7 @@ pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) 
         .request_adapter(&wgpu::RequestAdapterOptionsBase {
             power_preference: wgpu::PowerPreference::default(),
             force_fallback_adapter: false,
-            compatible_surface: Some(&surface),
+            compatible_surface: Some(surface),
         })
         .await
         .expect("Failed to create adapter")
@@ -163,7 +163,7 @@ pub fn create_render_pipeline_layout(
 ) -> wgpu::PipelineLayout {
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[texture_bind_group_layout, &camera_bind_group_layout],
+        bind_group_layouts: &[texture_bind_group_layout, camera_bind_group_layout],
         push_constant_ranges: &[],
     })
 }

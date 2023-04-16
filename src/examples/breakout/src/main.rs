@@ -4,13 +4,13 @@ fn main() {
     block_on(run());
 }
 
-const SCREEN_SIZE: Vec2 = vec2(700., 700.);
+const SCREEN_SIZE: Vec2 = vec2(1200., 900.);
 
 async fn run() {
     let event_loop = EventLoop::new();
     let mut state = State::new(SCREEN_SIZE, &event_loop).await;
 
-    state.set_fps(144);
+    state.set_fps(Some(144));
 
     let paddle_bytes = include_bytes!("assets/paddle.png");
     let paddle_tex = state.create_texture(paddle_bytes, "paddle.png");
@@ -32,7 +32,7 @@ struct Breakout {
 }
 impl Manager for Breakout {
     fn new(state: &mut State, textures: Vec<Texture>) -> Self {
-        let paddle = Paddle::new(vec2(0., -0.9));
+        let paddle = Paddle::new(vec2(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.1));
         let ball = Ball::new(vec2(0., 0.));
 
         let mut rects = vec![paddle.rect, ball.to_rect()];
@@ -40,8 +40,8 @@ impl Manager for Breakout {
         let mut blocks = Vec::new();
         for j in 0..5 {
             let mut row = Vec::new();
-            for i in 0..8 {
-                let block = Block::new(i as f64 * 100., j as f64 * 100.);
+            for i in 0..10 {
+                let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 500.);
                 rects.push(block.rect);
                 row.push(block);
             }
@@ -59,12 +59,12 @@ impl Manager for Breakout {
     }
 
     fn update(&mut self, state: &State) {
-        /*let frame_time = state.get_frame_time();
+        let frame_time = state.get_frame_time();
 
         self.paddle.update(&state.input, frame_time);
         self.ball.update(frame_time);
 
-        self.ball.resolve_collisions(&self.paddle);
+        self.ball.resolve_paddle_collision(&self.paddle);
 
         self.blocks.iter_mut().for_each(|row| {
             row.iter_mut().for_each(|mut block| {
@@ -73,7 +73,7 @@ impl Manager for Breakout {
                 }
             });
             row.retain(|block| block.lives > 0);
-        });*/
+        });
     }
 
     fn render(&self, state: &mut State) {
@@ -94,7 +94,7 @@ fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: Rect) -> bool {
         Some(intersection) => intersection,
         None => return false,
     };
-    //println!("colliding");
+    println!("colliding");
 
     let to = b.center() - a.center();
     let to_signum = vec2(to.x.signum(), to.y.signum());
@@ -115,7 +115,7 @@ struct Block {
     lives: usize,
 }
 impl Block {
-    const SIZE: Vec2 = vec2(200., 100.);
+    const SIZE: Vec2 = vec2(100., 50.);
     pub fn new(x: f64, y: f64) -> Self {
         Self {
             rect: rect(vec2(x, y), Self::SIZE),
@@ -130,49 +130,44 @@ struct Ball {
     vel: Vec2,
 }
 impl Ball {
-    const RADIUS: f64 = 0.7;
+    const RADIUS: f64 = 25.;
     fn new(pos: Vec2) -> Self {
         Self {
             pos,
-            vel: vec2(2., 2.),
+            vel: vec2(200., 200.),
         }
     }
     fn update(&mut self, frame_time: f64) {
         self.pos += self.vel * frame_time;
-        let radius_scaled = Self::RADIUS;
 
-        if self.pos.x + radius_scaled > 1. {
-            self.pos.x = 1. - radius_scaled;
+        if self.pos.x + Self::RADIUS > SCREEN_SIZE.x {
+            self.pos.x = SCREEN_SIZE.x - Self::RADIUS;
             self.vel.x *= -1.;
-        } else if self.pos.x - radius_scaled < -1. {
-            self.pos.x = -1. + radius_scaled;
+        } else if self.pos.x - Self::RADIUS < 0. {
+            self.pos.x = Self::RADIUS;
             self.vel.x *= -1.;
         }
-        if self.pos.y + radius_scaled > 1. {
+        if self.pos.y + Self::RADIUS > SCREEN_SIZE.y {
             self.vel.y *= -1.;
-            self.pos.y = 1. - radius_scaled;
-        } else if self.pos.y - radius_scaled < -1. {
+            self.pos.y = SCREEN_SIZE.y - Self::RADIUS;
+        } else if self.pos.y - Self::RADIUS < 0. {
+            self.pos.y = Self::RADIUS;
             self.vel.y *= -1.;
-            self.pos.y = -1. + radius_scaled;
         }
     }
 
-    fn resolve_collisions(&mut self, paddle: &Paddle) {
-        let paddle_width = paddle.rect.w;
-        let paddle_height = paddle.rect.h;
-        let radius_scaled = Self::RADIUS;
-
-        if self.pos.x > paddle.rect.x - paddle_width - radius_scaled
-            && self.pos.x < paddle.rect.x + paddle_width + radius_scaled
-            && self.pos.y - radius_scaled < paddle.rect.y + paddle_height
+    fn resolve_paddle_collision(&mut self, paddle: &Paddle) {
+        if self.pos.x + Self::RADIUS > paddle.rect.x - paddle.rect.w * 0.5
+            && self.pos.x - Self::RADIUS < paddle.rect.x + paddle.rect.w * 0.5
+            && self.pos.y - Self::RADIUS < paddle.rect.y + paddle.rect.h * 0.5
         {
-            self.pos.y = paddle.rect.y + paddle_height + radius_scaled;
+            self.pos.y = paddle.rect.y + paddle.rect.h * 0.5 + Self::RADIUS;
             self.vel.y *= -1.;
         }
     }
 
-    fn to_rect(&self) -> Rect {
-        rect(self.pos, vec2(Ball::RADIUS, Ball::RADIUS))
+    fn to_rect(self) -> Rect {
+        rect(self.pos, vec2(Ball::RADIUS * 2., Ball::RADIUS * 2.))
     }
 }
 
@@ -181,8 +176,8 @@ struct Paddle {
     rect: Rect,
 }
 impl Paddle {
-    const SPEED: f64 = 2.5;
-    const SIZE: Vec2 = vec2(300., 100.);
+    const SPEED: f64 = 500.;
+    const SIZE: Vec2 = vec2(180., 60.);
 
     fn new(pos: Vec2) -> Self {
         Self {
@@ -192,12 +187,12 @@ impl Paddle {
 
     fn update(&mut self, input: &Input, frame_time: f64) {
         let speed = Self::SPEED * frame_time;
-        let size_scaled_x = self.rect.w + speed;
+        let width = self.rect.w * 0.5;
 
-        if input.d_pressed && self.rect.x + size_scaled_x < 1. {
+        if input.d_pressed && self.rect.x + width < SCREEN_SIZE.x {
             self.rect.x += speed;
         }
-        if input.a_pressed && self.rect.x - size_scaled_x > -1. {
+        if input.a_pressed && self.rect.x - width > 0. {
             self.rect.x -= speed;
         }
     }
