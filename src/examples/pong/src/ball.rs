@@ -2,7 +2,7 @@ use goodman::prelude::*;
 
 use crate::{Paddle, SCREEN_SIZE};
 
-const RADIUS: f64 = 20.;
+const RADIUS: f64 = 24.;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ball {
