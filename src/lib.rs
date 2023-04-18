@@ -1,11 +1,11 @@
 mod camera;
 mod engine;
-mod engine_manager;
 mod instances;
 mod math;
 mod object_data;
-pub mod prelude;
+mod minor_types;
 mod texture;
+pub mod prelude;
 
 use prelude::*;
 

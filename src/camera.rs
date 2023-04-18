@@ -1,6 +1,6 @@
 use wgpu::{util::DeviceExt, Device};
 
-use crate::engine_manager::Input;
+use crate::minor_types::Input;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
