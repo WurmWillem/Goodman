@@ -4,10 +4,10 @@ fn main() {
     block_on(run());
 }
 
-const SCREEN_SIZE: Vec2 = vec2(1200., 900.);
+// const SCREEN_SIZE: Vec2 = vec2(1200., 900.);
 
 async fn run() {
-    let event_loop = EventLoop::new();
+    /*let event_loop = EventLoop::new();
     let mut engine = Engine::new(SCREEN_SIZE, &event_loop).await;
 
     engine.set_fps(Some(144));
@@ -21,10 +21,10 @@ async fn run() {
 
     let breakout = Breakout::new(&mut engine, vec![paddle_tex, ball_tex, block_tex]);
 
-    engine.enter_loop(breakout, event_loop);
+    engine.enter_loop(breakout, event_loop);*/
 }
 
-struct Breakout {
+/*struct Breakout {
     ball: Ball,
     paddle: Paddle,
     blocks: Vec<Vec<Block>>,
@@ -188,11 +188,11 @@ impl Paddle {
         let speed = Self::SPEED * frame_time;
         let width = self.rect.w * 0.5;
 
-        if input.d_pressed && self.rect.x + width < SCREEN_SIZE.x {
+        if input.is_d_pressed() && self.rect.x + width < SCREEN_SIZE.x {
             self.rect.x += speed;
         }
-        if input.a_pressed && self.rect.x - width > 0. {
+        if input.is_a_pressed() && self.rect.x - width > 0. {
             self.rect.x -= speed;
         }
     }
-}
+}*/

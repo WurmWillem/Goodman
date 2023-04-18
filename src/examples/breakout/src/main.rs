@@ -58,10 +58,8 @@ impl Manager for Breakout {
         }
     }
 
-    fn update(&mut self, state: &Engine) {
-        let frame_time = state.get_frame_time();
-
-        self.paddle.update(&state.input, frame_time);
+    fn update(&mut self, frame_time: f64, input: &Input) {
+        self.paddle.update(input, frame_time);
         self.ball.update(frame_time);
 
         self.ball.resolve_paddle_collision(&self.paddle);
@@ -189,10 +187,10 @@ impl Paddle {
         let speed = Self::SPEED * frame_time;
         let width = self.rect.w * 0.5;
 
-        if input.d_pressed && self.rect.x + width < SCREEN_SIZE.x {
+        if input.is_d_pressed() && self.rect.x + width < SCREEN_SIZE.x {
             self.rect.x += speed;
         }
-        if input.a_pressed && self.rect.x - width > 0. {
+        if input.is_a_pressed() && self.rect.x - width > 0. {
             self.rect.x -= speed;
         }
     }

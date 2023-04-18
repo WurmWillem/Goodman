@@ -10,20 +10,26 @@ pub type Vec3 = cgmath::Vector3<f64>;
 
 pub trait Manager {
     fn new(state: &mut Engine, textures: Vec<Texture>) -> Self;
-    fn update(&mut self, state: &Engine);
+    fn update(&mut self, frame_time: f64, input: &Input);
     fn render(&self, state: &mut Engine);
 }
 
+impl Engine {
+    pub fn lol(&mut self) {
+        //self.background_color;
+    }
+}
+
 pub struct Input {
-    pub left_mouse_button_pressed: bool,
-    pub d_pressed: bool,
-    pub a_pressed: bool,
-    pub w_pressed: bool,
-    pub s_pressed: bool,
-    pub right_pressed: bool,
-    pub left_pressed: bool,
-    pub up_pressed: bool,
-    pub down_pressed: bool,
+    left_mouse_button_pressed: bool,
+    d_pressed: bool,
+    a_pressed: bool,
+    w_pressed: bool,
+    s_pressed: bool,
+    right_arrow_pressed: bool,
+    left_arrow_pressed: bool,
+    up_arrow_pressed: bool,
+    down_arrow_pressed: bool,
 }
 impl Input {
     pub fn new() -> Self {
@@ -33,10 +39,10 @@ impl Input {
             a_pressed: false,
             w_pressed: false,
             s_pressed: false,
-            right_pressed: false,
-            left_pressed: false,
-            up_pressed: false,
-            down_pressed: false,
+            right_arrow_pressed: false,
+            left_arrow_pressed: false,
+            up_arrow_pressed: false,
+            down_arrow_pressed: false,
         }
     }
     pub fn process_events(&mut self, event: &WindowEvent) -> bool {
@@ -69,19 +75,19 @@ impl Input {
                         true
                     }
                     VirtualKeyCode::Right => {
-                        self.right_pressed = is_pressed;
+                        self.right_arrow_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::Left => {
-                        self.left_pressed = is_pressed;
+                        self.left_arrow_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::Up => {
-                        self.up_pressed = is_pressed;
+                        self.up_arrow_pressed = is_pressed;
                         true
                     }
                     VirtualKeyCode::Down => {
-                        self.down_pressed = is_pressed;
+                        self.down_arrow_pressed = is_pressed;
                         true
                     }
                     _ => false,
@@ -105,6 +111,34 @@ impl Input {
             self.left_mouse_button_pressed = false;
         }
     }
+    pub fn is_left_mouse_button_pressed(&self) -> bool {
+        self.left_mouse_button_pressed
+    }
+    pub fn is_d_pressed(&self) -> bool {
+        self.d_pressed
+    }
+    pub fn is_a_pressed(&self) -> bool {
+        self.a_pressed
+    }
+    pub fn is_w_pressed(&self) -> bool {
+        self.w_pressed
+    }
+    pub fn is_s_pressed(&self) -> bool {
+        self.s_pressed
+    }
+    pub fn is_right_arrow_pressed(&self) -> bool {
+        self.right_arrow_pressed
+    }
+    pub fn is_left_arrow_pressed(&self) -> bool {
+        self.left_arrow_pressed
+    }
+    pub fn is_up_arrow_pressed(&self) -> bool {
+        self.up_arrow_pressed
+    }
+    pub fn is_down_arrow_pressed(&self) -> bool {
+        self.down_arrow_pressed
+    }
+
 }
 
 pub struct Color {

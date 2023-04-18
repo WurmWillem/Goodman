@@ -7,10 +7,7 @@ mod object_data;
 pub mod prelude;
 mod texture;
 
-use cgmath::vec2;
-use engine::Engine;
-use prelude::{Manager, Texture};
-use winit::event_loop::EventLoop;
+use prelude::*;
 
 pub async fn run() {
     let event_loop = EventLoop::new();
@@ -26,6 +23,6 @@ impl Manager for StateManager {
     fn new(_state: &mut Engine, _textures: Vec<Texture>) -> Self {
         Self {}
     }
-    fn update(&mut self, _state: &Engine) {}
+    fn update(&mut self, _frame_time: f64, _input: &Input) {}
     fn render(&self, _state: &mut Engine) {}
 }

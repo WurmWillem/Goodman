@@ -38,13 +38,13 @@ struct Pong {
     textures: Vec<Texture>,
 }
 impl Manager for Pong {
-    fn new(state: &mut Engine, textures: Vec<Texture>) -> Self {
+    fn new(engine: &mut Engine, textures: Vec<Texture>) -> Self {
         let paddle_0 = Paddle::new(80., SCREEN_SIZE.y * 0.5);
         let paddle_1 = Paddle::new(SCREEN_SIZE.x - 80., SCREEN_SIZE.y * 0.5);
         let ball = Ball::new();
 
         let rects = vec![paddle_0.rect, paddle_1.rect, ball.to_rect()];
-        state.initialize_instances(rects);
+        engine.initialize_instances(rects);
 
         Self {
             paddle_0,
@@ -54,22 +54,21 @@ impl Manager for Pong {
         }
     }
 
-    fn update(&mut self, state: &Engine) {
+    fn update(&mut self, frame_time: f64, input: &Input) {
         let paddle_0 = &mut self.paddle_0;
         let paddle_1 = &mut self.paddle_1;
-        let frame_time = state.get_frame_time();
 
-        paddle_0.update(state.input.w_pressed, state.input.s_pressed, frame_time);
-        paddle_1.update(state.input.up_pressed, state.input.down_pressed, frame_time);
+        paddle_0.update(input.is_w_pressed(), input.is_s_pressed(), frame_time);
+        paddle_1.update(input.is_up_arrow_pressed(), input.is_down_arrow_pressed(), frame_time);
         self.ball.update(frame_time);
 
         self.ball.resolve_collisions(paddle_0);
         self.ball.resolve_collisions(paddle_1);
     }
 
-    fn render(&self, state: &mut Engine) {
-        state.draw_texture(self.paddle_0.rect, &self.textures[0]);
-        state.draw_texture(self.paddle_1.rect, &self.textures[1]);
-        state.draw_texture(self.ball.to_rect(), &self.textures[2]);
+    fn render(&self, engine: &mut Engine) {
+        engine.draw_texture(self.paddle_0.rect, &self.textures[0]);
+        engine.draw_texture(self.paddle_1.rect, &self.textures[1]);
+        engine.draw_texture(self.ball.to_rect(), &self.textures[2]);
     }
 }

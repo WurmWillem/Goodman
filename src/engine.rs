@@ -18,7 +18,7 @@ use crate::{
 };
 
 pub struct Engine {
-    pub input: Input,
+    input: Input,
     window: Window,
     background_color: wgpu::Color,
     surface: wgpu::Surface,
@@ -318,9 +318,9 @@ impl Engine {
 
                 Event::MainEventsCleared => {
                     self.update();
-                    manager.update(&self);
+                    manager.update(self.get_frame_time(), &self.input);
 
-                    if self.input.left_mouse_button_pressed {
+                    if self.input.is_left_mouse_button_pressed() {
                         println!("{}", self.get_average_tps());
                     }
                     self.input.reset_buttons();
