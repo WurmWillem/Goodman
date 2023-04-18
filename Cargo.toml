@@ -22,7 +22,10 @@ features = ["png", "jpeg"]
 
 [[bin]]
 name = "pong"
-path = "src/examples/pong/src/main.rs"
+path = "examples/pong/src/main.rs"
 [[bin]]
 name = "breakout"
-path = "src/examples/breakout/src/main.rs"
+path = "examples/breakout/src/main.rs"
+[[bin]] 
+name = "test"
+path = "examples/test_examplee/src/main.rs"

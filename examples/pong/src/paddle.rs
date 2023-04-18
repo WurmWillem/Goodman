@@ -3,7 +3,7 @@ use goodman::prelude::*;
 use crate::SCREEN_SIZE;
 
 const SPEED: f64 = 1000.;
-const SIZE: Vec2 = vec2(48., 144.);
+const SIZE: Vec2 = vec2(32., 192.);
 
 #[derive(Debug, Clone, Copy)]
 pub struct Paddle {
