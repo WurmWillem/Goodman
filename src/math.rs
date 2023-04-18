@@ -1,4 +1,4 @@
-use crate::state_manager::Vec2;
+use crate::engine_manager::Vec2;
 use cgmath::vec2;
 use std::ops::{Add, Div, DivAssign, Mul, Sub};
 

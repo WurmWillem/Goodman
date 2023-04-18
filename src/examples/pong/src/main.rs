@@ -13,19 +13,22 @@ fn main() {
 
 async fn run() {
     let event_loop = EventLoop::new();
-    let mut state = State::new(SCREEN_SIZE, &event_loop).await;
+    let mut engine = Engine::new(SCREEN_SIZE, &event_loop).await;
 
-    state.set_fps(Some(144));
+    engine.set_fps(Some(144));
 
-    let paddle_bytes = include_bytes!("assets/paddle.png");
-    let paddle_tex = state.create_texture(paddle_bytes, "paddle.png");
+    let paddle_bytes = include_bytes!("assets/Computer.png");
+    let paddle0_tex = engine.create_texture(paddle_bytes, "paddle1.png");
 
-    let ball_bytes = include_bytes!("assets/ball.png");
-    let ball_tex = state.create_texture(ball_bytes, "ball.png");
+    let paddle_bytes = include_bytes!("assets/Player.png");
+    let paddle1_tex = engine.create_texture(paddle_bytes, "paddle.png");
 
-    let pong = Pong::new(&mut state, vec![paddle_tex, ball_tex]);
+    let ball_bytes = include_bytes!("assets/Ball.png");
+    let ball_tex = engine.create_texture(ball_bytes, "ball.png");
 
-    state.enter_loop(pong, event_loop);
+    let pong = Pong::new(&mut engine, vec![paddle0_tex ,paddle1_tex, ball_tex]);
+
+    engine.enter_loop(pong, event_loop);
 }
 
 struct Pong {
@@ -35,7 +38,7 @@ struct Pong {
     textures: Vec<Texture>,
 }
 impl Manager for Pong {
-    fn new(state: &mut State, textures: Vec<Texture>) -> Self {
+    fn new(state: &mut Engine, textures: Vec<Texture>) -> Self {
         let paddle_0 = Paddle::new(80., SCREEN_SIZE.y * 0.5);
         let paddle_1 = Paddle::new(SCREEN_SIZE.x - 80., SCREEN_SIZE.y * 0.5);
         let ball = Ball::new();
@@ -51,7 +54,7 @@ impl Manager for Pong {
         }
     }
 
-    fn update(&mut self, state: &State) {
+    fn update(&mut self, state: &Engine) {
         let paddle_0 = &mut self.paddle_0;
         let paddle_1 = &mut self.paddle_1;
         let frame_time = state.get_frame_time();
@@ -64,9 +67,9 @@ impl Manager for Pong {
         self.ball.resolve_collisions(paddle_1);
     }
 
-    fn render(&self, state: &mut State) {
+    fn render(&self, state: &mut Engine) {
         state.draw_texture(self.paddle_0.rect, &self.textures[0]);
-        state.draw_texture(self.paddle_1.rect, &self.textures[0]);
-        state.draw_texture(self.ball.to_rect(), &self.textures[1]);
+        state.draw_texture(self.paddle_1.rect, &self.textures[1]);
+        state.draw_texture(self.ball.to_rect(), &self.textures[2]);
     }
 }

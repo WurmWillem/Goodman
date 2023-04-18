@@ -1,5 +1,6 @@
 use std::{collections::HashMap, time::Instant};
 
+use engine_manager::Color;
 use winit::{
     dpi::PhysicalSize,
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -9,16 +10,17 @@ use winit::{
 
 use crate::{
     camera::{self, Camera},
+    engine_manager::{self, Input, Manager, Vec2},
     instances::{self, Instance, InstanceRaw},
     math::Rect,
     object_data::{self, INDICES},
-    state_manager::{self, Input, Manager, Vec2},
     texture::{self, Texture},
 };
 
-pub struct State {
+pub struct Engine {
     pub input: Input,
     window: Window,
+    background_color: wgpu::Color,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -44,7 +46,7 @@ pub struct State {
     time_since_last_render: f64,
 }
 
-impl State {
+impl Engine {
     pub async fn new(size: Vec2, event_loop: &EventLoop<()>) -> Self {
         let window = WindowBuilder::new() //350 - 1;
             .with_inner_size(PhysicalSize::new(size.x, size.y))
@@ -56,19 +58,19 @@ impl State {
         // Backends::all => Vulkan + Metal + DX12 + Browser WebGPU
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
-            dx12_shader_compiler: Default::default(),
+            dx12_shader_compiler: Default::default(), // sudo sysctl dev.i915.perf_stream_paranoid=0
         });
 
         // State owns the window so this should be safe.
         let surface = unsafe { instance.create_surface(&window) }.expect("Failed to init surface");
 
-        let adapter = state_manager::create_adapter(&instance, &surface).await;
-        let (device, queue) = state_manager::create_device_and_queue(&adapter).await;
+        let adapter = engine_manager::create_adapter(&instance, &surface).await;
+        let (device, queue) = engine_manager::create_device_and_queue(&adapter).await;
 
         let surface_caps = surface.get_capabilities(&adapter);
-        let surface_format = state_manager::create_surface_format(&surface_caps);
+        let surface_format = engine_manager::create_surface_format(&surface_caps);
 
-        let config = state_manager::create_config(&surface_format, size, &surface_caps);
+        let config = engine_manager::create_config(&surface_format, size, &surface_caps);
         surface.configure(&device, &config);
 
         let texture_bind_group_layout = texture::create_bind_group_layout(&device);
@@ -86,12 +88,12 @@ impl State {
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
-        let render_pipeline_layout = state_manager::create_render_pipeline_layout(
+        let render_pipeline_layout = engine_manager::create_render_pipeline_layout(
             &device,
             &texture_bind_group_layout,
             &camera_bind_group_layout,
         );
-        let render_pipeline = state_manager::create_render_pipeline(
+        let render_pipeline = engine_manager::create_render_pipeline(
             &device,
             &render_pipeline_layout,
             &shader,
@@ -100,8 +102,16 @@ impl State {
 
         let (vertex_buffer, index_buffer) = object_data::create_buffers(&device);
 
+        let background_color = wgpu::Color {
+            r: 0.,
+            g: 0.,
+            b: 0.,
+            a: 1.,
+        };
+
         Self {
             window,
+            background_color,
             surface,
             device,
             queue,
@@ -170,12 +180,7 @@ impl State {
                 view: &view,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.3,
-                        a: 1.0,
-                    }),
+                    load: wgpu::LoadOp::Clear(self.background_color),
                     store: true,
                 },
             })],
@@ -327,26 +332,35 @@ impl State {
                                 self.window.request_redraw();
                             }
                         }
-                        None => self.window.request_redraw(),
+                        None => {
+                            self.window.request_redraw();
+                        }
                     }
                 }
 
                 Event::RedrawRequested(window_id) if window_id == self.window.id() => {
-                    manager.render(&mut self);
-                    self.update_instance_buffer();
-                    match self.render() {
-                        Ok(_) => {}
-                        // Reconfigure the surface if lost
-                        Err(wgpu::SurfaceError::Lost) => self.resize(self.get_size()),
-                        // The system is out of memory, we should probably quit
-                        Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                        // All other errors (Outdated, Timeout) should be resolved by the next frame
-                        Err(e) => eprintln!("{e:?}"),
-                    }
+                    self.update_textures_and_render(&mut manager, control_flow);
                 }
                 _ => {}
             }
         });
+    }
+
+    fn update_textures_and_render<T>(&mut self, manager: &mut T, control_flow: &mut ControlFlow)
+    where
+        T: Manager + 'static,
+    {
+        manager.render(self);
+        self.update_instance_buffer();
+        match self.render() {
+            Ok(_) => {}
+            // Reconfigure the surface if lost
+            Err(wgpu::SurfaceError::Lost) => self.resize(self.get_size()),
+            // The system is out of memory, we should probably quit
+            Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+            // All other errors (Outdated, Timeout) should be resolved by the next frame
+            Err(e) => eprintln!("{e:?}"),
+        }
     }
 
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
@@ -380,5 +394,13 @@ impl State {
 
     pub fn set_fps(&mut self, fps: Option<u32>) {
         self.target_fps = fps;
+    }
+    pub fn set_background_color(&mut self, color: Color) {
+        self.background_color = wgpu::Color {
+            r: color.r,
+            g: color.g,
+            b: color.b,
+            a: color.a,
+        }
     }
 }

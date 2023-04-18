@@ -8,7 +8,7 @@ const SCREEN_SIZE: Vec2 = vec2(1200., 900.);
 
 async fn run() {
     let event_loop = EventLoop::new();
-    let mut engine: Engine = Engine::new(SCREEN_SIZE, &event_loop).await;
+    let mut engine = Engine::new(SCREEN_SIZE, &event_loop).await;
 
     engine.set_fps(Some(144));
 
@@ -16,7 +16,7 @@ async fn run() {
     let paddle_tex = engine.create_texture(paddle_bytes, "paddle.png");
     let ball_bytes = include_bytes!("assets/ball.png");
     let ball_tex = engine.create_texture(ball_bytes, "ball.png");
-    let block_bytes = include_bytes!("assets/block.png");
+    let block_bytes = include_bytes!("assets/ball.png");
     let block_tex = engine.create_texture(block_bytes, "block.png");
 
     let breakout = Breakout::new(&mut engine, vec![paddle_tex, ball_tex, block_tex]);
@@ -35,13 +35,13 @@ impl Manager for Breakout {
         let paddle = Paddle::new(vec2(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.1));
         let ball = Ball::new(vec2(0., 0.));
 
-        let mut rects = vec![paddle.rect, ball.to_rect()];
+        let mut rects = vec![];
 
         let mut blocks = Vec::new();
-        for j in 0..5 {
+        for j in 0..9 {
             let mut row = Vec::new();
-            for i in 0..10 {
-                let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 500.);
+            for i in 0..12 {
+                let block = Block::new(i as f64 * 10. + 5., j as f64 * 10. + 5.);
                 rects.push(block.rect);
                 row.push(block);
             }
@@ -59,7 +59,7 @@ impl Manager for Breakout {
     }
 
     fn update(&mut self, state: &Engine) {
-        let frame_time = state.get_frame_time();
+        /*let frame_time = state.get_frame_time();
 
         self.paddle.update(&state.input, frame_time);
         self.ball.update(frame_time);
@@ -73,12 +73,12 @@ impl Manager for Breakout {
                 }
             });
             row.retain(|block| block.lives > 0);
-        });
+        });*/
     }
 
     fn render(&self, state: &mut Engine) {
-        state.draw_texture(self.paddle.rect, &self.textures[0]);
-        state.draw_texture(self.ball.to_rect(), &self.textures[1]);
+        //state.draw_texture(self.paddle.rect, &self.textures[0]);
+        //state.draw_texture(self.ball.to_rect(), &self.textures[1]);
 
         self.blocks.iter().for_each(|row| {
             row.iter().for_each(|block| {
@@ -94,7 +94,6 @@ fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: Rect) -> bool {
         Some(intersection) => intersection,
         None => return false,
     };
-    println!("colliding");
 
     let to = b.center() - a.center();
     let to_signum = vec2(to.x.signum(), to.y.signum());
@@ -115,7 +114,7 @@ struct Block {
     lives: usize,
 }
 impl Block {
-    const SIZE: Vec2 = vec2(100., 50.);
+    const SIZE: Vec2 = vec2(10., 10.);
     pub fn new(x: f64, y: f64) -> Self {
         Self {
             rect: rect(vec2(x, y), Self::SIZE),

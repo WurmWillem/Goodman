@@ -1,16 +1,17 @@
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
-use crate::state::State;
+use crate::engine::Engine;
+use crate::prelude::Texture;
 use crate::{instances::InstanceRaw, object_data::Vertex};
 
 pub type Vec2 = cgmath::Vector2<f64>;
 pub type Vec3 = cgmath::Vector3<f64>;
 
 pub trait Manager {
-    fn new(state: &mut State, textures: Vec<crate::Texture>) -> Self;
-    fn update(&mut self, state: &State);
-    fn render(&self, state: &mut State);
+    fn new(state: &mut Engine, textures: Vec<Texture>) -> Self;
+    fn update(&mut self, state: &Engine);
+    fn render(&self, state: &mut Engine);
 }
 
 pub struct Input {
@@ -104,6 +105,56 @@ impl Input {
             self.left_mouse_button_pressed = false;
         }
     }
+}
+
+pub struct Color {
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
+    pub a: f64,
+}
+
+#[allow(missing_docs)]
+impl Color {
+    pub fn new(r: f64, g: f64, b: f64, a: f64) -> Self {
+        Color { r, g, b, a}
+    }
+    pub const TRANSPARENT: Self = Self {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 0.0,
+    };
+    pub const BLACK: Self = Self {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 1.0,
+    };
+    pub const WHITE: Self = Self {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+        a: 1.0,
+    };
+    pub const RED: Self = Self {
+        r: 1.0,
+        g: 0.0,
+        b: 0.0,
+        a: 1.0,
+    };
+    pub const GREEN: Self = Self {
+        r: 0.0,
+        g: 1.0,
+        b: 0.0,
+        a: 1.0,
+    };
+    pub const BLUE: Self = Self {
+        r: 0.0,
+        g: 0.0,
+        b: 1.0,
+        a: 1.0,
+    };
 }
 
 pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> wgpu::Adapter {
