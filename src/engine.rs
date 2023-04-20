@@ -134,7 +134,6 @@ impl Engine {
                     println!("{}", (1. / x).round()); //7 digits in total
                     */
 
-        
         //let x = Instant::now();
         for (bind_group_label, tex_bind_group) in &self.texture_bind_groups {
             if let Some(inst_vec) = self.tex_bind_group_indexes.get_mut(bind_group_label) {
@@ -156,7 +155,7 @@ impl Engine {
         }
         //let x = x.elapsed().as_secs_f64();
         //println!("{}", (1. / x).round());
-        
+
         /*
         foreach tex
             if a instance uses tex
@@ -173,25 +172,11 @@ impl Engine {
         Ok(())
     }
 
-    fn update_time(&mut self) {
-        let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
-        self.last_frame = Instant::now();
-
-        self.frame_time_this_sec += time_since_last_frame;
-        self.time_since_last_render += time_since_last_frame;
-        self.frames_passed_this_sec += 1;
-
-        if self.frame_time_this_sec > 1. {
-            self.frames_passed_this_sec = 0;
-            self.frame_time_this_sec = 0.;
-        }
-    }
-
     pub fn draw_texture(&mut self, mut rect: Rect, texture: &Texture) {
-        rect.x = rect.x / (self.window.inner_size().width as f64 * 0.5) - 1.;
-        rect.y = rect.y / (self.window.inner_size().height as f64 * 0.5) - 1.;
-        rect.w /= self.window.inner_size().width as f64;
-        rect.h /= self.window.inner_size().height as f64;
+        // rect.x = rect.x / (self.window.inner_size().width as f64 * 0.5) - 1.; // Vertex buffer * 1 / (self.window.inner_size().width as f64 * 0.5)
+        // rect.y = rect.y / (self.window.inner_size().height as f64 * 0.5) - 1.;
+        // rect.w /= self.window.inner_size().width as f64;
+        // rect.h /= self.window.inner_size().height as f64;
 
         let inst = Instance::new(rect);
         if self.instances[self.instances_drawn] != inst {
@@ -199,16 +184,12 @@ impl Engine {
             self.instances_raw[self.instances_drawn] = inst.to_raw();
         }
 
-        if self.tex_bind_group_indexes.contains_key(&texture.label) {
-            for (label, index_vec) in &mut self.tex_bind_group_indexes {
-                if *label == texture.label {
-                    index_vec.push(self.instances_drawn);
-                    break;
-                }
+        match self.tex_bind_group_indexes.get_mut(&texture.label) {
+            Some(index_vec) => index_vec.push(self.instances_drawn),
+            None => {
+                self.tex_bind_group_indexes
+                    .insert(texture.label.to_string(), vec![self.instances_drawn]);
             }
-        } else {
-            self.tex_bind_group_indexes
-                .insert(texture.label.to_string(), vec![self.instances_drawn]);
         }
         self.instances_drawn += 1;
     }
@@ -225,6 +206,20 @@ impl Engine {
             .collect::<Vec<_>>();
 
         self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
+    }
+
+    fn update_time(&mut self) {
+        let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
+        self.last_frame = Instant::now();
+
+        self.frame_time_this_sec += time_since_last_frame;
+        self.time_since_last_render += time_since_last_frame;
+        self.frames_passed_this_sec += 1;
+
+        if self.frame_time_this_sec > 1. {
+            self.frames_passed_this_sec = 0;
+            self.frame_time_this_sec = 0.;
+        }
     }
 
     fn update_instance_buffer(&mut self) {
