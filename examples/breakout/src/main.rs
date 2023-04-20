@@ -19,7 +19,30 @@ async fn run() {
     let block_bytes = include_bytes!("assets/block.png");
     let block_tex = engine.create_texture(block_bytes, "block.png");
 
-    let breakout = Breakout::new(&mut engine, vec![paddle_tex, ball_tex, block_tex]);
+    let paddle_bytes = include_bytes!("assets/Ball.png");
+    let a = engine.create_texture(paddle_bytes, "a");
+
+    let ball_bytes = include_bytes!("assets/BallMotion.png");
+    let b = engine.create_texture(ball_bytes, "b");
+
+    let block_bytes = include_bytes!("assets/Board.png");
+    let c = engine.create_texture(block_bytes, "c");
+
+    let block_bytes = include_bytes!("assets/Computer.png");
+    let d = engine.create_texture(block_bytes, "d");
+
+    let block_bytes = include_bytes!("assets/Player.png");
+    let e = engine.create_texture(block_bytes, "e");
+
+    let block_bytes = include_bytes!("assets/ScoreBar.png");
+    let f = engine.create_texture(block_bytes, "f");
+    let mut v = vec![paddle_tex, ball_tex, block_tex, a, b, c, d, e, f];
+    for i in 0..91 {
+        let x = engine.create_texture(block_bytes, &i.to_string());
+        v.push(x);
+    }
+
+    let breakout = Breakout::new(&mut engine, v);
 
     engine.enter_loop(breakout, event_loop);
 }
@@ -38,10 +61,10 @@ impl Manager for Breakout {
         let mut rects = vec![paddle.rect, ball.to_rect()];
 
         let mut blocks = Vec::new();
-        for j in 0..5 {
+        for j in 0..10 {
             let mut row = Vec::new();
             for i in 0..10 {
-                let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 500.);
+                let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 500., j);
                 rects.push(block.rect);
                 row.push(block);
             }
@@ -75,12 +98,11 @@ impl Manager for Breakout {
     }
 
     fn render(&self, state: &mut Engine) {
-        state.draw_texture(self.paddle.rect, &self.textures[0]);
-        state.draw_texture(self.ball.to_rect(), &self.textures[1]);
-
+        //state.draw_texture(self.paddle.rect, &self.textures[0]);
+        //state.draw_texture(self.ball.to_rect(), &self.textures[1]);
         self.blocks.iter().for_each(|row| {
             row.iter().for_each(|block| {
-                state.draw_texture(block.rect, &self.textures[2]);
+                state.draw_texture(block.rect, &self.textures[block.i]); //830000
             })
         });
     }
@@ -111,13 +133,15 @@ fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: Rect) -> bool {
 struct Block {
     rect: Rect,
     lives: usize,
+    i: usize,
 }
 impl Block {
     const SIZE: Vec2 = vec2(100., 50.);
-    pub fn new(x: f64, y: f64) -> Self {
+    pub fn new(x: f64, y: f64, j: usize) -> Self {
         Self {
             rect: rect(vec2(x, y), Self::SIZE),
             lives: 1,
+            i: j,
         }
     }
 }

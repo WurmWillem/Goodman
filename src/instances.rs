@@ -2,8 +2,8 @@ use cgmath::{vec2, vec3, Deg, Matrix4, Vector4};
 use wgpu::{util::DeviceExt, Device};
 
 use crate::{
-    minor_types::{Vec2, Vec3},
     math::Rect,
+    minor_types::{Vec2, Vec3},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,7 +42,7 @@ fn get_f32_array_from_vec4_f64(vec: Vector4<f64>) -> [f32; 4] {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct InstanceRaw {
     model: [[f32; 4]; 4],
 }
