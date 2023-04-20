@@ -37,6 +37,7 @@ pub struct Engine {
     texture_bind_groups: HashMap<String, wgpu::BindGroup>,
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
+    window_bind_group: wgpu::BindGroup,
     last_frame: Instant,
     target_fps: Option<u32>,
     //pub target_tps: u32,
@@ -69,7 +70,7 @@ impl Engine {
                     println!("{}", self.get_average_tps());
                 }
                 self.input.reset_buttons();
-
+                
                 self.update_time();
                 match self.get_target_fps() {
                     Some(fps) => {
@@ -115,50 +116,27 @@ impl Engine {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
+        render_pass.set_bind_group(2, &self.window_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-        /*let x = Instant::now();
-        let b = self.texture_bind_groups.get("block.png").unwrap();
-        render_pass.set_bind_group(0, b, &[]);
-
-
-                    render_pass.draw_indexed(
-                        0..INDICES.len() as u32,
-                        0,
-                        0..self.instances.len() as u32,
-                    );
-                    let x = x.elapsed().as_secs_f64(); //3000000 7 digits   37037037 7 digits
-                    println!("{}", (1. / x).round()); //7 digits in total
-                    */
-
-        //let x = Instant::now();
         for (bind_group_label, tex_bind_group) in &self.texture_bind_groups {
             if let Some(inst_vec) = self.tex_bind_group_indexes.get_mut(bind_group_label) {
                 render_pass.set_bind_group(0, tex_bind_group, &[]);
                 for i in inst_vec.drain(..) {
-                    // let x = Instant::now();
                     render_pass.draw_indexed(
                         0..INDICES.len() as u32,
                         0,
                         (i as u32)..(i + 1) as u32,
                     );
-                    //let x = x.elapsed().as_secs_f64(); //37037037
-                    //println!("{}", (1. / x).round());
                 }
-                //println!();
-                //println!();
-                //println!();
             }
         }
-        //let x = x.elapsed().as_secs_f64();
-        //println!("{}", (1. / x).round());
-
         /*
         foreach tex
-            if a instance uses tex
+            if an instance uses tex
                 foreach instance that uses tex
                     draw(inst)
          */
@@ -172,12 +150,7 @@ impl Engine {
         Ok(())
     }
 
-    pub fn draw_texture(&mut self, mut rect: Rect, texture: &Texture) {
-        // rect.x = rect.x / (self.window.inner_size().width as f64 * 0.5) - 1.; // Vertex buffer * 1 / (self.window.inner_size().width as f64 * 0.5)
-        // rect.y = rect.y / (self.window.inner_size().height as f64 * 0.5) - 1.;
-        // rect.w /= self.window.inner_size().width as f64;
-        // rect.h /= self.window.inner_size().height as f64;
-
+    pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
         let inst = Instance::new(rect);
         if self.instances[self.instances_drawn] != inst {
             self.instances[self.instances_drawn] = inst;

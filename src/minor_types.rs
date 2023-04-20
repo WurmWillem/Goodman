@@ -179,3 +179,9 @@ impl Color {
         a: 1.0,
     };
 }
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Windowniform {
+    pub size: [f32; 2],
+}

@@ -2,9 +2,15 @@
 struct CameraUniform {
     pos: vec2<f32>,
 };
+struct WindowSizeUniform {
+    x: f32,
+    y: f32,
+};
 
 @group(1) @binding(0) 
 var<uniform> camera: CameraUniform;
+@group(2) @binding(0) 
+var<uniform> window_size: WindowSizeUniform;
 
 struct InstanceInput {
     @location(5) matrix_0: vec4<f32>,
@@ -31,22 +37,17 @@ fn vs_main(
 
     var out: VertexOutput;
     out.tex_coords = vertex.tex_coords;
-    let x = vec4<f32>(instance.matrix_0.x / 1200., instance.matrix_0.y, instance.matrix_0.z, instance.matrix_0.w);
-    let y = vec4<f32>(instance.matrix_1.x, instance.matrix_1.y / 800., instance.matrix_1.z, instance.matrix_1.w);
-    let w = vec4<f32>(instance.matrix_3.x / 600. - 1., instance.matrix_3.y / 400. - 1., instance.matrix_3.z, instance.matrix_3.w);
 
-    let model_matrix = mat4x4<f32>(
-        x,
-        y,
-        instance.matrix_2,
-        w,
-    );  
-    /*let model_matrix = mat4x4<f32>(
+    var model_matrix = mat4x4<f32>(
         instance.matrix_0,
         instance.matrix_1,
         instance.matrix_2,
         instance.matrix_3,
-    );*/
+    );  
+    model_matrix.x.x *= window_size.x;
+    model_matrix.y.y *= window_size.y;
+    model_matrix.w.x = instance.matrix_3.x * window_size.x * 2. - 1.;
+    model_matrix.w.y = instance.matrix_3.y * window_size.y * 2. - 1.;
 
     let updated_pos = model_matrix * vec4<f32>(vertex.pos.x, vertex.pos.y, vertex.pos.z, 1.0);
     let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);
