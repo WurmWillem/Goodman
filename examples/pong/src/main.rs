@@ -18,15 +18,15 @@ async fn run() {
     engine.set_fps(Some(144));
 
     let paddle_bytes = include_bytes!("assets/Computer.png");
-    let paddle0_tex = engine.create_texture(paddle_bytes, "paddle1.png");
+    let paddle_0_tex = engine.create_texture(paddle_bytes, "paddle1.png");
 
     let paddle_bytes = include_bytes!("assets/Player.png");
-    let paddle1_tex = engine.create_texture(paddle_bytes, "paddle.png");
+    let paddle_1_tex = engine.create_texture(paddle_bytes, "paddle.png");
 
     let ball_bytes = include_bytes!("assets/Ball.png");
     let ball_tex = engine.create_texture(ball_bytes, "ball.png");
 
-    let pong = Pong::new(&mut engine, vec![paddle0_tex ,paddle1_tex, ball_tex]);
+    let pong = Pong::new(&mut engine, vec![paddle_0_tex, paddle_1_tex, ball_tex]);
 
     engine.enter_loop(pong, event_loop);
 }
@@ -59,7 +59,11 @@ impl Manager for Pong {
         let paddle_1 = &mut self.paddle_1;
 
         paddle_0.update(input.is_w_pressed(), input.is_s_pressed(), frame_time);
-        paddle_1.update(input.is_up_arrow_pressed(), input.is_down_arrow_pressed(), frame_time);
+        paddle_1.update(
+            input.is_up_arrow_pressed(),
+            input.is_down_arrow_pressed(),
+            frame_time,
+        );
         self.ball.update(frame_time);
 
         self.ball.resolve_collisions(paddle_0);

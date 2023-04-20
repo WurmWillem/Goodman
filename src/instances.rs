@@ -2,8 +2,8 @@ use cgmath::{vec2, vec3, Deg, Matrix4, Vector4};
 use wgpu::{util::DeviceExt, Device};
 
 use crate::{
-    minor_types::{Vec2, Vec3},
     math::Rect,
+    minor_types::{Vec2, Vec3},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]

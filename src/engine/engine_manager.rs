@@ -5,11 +5,11 @@ use winit::dpi::PhysicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 
-use crate::camera::{Camera, self};
+use crate::camera::{self, Camera};
 use crate::engine::Engine;
 use crate::instances::Instance;
-use crate::prelude::{Input, Vec2, Color};
-use crate::texture::{Texture, self};
+use crate::prelude::{Color, Input, Vec2};
+use crate::texture::{self, Texture};
 use crate::{instances::InstanceRaw, object_data::Vertex};
 
 impl Engine {
@@ -141,7 +141,7 @@ impl Engine {
             target_fps: None,
             //target_tps: 5700,
             instances_drawn: 0,
-            bind_group_indexes: HashMap::new(),
+            tex_bind_group_indexes: HashMap::new(),
             texture_bind_groups,
         }
     }

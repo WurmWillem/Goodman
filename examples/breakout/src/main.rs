@@ -38,7 +38,7 @@ impl Manager for Breakout {
         let mut rects = vec![paddle.rect, ball.to_rect()];
 
         let mut blocks = Vec::new();
-        for j in 0..5 {
+        for j in 0..10 {
             let mut row = Vec::new();
             for i in 0..10 {
                 let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 500.);
@@ -59,19 +59,19 @@ impl Manager for Breakout {
     }
 
     fn update(&mut self, frame_time: f64, input: &Input) {
-        self.paddle.update(input, frame_time);
+        /*self.paddle.update(input, frame_time);
         self.ball.update(frame_time);
 
-        self.ball.resolve_paddle_collision(&self.paddle);
+        self.ball.resolve_paddle_collision(&self.paddle);*/
 
-        self.blocks.iter_mut().for_each(|row| {
+        /*self.blocks.iter_mut().for_each(|row| {
             row.iter_mut().for_each(|mut block| {
                 if resolve_collision(&mut self.ball.to_rect(), &mut self.ball.vel, block.rect) {
                     block.lives -= 1;
                 }
             });
             row.retain(|block| block.lives > 0);
-        });
+        });*/
     }
 
     fn render(&self, state: &mut Engine) {

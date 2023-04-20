@@ -1,6 +1,6 @@
 pub use crate::engine::Engine;
-pub use crate::minor_types::{Input, Manager, Vec2, Color};
 pub use crate::math::{rect, Rect};
+pub use crate::minor_types::{Color, Input, Manager, Vec2};
 pub use crate::texture::Texture;
 
 pub use cgmath::vec2;

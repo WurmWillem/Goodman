@@ -2,10 +2,10 @@ mod camera;
 mod engine;
 mod instances;
 mod math;
-mod object_data;
 mod minor_types;
-mod texture;
+mod object_data;
 pub mod prelude;
+mod texture;
 
 use prelude::*;
 

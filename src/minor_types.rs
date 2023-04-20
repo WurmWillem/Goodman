@@ -1,7 +1,5 @@
+use crate::prelude::{Engine, Texture};
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
-use crate::prelude::{Texture, Engine};
-
-
 
 pub type Vec2 = cgmath::Vector2<f64>;
 pub type Vec3 = cgmath::Vector3<f64>;
@@ -130,7 +128,6 @@ impl Input {
     pub fn is_down_arrow_pressed(&self) -> bool {
         self.down_arrow_pressed
     }
-
 }
 
 pub struct Color {
@@ -143,7 +140,7 @@ pub struct Color {
 #[allow(missing_docs)]
 impl Color {
     pub fn new(r: f64, g: f64, b: f64, a: f64) -> Self {
-        Color { r, g, b, a}
+        Color { r, g, b, a }
     }
     pub const TRANSPARENT: Self = Self {
         r: 0.0,
