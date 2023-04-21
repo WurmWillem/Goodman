@@ -5,7 +5,7 @@ pub type Vec2 = cgmath::Vector2<f64>;
 pub type Vec3 = cgmath::Vector3<f64>;
 
 pub trait Manager {
-    fn new(state: &mut Engine, textures: Vec<Texture>) -> Self;
+    fn new(textures: Vec<Texture>) -> Self;
     fn update(&mut self, frame_time: f64, input: &Input);
     fn render(&self, state: &mut Engine);
 }

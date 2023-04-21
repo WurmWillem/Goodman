@@ -40,7 +40,7 @@ pub struct Engine {
     window_bind_group: wgpu::BindGroup,
     last_frame: Instant,
     target_fps: Option<u32>,
-    //pub target_tps: u32,
+    target_tps: Option<u32>,
     frames_passed_this_sec: u64,
     frame_time_this_sec: f64,
     time_since_last_render: f64,
@@ -61,8 +61,12 @@ impl Engine {
                     self.handle_window_event(event, control_flow);
                 }
             }
-
             Event::MainEventsCleared => {
+                /*if let Some(tps) = self.target_tps {
+                    if self.get_frame_time() < 1. / tps as f64 {
+                        return;
+                    }
+                }*/
                 self.update();
                 manager.update(self.get_frame_time(), &self.input);
 
@@ -70,11 +74,12 @@ impl Engine {
                     println!("{}", self.get_average_tps());
                 }
                 self.input.reset_buttons();
-                
+
                 self.update_time();
+
                 match self.get_target_fps() {
                     Some(fps) => {
-                        if self.get_time_since_last_render() > 1. / fps as f64 {
+                        if self.get_time_since_last_render() >= 1. / fps as f64 {
                             self.window.request_redraw();
                         }
                     }
@@ -83,7 +88,6 @@ impl Engine {
                     }
                 }
             }
-
             Event::RedrawRequested(window_id) if window_id == self.window.id() => {
                 self.handle_rendering(&mut manager, control_flow);
             }
@@ -152,10 +156,16 @@ impl Engine {
 
     pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
         let inst = Instance::new(rect);
-        if self.instances[self.instances_drawn] != inst {
-            self.instances[self.instances_drawn] = inst;
-            self.instances_raw[self.instances_drawn] = inst.to_raw();
+        if self.instances_drawn < self.instances.len() {
+            if self.instances[self.instances_drawn] != inst {
+                self.instances[self.instances_drawn] = inst;
+                self.instances_raw[self.instances_drawn] = inst.to_raw();
+            }
+        } else {
+            self.instances.push(inst);
+            self.instances_raw.push(inst.to_raw());
         }
+        
 
         match self.tex_bind_group_indexes.get_mut(&texture.label) {
             Some(index_vec) => index_vec.push(self.instances_drawn),
@@ -226,12 +236,13 @@ impl Engine {
 
     fn update(&mut self) {
         if self.camera.movement_enabled {
-            self.camera.update(&self.input);
-            self.queue.write_buffer(
-                &self.camera_buffer,
-                0,
-                bytemuck::cast_slice(&[self.camera.uniform]),
-            );
+            if self.camera.update(&self.input) {
+                self.queue.write_buffer(
+                    &self.camera_buffer,
+                    0,
+                    bytemuck::cast_slice(&[self.camera.uniform]),
+                );
+            }
         }
     }
 

@@ -92,26 +92,27 @@ impl Engine {
             camera::create_bind_group(&device, &camera_buffer, &camera_bind_group_layout);
 
         let window_size_uniform = Windowniform {
-            size: [1. / size.x as f32, 1. / size.y as f32]
+            size: [1. / size.x as f32, 1. / size.y as f32],
         };
         let window_size_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("window size buffer"),
             contents: bytemuck::cast_slice(&[window_size_uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        let window_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-            label: Some("camera_bind_group_layout"),
-        });
+        let window_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+                label: Some("camera_bind_group_layout"),
+            });
         let window_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &window_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
@@ -172,6 +173,7 @@ impl Engine {
             frames_passed_this_sec: 0,
             time_since_last_render: 0.,
             target_fps: None,
+            target_tps: Some(100000),
             //target_tps: 5700,
             instances_drawn: 0,
             tex_bind_group_indexes: HashMap::new(),
@@ -239,7 +241,11 @@ pub fn create_render_pipeline_layout(
 ) -> wgpu::PipelineLayout {
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[texture_bind_group_layout, camera_bind_group_layout, window_bind_group_layout],
+        bind_group_layouts: &[
+            texture_bind_group_layout,
+            camera_bind_group_layout,
+            window_bind_group_layout,
+        ],
         push_constant_ranges: &[],
     })
 }

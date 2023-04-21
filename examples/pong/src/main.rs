@@ -26,7 +26,7 @@ async fn run() {
     let ball_bytes = include_bytes!("assets/Ball.png");
     let ball_tex = engine.create_texture(ball_bytes, "ball.png");
 
-    let pong = Pong::new(&mut engine, vec![paddle_0_tex, paddle_1_tex, ball_tex]);
+    let pong = Pong::new(vec![paddle_0_tex, paddle_1_tex, ball_tex]);
 
     engine.enter_loop(pong, event_loop);
 }
@@ -38,13 +38,10 @@ struct Pong {
     textures: Vec<Texture>,
 }
 impl Manager for Pong {
-    fn new(engine: &mut Engine, textures: Vec<Texture>) -> Self {
+    fn new(textures: Vec<Texture>) -> Self {
         let paddle_0 = Paddle::new(80., SCREEN_SIZE.y * 0.5);
         let paddle_1 = Paddle::new(SCREEN_SIZE.x - 80., SCREEN_SIZE.y * 0.5);
         let ball = Ball::new();
-
-        let rects = vec![paddle_0.rect, paddle_1.rect, ball.to_rect()];
-        engine.initialize_instances(rects);
 
         Self {
             paddle_0,
