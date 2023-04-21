@@ -47,7 +47,7 @@ fn vs_main(
     model_matrix.x.x *= window_size.x;
     model_matrix.y.y *= window_size.y;
     model_matrix.w.x = instance.matrix_3.x * window_size.x * 2. - 1.;
-    model_matrix.w.y = instance.matrix_3.y * window_size.y * 2. - 1.;
+    model_matrix.w.y = (instance.matrix_3.y * window_size.y * 2. - 1.)*-1.;
 
     let updated_pos = model_matrix * vec4<f32>(vertex.pos.x, vertex.pos.y, vertex.pos.z, 1.0);
     let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);

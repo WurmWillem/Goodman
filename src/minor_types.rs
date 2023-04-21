@@ -1,4 +1,5 @@
 use crate::prelude::{Engine, Texture};
+use cgmath::vec2;
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
 pub type Vec2 = cgmath::Vector2<f64>;
@@ -11,6 +12,7 @@ pub trait Manager {
 }
 
 pub struct Input {
+    cursor_pos: Vec2,
     left_mouse_button_pressed: bool,
     d_pressed: bool,
     a_pressed: bool,
@@ -24,6 +26,7 @@ pub struct Input {
 impl Input {
     pub fn new() -> Self {
         Self {
+            cursor_pos: vec2(0., 0.),
             left_mouse_button_pressed: false,
             d_pressed: false,
             a_pressed: false,
@@ -93,6 +96,10 @@ impl Input {
                     _ => false,
                 }
             }
+            WindowEvent::CursorMoved { position, .. } => {
+                self.cursor_pos = vec2(position.x, position.y);
+                false
+            }
             _ => false,
         }
     }
@@ -100,6 +107,10 @@ impl Input {
         if self.left_mouse_button_pressed {
             self.left_mouse_button_pressed = false;
         }
+    }
+
+    pub fn get_cursor_pos(&self) -> Vec2 {
+        self.cursor_pos
     }
     pub fn is_left_mouse_button_pressed(&self) -> bool {
         self.left_mouse_button_pressed

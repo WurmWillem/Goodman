@@ -32,14 +32,14 @@ struct Breakout {
 }
 impl Manager for Breakout {
     fn new(textures: Vec<Texture>) -> Self {
-        let paddle = Paddle::new(vec2(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.1));
-        let ball = Ball::new(vec2(0., 0.));
+        let paddle = Paddle::new(vec2(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.9));
+        let ball = Ball::new(vec2(0., SCREEN_SIZE.y));
 
         let mut blocks = Vec::new();
-        for j in 0..800 {
+        for j in 0..8 {
             let mut row = Vec::new();
             for i in 0..10 {
-                let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 500.);
+                let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 100.);
                 row.push(block);
             }
             blocks.push(row);
@@ -109,7 +109,7 @@ impl Block {
     const SIZE: Vec2 = vec2(100., 50.);
     pub fn new(x: f64, y: f64) -> Self {
         Self {
-            rect: rect(vec2(x, y), Self::SIZE),
+            rect: rect_vec(vec2(x, y), Self::SIZE),
             lives: 1,
         }
     }
@@ -125,7 +125,7 @@ impl Ball {
     fn new(pos: Vec2) -> Self {
         Self {
             pos,
-            vel: vec2(200., 200.),
+            vel: vec2(400., -400.),
         }
     }
     fn update(&mut self, frame_time: f64) {
@@ -150,15 +150,15 @@ impl Ball {
     fn resolve_paddle_collision(&mut self, paddle: &Paddle) {
         if self.pos.x + Self::RADIUS > paddle.rect.x - paddle.rect.w * 0.5
             && self.pos.x - Self::RADIUS < paddle.rect.x + paddle.rect.w * 0.5
-            && self.pos.y - Self::RADIUS < paddle.rect.y + paddle.rect.h * 0.5
+            && self.pos.y + Self::RADIUS > paddle.rect.y - paddle.rect.h * 0.5
         {
-            self.pos.y = paddle.rect.y + paddle.rect.h * 0.5 + Self::RADIUS;
+            self.pos.y = paddle.rect.y - paddle.rect.h * 0.5 - Self::RADIUS;
             self.vel.y *= -1.;
         }
     }
 
     fn to_rect(self) -> Rect {
-        rect(self.pos, vec2(Ball::RADIUS * 2., Ball::RADIUS * 2.))
+        rect_vec(self.pos, vec2(Ball::RADIUS * 2., Ball::RADIUS * 2.))
     }
 }
 
@@ -172,7 +172,7 @@ impl Paddle {
 
     fn new(pos: Vec2) -> Self {
         Self {
-            rect: rect(pos, Self::SIZE),
+            rect: rect_vec(pos, Self::SIZE),
         }
     }
 

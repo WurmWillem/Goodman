@@ -29,7 +29,7 @@ impl Engine {
     }
 
     pub fn get_frame_time(&self) -> f64 {
-        self.last_frame.elapsed().as_secs_f64()
+        self.frame_time.elapsed().as_secs_f64()
     }
     pub fn get_average_tps(&mut self) -> u32 {
         (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
@@ -168,7 +168,7 @@ impl Engine {
             instances,
             instances_raw: instance_data,
             input: Input::new(),
-            last_frame: Instant::now(),
+            frame_time: Instant::now(),
             frame_time_this_sec: 0.,
             frames_passed_this_sec: 0,
             time_since_last_render: 0.,

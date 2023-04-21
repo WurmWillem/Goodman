@@ -38,7 +38,7 @@ pub struct Engine {
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
-    last_frame: Instant,
+    frame_time: Instant,
     target_fps: Option<u32>,
     target_tps: Option<u32>,
     frames_passed_this_sec: u64,
@@ -165,7 +165,6 @@ impl Engine {
             self.instances.push(inst);
             self.instances_raw.push(inst.to_raw());
         }
-        
 
         match self.tex_bind_group_indexes.get_mut(&texture.label) {
             Some(index_vec) => index_vec.push(self.instances_drawn),
@@ -192,8 +191,8 @@ impl Engine {
     }
 
     fn update_time(&mut self) {
-        let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
-        self.last_frame = Instant::now();
+        let time_since_last_frame = self.frame_time.elapsed().as_secs_f64();
+        self.frame_time = Instant::now();
 
         self.frame_time_this_sec += time_since_last_frame;
         self.time_since_last_render += time_since_last_frame;
