@@ -13,11 +13,11 @@ async fn run() {
     engine.set_fps(Some(144));
 
     let paddle_bytes = include_bytes!("assets/paddle.png");
-    let paddle_tex = engine.create_texture(paddle_bytes, "paddle.png");
+    let paddle_tex = engine.create_texture(paddle_bytes, "paddle").unwrap();
     let ball_bytes = include_bytes!("assets/ball.png");
-    let ball_tex = engine.create_texture(ball_bytes, "ball.png");
+    let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
     let block_bytes = include_bytes!("assets/block.png");
-    let block_tex = engine.create_texture(block_bytes, "block.png");
+    let block_tex = engine.create_texture(block_bytes, "block").unwrap();
 
     let breakout = Breakout::new(vec![paddle_tex, ball_tex, block_tex]);
 

@@ -15,17 +15,27 @@ use crate::texture::{self, Texture};
 use crate::{instances::InstanceRaw, object_data::Vertex};
 
 impl Engine {
-    pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
-        let tex = Texture::from_bytes(&self.device, &self.queue, bytes, label)
-            .unwrap_or_else(|_| panic!("Could not create {label} texture"));
+    pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Result<Texture, &'static str> {
+        let tex = match Texture::from_bytes(
+            &self.device,
+            &self.queue,
+            bytes,
+            label,
+            self.texture_amt_created,
+        ) {
+            Ok(tex) => tex,
+            Err(_) => return Err("failed to create texture"),
+        };
 
         let texture_bind_group_layout = super::texture::create_bind_group_layout(&self.device);
         let texture_bind_group =
             texture::create_bind_group(&self.device, &texture_bind_group_layout, &tex);
 
         self.texture_bind_groups
-            .insert(tex.label.clone(), texture_bind_group);
-        tex
+            .insert(tex.index, texture_bind_group);
+
+        self.texture_amt_created += 1;
+        Ok(tex)
     }
 
     pub fn get_frame_time(&self) -> f64 {
@@ -179,6 +189,7 @@ impl Engine {
             tex_bind_group_indexes: HashMap::new(),
             texture_bind_groups,
             window_bind_group,
+            texture_amt_created: 0,
         }
     }
 }

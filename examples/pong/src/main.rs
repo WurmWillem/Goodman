@@ -18,13 +18,13 @@ async fn run() {
     engine.set_fps(Some(144));
 
     let paddle_bytes = include_bytes!("assets/Computer.png");
-    let paddle_0_tex = engine.create_texture(paddle_bytes, "paddle1.png");
+    let paddle_0_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
 
     let paddle_bytes = include_bytes!("assets/Player.png");
-    let paddle_1_tex = engine.create_texture(paddle_bytes, "paddle.png");
+    let paddle_1_tex = engine.create_texture(paddle_bytes, "paddle1").unwrap();
 
     let ball_bytes = include_bytes!("assets/Ball.png");
-    let ball_tex = engine.create_texture(ball_bytes, "ball.png");
+    let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
 
     let pong = Pong::new(vec![paddle_0_tex, paddle_1_tex, ball_tex]);
 

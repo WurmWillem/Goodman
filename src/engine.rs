@@ -33,8 +33,9 @@ pub struct Engine {
     instances: Vec<Instance>,
     instances_raw: Vec<InstanceRaw>,
     instances_drawn: usize,
-    tex_bind_group_indexes: HashMap<String, Vec<usize>>,
-    texture_bind_groups: HashMap<String, wgpu::BindGroup>,
+    tex_bind_group_indexes: HashMap<u32, Vec<u32>>,
+    texture_bind_groups: HashMap<u32, wgpu::BindGroup>,
+    texture_amt_created: u32,
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
@@ -130,11 +131,7 @@ impl Engine {
             if let Some(inst_vec) = self.tex_bind_group_indexes.get_mut(bind_group_label) {
                 render_pass.set_bind_group(0, tex_bind_group, &[]);
                 for i in inst_vec.drain(..) {
-                    render_pass.draw_indexed(
-                        0..INDICES.len() as u32,
-                        0,
-                        (i as u32)..(i + 1) as u32,
-                    );
+                    render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
                 }
             }
         }
@@ -143,7 +140,7 @@ impl Engine {
             if an instance uses tex
                 foreach instance that uses tex
                     draw(inst)
-         */
+        */
 
         drop(render_pass);
         self.queue.submit(std::iter::once(encoder.finish()));
@@ -166,11 +163,11 @@ impl Engine {
             self.instances_raw.push(inst.to_raw());
         }
 
-        match self.tex_bind_group_indexes.get_mut(&texture.label) {
-            Some(index_vec) => index_vec.push(self.instances_drawn),
+        match self.tex_bind_group_indexes.get_mut(&texture.index) {
+            Some(index_vec) => index_vec.push(self.instances_drawn as u32),
             None => {
                 self.tex_bind_group_indexes
-                    .insert(texture.label.to_string(), vec![self.instances_drawn]);
+                    .insert(texture.index, vec![self.instances_drawn as u32]);
             }
         }
         self.instances_drawn += 1;
