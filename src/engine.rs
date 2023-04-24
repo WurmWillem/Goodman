@@ -9,7 +9,7 @@ use crate::{
     camera::Camera,
     instances::{self, Instance, InstanceRaw},
     math::Rect,
-    minor_types::{Input, Manager},
+    minor_types::{Input, Manager, Layer},
     object_data::{self, INDICES},
     texture::{self, Texture},
 };
@@ -18,6 +18,7 @@ mod engine_manager;
 
 pub struct Engine {
     input: Input,
+
     window: Window,
     background_color: wgpu::Color,
     surface: wgpu::Surface,
@@ -25,20 +26,26 @@ pub struct Engine {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
+
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     instance_buffer: wgpu::Buffer,
     camera_buffer: wgpu::Buffer,
+
     instances: Vec<Instance>,
     instances_raw: Vec<InstanceRaw>,
     instances_drawn: usize,
-    tex_bind_group_indexes: HashMap<u32, Vec<u32>>,
-    texture_bind_groups: HashMap<u32, wgpu::BindGroup>,
+
+    tex_hash_inst: HashMap<u32, Vec<u32>>,
+    tex_index_hash_bind: HashMap<u32, wgpu::BindGroup>,
+    inst_hash_layer: HashMap<Layer, Vec<u32>>,
     texture_amt_created: u32,
+
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
+    
     frame_time: Instant,
     target_fps: Option<u32>,
     target_tps: Option<u32>,
@@ -127,15 +134,36 @@ impl Engine {
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-        for (bind_group_label, tex_bind_group) in &self.texture_bind_groups {
-            if let Some(inst_vec) = self.tex_bind_group_indexes.get_mut(bind_group_label) {
+        
+        /*let l = Layer::Layer1; //Hashmap<Layer, Vec<u32>>
+        if let Some(inst_vec) = self.inst_hash_layer.get_mut(&l) {
+            for i in inst_vec.drain(..) {
+                if let Some(tex_bind_group) = self.tex_index_hash_bind.get_mut(&i) {
+                    render_pass.set_bind_group(0, tex_bind_group, &[]);
+                    render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
+                }   
+            }
+        }*/
+        /*
+        foreach layer 
+            if an instance is in layer 
+                foreach instance in layer 
+                    if tex in
+                
+         */
+
+        // let x = Instant::now();
+        for (tex_index, tex_bind_group) in &self.tex_index_hash_bind {
+            if let Some(inst_vec) = self.tex_hash_inst.get_mut(tex_index) {
                 render_pass.set_bind_group(0, tex_bind_group, &[]);
                 for i in inst_vec.drain(..) {
                     render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
                 }
             }
         }
-        /*
+        // let x = x.elapsed().as_micros(); //50-150 micros
+        // println!("{x}");
+        /*    
         foreach tex
             if an instance uses tex
                 foreach instance that uses tex
@@ -152,6 +180,7 @@ impl Engine {
     }
 
     pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
+        //let layer = Layer::Layer1;
         let inst = Instance::new(rect);
         if self.instances_drawn < self.instances.len() {
             if self.instances[self.instances_drawn] != inst {
@@ -163,17 +192,17 @@ impl Engine {
             self.instances_raw.push(inst.to_raw());
         }
 
-        match self.tex_bind_group_indexes.get_mut(&texture.index) {
-            Some(index_vec) => index_vec.push(self.instances_drawn as u32),
+        match self.tex_hash_inst.get_mut(&texture.index) {
+            Some(instance_vec) => instance_vec.push(self.instances_drawn as u32),
             None => {
-                self.tex_bind_group_indexes
+                self.tex_hash_inst
                     .insert(texture.index, vec![self.instances_drawn as u32]);
             }
         }
         self.instances_drawn += 1;
     }
 
-    pub fn initialize_instances(&mut self, rects: Vec<Rect>) {
+    /*pub fn initialize_instances(&mut self, rects: Vec<Rect>) {
         self.instances = rects
             .iter()
             .map(|rect| Instance::new(*rect / 350. - 1.))
@@ -185,7 +214,7 @@ impl Engine {
             .collect::<Vec<_>>();
 
         self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
-    }
+    }*/
 
     fn update_time(&mut self) {
         let time_since_last_frame = self.frame_time.elapsed().as_secs_f64();

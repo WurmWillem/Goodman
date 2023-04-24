@@ -11,6 +11,15 @@ pub trait Manager {
     fn render(&self, state: &mut Engine);
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Layer {
+    Layer1,
+    Layer2,
+    Layer3,
+    Layer4,
+    Layer5,
+}
+
 pub struct Input {
     cursor_pos: Vec2,
     left_mouse_button_pressed: bool,
