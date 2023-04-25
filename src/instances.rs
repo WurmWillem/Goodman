@@ -1,4 +1,4 @@
-use cgmath::{vec2, vec3, Deg, Matrix4, Vector4};
+use cgmath::{vec2, vec3, Deg, Matrix4};
 use wgpu::{util::DeviceExt, Device};
 
 use crate::{
@@ -25,26 +25,16 @@ impl Instance {
         let mat4 = Matrix4::from_translation(self.pos)
             * Matrix4::from_angle_z(Deg(self.rotation))
             * Matrix4::from_nonuniform_scale(self.size.x, self.size.y, 1.);
-        //println!("{:?}", mat4);
 
         let x = [mat4.x.x as f32, mat4.x.y as f32];
         let y = [mat4.y.x as f32, mat4.y.y as f32];
         let w = [mat4.w.x as f32, mat4.w.y as f32];
-
-        /*let x = get_f32_array_from_vec4_f64(mat4.x);
-        let y = get_f32_array_from_vec4_f64(mat4.y);
-        let z = get_f32_array_from_vec4_f64(mat4.z);
-        let w = get_f32_array_from_vec4_f64(mat4.w);*/
 
         InstanceRaw {
             model: [x, y, w],
         }
     }
 }
-
-/*fn get_f32_array_from_vec4_f64(vec: Vector4<f64>) -> [f32; 4] {
-    [vec.x as f32, vec.y as f32, vec.z as f32, vec.w as f32]
-}*/
 
 const VERTEX_SCALE: f32 = 1.;
 #[rustfmt::skip]

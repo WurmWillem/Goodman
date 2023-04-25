@@ -37,6 +37,7 @@ fn vs_main(
     var out: VertexOutput;
     out.tex_coords = vertex.tex_coords;
 
+    ///*
     var instance_mat = mat4x4<f32>(
         vec4<f32>(instance.vec2_0.x, instance.vec2_0.y, 0., 0.),
         vec4<f32>(instance.vec2_1.x, instance.vec2_1.y, 0., 0.),
@@ -48,22 +49,10 @@ fn vs_main(
     instance_mat.w.x = instance_mat.w.x * window_size.x * 2. - 1.;
     instance_mat.w.y = instance_mat.w.y * window_size.y * -2. + 1.;
 
-    
-    /*let inst0_x = instance.vec2_0.x * window_size.x;
-    let inst1_y = instance.vec2_1.y * window_size.y;
-    let inst2_x = instance.vec2_2.x * window_size.x * 2. - 1.;
-    let inst2_y = instance.vec2_2.y * window_size.y * -2. + 1.;
-
-    let x = vertex.pos.x * inst0_x + vertex.pos.x * instance.vec2_0.y;
-    let y = vertex.pos.y * instance.vec2_1.x + vertex.pos.y * inst1_y;
-    let w = inst2_x + inst2_y + 1.;
-
-    let updated_model = vec4<f32>(x + camera.pos.x, y + camera.pos.y, vertex.pos.z, w);
-    out.clip_position = updated_model;*/
-    
     let updated_pos = instance_mat * vec4<f32>(vertex.pos.x, vertex.pos.y, vertex.pos.z, 1.0);
     let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);
     out.clip_position = updated_model;
+    //*/    
 
     return out;
 }
