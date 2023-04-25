@@ -16,7 +16,7 @@ async fn run() {
     let paddle_tex = engine.create_texture(paddle_bytes, "paddle").unwrap();
     let ball_bytes = include_bytes!("assets/ball.png");
     let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
-    let block_bytes = include_bytes!("assets/square.png");
+    let block_bytes = include_bytes!("assets/block.png");
     let block_tex = engine.create_texture(block_bytes, "block").unwrap();
 
     let breakout = Breakout::new(vec![paddle_tex, ball_tex, block_tex]);
@@ -36,10 +36,10 @@ impl Manager for Breakout {
         let ball = Ball::new(vec2(0., SCREEN_SIZE.y));
 
         let mut blocks = Vec::new();
-        for j in 0..300 {
+        for j in 0..100 {
             let mut row = Vec::new();
-            for i in 0..10 {
-                let block = Block::new(i as f64 * 100. + 150., j as f64 * 3.);
+            for i in 0..100 {
+                let block = Block::new(i as f64 * 12., j as f64 * 9.);
                 row.push(block);
             }
             blocks.push(row);
@@ -74,31 +74,10 @@ impl Manager for Breakout {
         //state.draw_texture(self.ball.to_rect(), &self.textures[1]);
         self.blocks.iter().for_each(|row| {
             row.iter().for_each(|block| {
-                state.draw_texture(block.rect, &self.textures[2]);
+                state.draw_texture(&block.rect, &self.textures[2], Layer::Layer1);
             })
         });
     }
-}
-
-fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: Rect) -> bool {
-    // early exit
-    let intersection = match a.intersect(b) {
-        Some(intersection) => intersection,
-        None => return false,
-    };
-
-    let to = b.center() - a.center();
-    let to_signum = vec2(to.x.signum(), to.y.signum());
-    if intersection.w > intersection.h {
-        // bounce on y
-        a.y -= to_signum.y * intersection.h;
-        vel.y = -to_signum.y * vel.y.abs();
-    } else {
-        // bounce on x
-        a.x -= to_signum.x * intersection.w;
-        vel.x = -to_signum.x * vel.x.abs();
-    }
-    true
 }
 
 struct Block {
@@ -106,7 +85,7 @@ struct Block {
     lives: usize,
 }
 impl Block {
-    const SIZE: Vec2 = vec2(32., 50.);
+    const SIZE: Vec2 = vec2(12., 9.);
     pub fn new(x: f64, y: f64) -> Self {
         Self {
             rect: rect_vec(vec2(x, y), Self::SIZE),
@@ -187,4 +166,25 @@ impl Paddle {
             self.rect.x -= speed;
         }
     }
+}
+
+fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: Rect) -> bool {
+    // early exit
+    let intersection = match a.intersect(b) {
+        Some(intersection) => intersection,
+        None => return false,
+    };
+
+    let to = b.center() - a.center();
+    let to_signum = vec2(to.x.signum(), to.y.signum());
+    if intersection.w > intersection.h {
+        // bounce on y
+        a.y -= to_signum.y * intersection.h;
+        vel.y = -to_signum.y * vel.y.abs();
+    } else {
+        // bounce on x
+        a.x -= to_signum.x * intersection.w;
+        vel.x = -to_signum.x * vel.x.abs();
+    }
+    true
 }

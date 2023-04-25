@@ -10,7 +10,8 @@ pub trait Manager {
     fn update(&mut self, frame_time: f64, input: &Input);
     fn render(&self, state: &mut Engine);
 }
-
+use self::Layer::*;
+use std::slice::Iter;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Layer {
     Layer1,
@@ -18,6 +19,12 @@ pub enum Layer {
     Layer3,
     Layer4,
     Layer5,
+}
+impl Layer {
+    pub fn iterator() -> Iter<'static, Layer> {
+        static LAYERS: [Layer; 5] = [Layer1, Layer2, Layer3, Layer4, Layer5];
+        LAYERS.iter()
+    }
 }
 
 pub struct Input {

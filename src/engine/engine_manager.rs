@@ -191,6 +191,7 @@ impl Engine {
             tex_index_hash_bind: texture_bind_groups,
             window_bind_group,
             texture_amt_created: 0,
+            inst_hash_tex_index: HashMap::new(),
         }
     }
 }
