@@ -66,8 +66,8 @@ impl Manager for Pong {
     }
 
     fn render(&self, engine: &mut Engine) {
-        engine.draw_texture(&self.left_paddle.rect, &self.textures[0], Layer::Layer1);
-        engine.draw_texture(&self.right_paddle.rect, &self.textures[1], Layer::Layer1);
-        engine.draw_texture(&self.ball.to_rect(), &self.textures[2], Layer::Layer1);
+        engine.draw_texture(&self.left_paddle.rect, &self.textures[0], Layer1);
+        engine.draw_texture(&self.right_paddle.rect, &self.textures[1], Layer1);
+        engine.draw_texture(&self.ball.to_rect(), &self.textures[2], Layer1);
     }
 }

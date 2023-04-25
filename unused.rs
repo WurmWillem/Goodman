@@ -90,7 +90,7 @@ pub fn create_instances() -> Vec<SquareInstance> {
         .collect::<Vec<_>>()
 }
 
-fn old_render_code() {
+fn really_old_render_code() {
     for (bind_group_label, bind_group) in &self.texture_bind_groups {
         if !self.bind_group_indexes.contains_key(bind_group_label) {
             continue;
@@ -113,7 +113,35 @@ fn old_render_code() {
     }
 }
 
+fn old_render_code() {
+    let x = Instant::now();
+        for (tex_index, tex_bind_group) in &self.tex_index_hash_bind {
+            if let Some(inst_vec) = self.tex_hash_inst.get_mut(tex_index) {
+                render_pass.set_bind_group(0, tex_bind_group, &[]);
+                for i in inst_vec.drain(..) {
+                    render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
+                }
+            }
+        }
+        let x = x.elapsed().as_micros(); //50-150 micros
+        println!("{x}");
+        /*
+        foreach tex
+            if an instance uses tex
+                foreach instance that uses tex
+                    draw(inst)
+        */
+}
 
+fn old_draw_texture_partial() {
+    match self.tex_hash_inst.get_mut(&texture.index) {
+            Some(instance_vec) => instance_vec.push(self.instances_drawn as u32),
+            None => {
+                self.tex_hash_inst
+                    .insert(texture.index, vec![self.instances_drawn as u32]);
+            }
+        }
+}
 
 
 

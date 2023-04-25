@@ -9,7 +9,7 @@ use crate::{
     camera::Camera,
     instances::{self, Instance, InstanceRaw},
     math::Rect,
-    minor_types::{Input, Layer, Manager},
+    minor_types::{Input, Layer, Manager, InstIndex, TexIndex},
     object_data::{self, INDICES},
     texture::{self, Texture},
 };
@@ -35,12 +35,11 @@ pub struct Engine {
 
     instances: Vec<Instance>,
     instances_raw: Vec<InstanceRaw>,
-    instances_drawn: usize,
+    instances_rendered: usize,
 
-    tex_hash_inst: HashMap<u32, Vec<u32>>,
-    tex_index_hash_bind: HashMap<u32, wgpu::BindGroup>,
-    inst_hash_layer: HashMap<Layer, Vec<u32>>,
-    inst_hash_tex_index: HashMap<u32, u32>,
+    tex_index_hash_bind: HashMap<TexIndex, wgpu::BindGroup>,
+    layer_hash_inst_vec: HashMap<Layer, Vec<InstIndex>>,
+    inst_hash_tex_index: HashMap<InstIndex, TexIndex>,
     texture_amt_created: u32,
 
     camera: Camera,
@@ -136,10 +135,10 @@ impl Engine {
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         //let x = Instant::now();
-        for layer in Layer::iterator() {
-            if let Some(inst_vec) = self.inst_hash_layer.get_mut(&layer) {
+        for layer in Layer::iterator().rev() {
+            if let Some(inst_vec) = self.layer_hash_inst_vec.get_mut(&layer) {
                 for i in inst_vec.drain(..) {
-                    if let Some(tex_index) = self.inst_hash_tex_index.get_mut(&i) {
+                    if let Some(tex_index) = self.inst_hash_tex_index.get(&i) {
                         if let Some(bind) = self.tex_index_hash_bind.get(&tex_index) {
                             render_pass.set_bind_group(0, bind, &[]);
                             render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
@@ -150,7 +149,6 @@ impl Engine {
         }
         // let x = x.elapsed().as_micros(); //~400 micro
         // println!("{x}");
-
         /*
         foreach layer
             if an instance is in layer
@@ -158,42 +156,23 @@ impl Engine {
                     if tex in instance
                         bind(tex)
                         draw(instance)
-
-        */
-
-        /*let x = Instant::now();
-        for (tex_index, tex_bind_group) in &self.tex_index_hash_bind {
-            if let Some(inst_vec) = self.tex_hash_inst.get_mut(tex_index) {
-                render_pass.set_bind_group(0, tex_bind_group, &[]);
-                for i in inst_vec.drain(..) {
-                    render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
-                }
-            }
-        }
-        let x = x.elapsed().as_micros(); //50-150 micros
-        println!("{x}");*/
-        /*
-        foreach tex
-            if an instance uses tex
-                foreach instance that uses tex
-                    draw(inst)
         */
 
         drop(render_pass);
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
-        self.instances_drawn = 0;
+        self.instances_rendered = 0;
         self.time_since_last_render = 0.;
         Ok(())
     }
 
     pub fn draw_texture(&mut self, rect: &Rect, texture: &Texture, layer: Layer) {
         let inst = Instance::new(*rect);
-        if self.instances_drawn < self.instances_raw.len() {
-            if self.instances[self.instances_drawn] != inst {
-                self.instances[self.instances_drawn] = inst;
-                self.instances_raw[self.instances_drawn] = inst.to_raw();
+        if self.instances_rendered < self.instances.len() {
+            if self.instances[self.instances_rendered] != inst {
+                self.instances[self.instances_rendered] = inst;
+                self.instances_raw[self.instances_rendered] = inst.to_raw();
             }
         } else {
             self.instances.push(inst);
@@ -201,24 +180,17 @@ impl Engine {
         }
 
         self.inst_hash_tex_index
-            .insert(self.instances_drawn as u32, texture.index);
+            .insert(self.instances_rendered as u32, texture.index);
 
-        match self.inst_hash_layer.get_mut(&layer) {
-            Some(instance_vec) => instance_vec.push(self.instances_drawn as u32),
+        match self.layer_hash_inst_vec.get_mut(&layer) {
+            Some(instance_vec) => instance_vec.push(self.instances_rendered as u32),
             None => {
-                self.inst_hash_layer
-                    .insert(layer, vec![self.instances_drawn as u32]);
+                self.layer_hash_inst_vec
+                    .insert(layer, vec![self.instances_rendered as u32]);
             }
         }
 
-        /*match self.tex_hash_inst.get_mut(&texture.index) {
-            Some(instance_vec) => instance_vec.push(self.instances_drawn as u32),
-            None => {
-                self.tex_hash_inst
-                    .insert(texture.index, vec![self.instances_drawn as u32]);
-            }
-        }*/
-        self.instances_drawn += 1;
+        self.instances_rendered += 1;
     }
 
     fn update_time(&mut self) {

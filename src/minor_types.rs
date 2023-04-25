@@ -1,17 +1,22 @@
 use crate::prelude::{Engine, Texture};
+use self::Layer::*;
+
 use cgmath::vec2;
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
+use std::slice::Iter;
 
 pub type Vec2 = cgmath::Vector2<f64>;
 pub type Vec3 = cgmath::Vector3<f64>;
+
+pub type InstIndex = u32;
+pub type TexIndex = u32;
 
 pub trait Manager {
     fn new(textures: Vec<Texture>) -> Self;
     fn update(&mut self, frame_time: f64, input: &Input);
     fn render(&self, state: &mut Engine);
 }
-use self::Layer::*;
-use std::slice::Iter;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Layer {
     Layer1,
