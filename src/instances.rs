@@ -15,7 +15,7 @@ pub struct Instance {
 impl Instance {
     pub fn new(rect: Rect) -> Self {
         Self {
-            pos: vec3(rect.x, rect.y, 1.),
+            pos: vec3(rect.x, rect.y, 0.),
             size: vec2(rect.w, rect.h),
             rotation: 0.,
         }

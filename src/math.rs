@@ -46,7 +46,7 @@ impl Rect {
 impl Div<f64> for Rect {
     #[inline]
     fn div(self, rhs: f64) -> Rect {
-        rect(
+        rect_vec(
             vec2(self.x / rhs, self.y / rhs),
             vec2(self.w / rhs, self.h / rhs),
         )
@@ -65,7 +65,7 @@ impl DivAssign<f64> for Rect {
 impl Mul<f64> for Rect {
     #[inline]
     fn mul(self, rhs: f64) -> Rect {
-        rect(
+        rect_vec(
             vec2(self.x * rhs, self.y * rhs),
             vec2(self.w * rhs, self.h * rhs),
         )
@@ -75,7 +75,7 @@ impl Mul<f64> for Rect {
 impl Sub<f64> for Rect {
     #[inline]
     fn sub(self, rhs: f64) -> Rect {
-        rect(
+        rect_vec(
             vec2(self.x - rhs, self.y - rhs),
             vec2(self.w - rhs, self.h - rhs),
         )
@@ -85,7 +85,7 @@ impl Sub<f64> for Rect {
 impl Add<f64> for Rect {
     #[inline]
     fn add(self, rhs: f64) -> Rect {
-        rect(
+        rect_vec(
             vec2(self.x + rhs, self.y + rhs),
             vec2(self.w + rhs, self.h + rhs),
         )
@@ -94,7 +94,11 @@ impl Add<f64> for Rect {
 }
 
 #[inline]
-pub fn rect(pos: Vec2, size: Vec2) -> Rect {
+pub fn rect(x: f64, y: f64, w: f64, h: f64) -> Rect {
+    Rect { x, y, w, h }
+}
+#[inline]
+pub fn rect_vec(pos: Vec2, size: Vec2) -> Rect {
     Rect {
         x: pos.x,
         y: pos.y,

@@ -18,26 +18,31 @@ pub struct Camera {
     pub uniform: CameraUniform,
 }
 impl Camera {
-    const SPEED: f32 = 0.003;
+    const SPEED: f32 = 0.00001;
     pub fn new(movement_enabled: bool) -> Self {
         Self {
             movement_enabled,
             uniform: CameraUniform::new(),
         }
     }
-    pub fn update(&mut self, input: &Input) {
+    pub fn update(&mut self, input: &Input) -> bool {
         if input.is_d_pressed() {
             self.uniform.pos[0] += Camera::SPEED;
+            return true;
         }
         if input.is_a_pressed() {
             self.uniform.pos[0] -= Camera::SPEED;
+            return true;
         }
         if input.is_w_pressed() {
             self.uniform.pos[1] += Camera::SPEED;
+            return true;
         }
         if input.is_s_pressed() {
             self.uniform.pos[1] -= Camera::SPEED;
+            return true;
         }
+        false
     }
 }
 

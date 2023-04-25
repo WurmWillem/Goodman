@@ -38,18 +38,18 @@ fn vs_main(
     var out: VertexOutput;
     out.tex_coords = vertex.tex_coords;
 
-    var model_matrix = mat4x4<f32>(
+    var instance_mat = mat4x4<f32>(
         instance.matrix_0,
         instance.matrix_1,
         instance.matrix_2,
         instance.matrix_3,
     );  
-    model_matrix.x.x *= window_size.x;
-    model_matrix.y.y *= window_size.y;
-    model_matrix.w.x = instance.matrix_3.x * window_size.x * 2. - 1.;
-    model_matrix.w.y = instance.matrix_3.y * window_size.y * 2. - 1.;
+    instance_mat.x.x *= window_size.x;
+    instance_mat.y.y *= window_size.y;
+    instance_mat.w.x = instance.matrix_3.x * window_size.x * 2. - 1.;
+    instance_mat.w.y = instance.matrix_3.y * window_size.y * -2. + 1.;
 
-    let updated_pos = model_matrix * vec4<f32>(vertex.pos.x, vertex.pos.y, vertex.pos.z, 1.0);
+    let updated_pos = instance_mat * vec4<f32>(vertex.pos.x, vertex.pos.y, vertex.pos.z, 1.0);
     let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);
     out.clip_position = updated_model;
 

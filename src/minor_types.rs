@@ -1,16 +1,39 @@
 use crate::prelude::{Engine, Texture};
+use self::Layer::*;
+
+use cgmath::vec2;
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
+use std::slice::Iter;
 
 pub type Vec2 = cgmath::Vector2<f64>;
 pub type Vec3 = cgmath::Vector3<f64>;
 
+pub type InstIndex = u32;
+pub type TexIndex = u32;
+
 pub trait Manager {
-    fn new(state: &mut Engine, textures: Vec<Texture>) -> Self;
+    fn new(textures: Vec<Texture>) -> Self;
     fn update(&mut self, frame_time: f64, input: &Input);
     fn render(&self, state: &mut Engine);
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Layer {
+    Layer1,
+    Layer2,
+    Layer3,
+    Layer4,
+    Layer5,
+}
+impl Layer {
+    pub fn iterator() -> Iter<'static, Layer> {
+        static LAYERS: [Layer; 5] = [Layer1, Layer2, Layer3, Layer4, Layer5];
+        LAYERS.iter()
+    }
+}
+
 pub struct Input {
+    cursor_pos: Vec2,
     left_mouse_button_pressed: bool,
     d_pressed: bool,
     a_pressed: bool,
@@ -24,6 +47,7 @@ pub struct Input {
 impl Input {
     pub fn new() -> Self {
         Self {
+            cursor_pos: vec2(0., 0.),
             left_mouse_button_pressed: false,
             d_pressed: false,
             a_pressed: false,
@@ -93,6 +117,10 @@ impl Input {
                     _ => false,
                 }
             }
+            WindowEvent::CursorMoved { position, .. } => {
+                self.cursor_pos = vec2(position.x, position.y);
+                false
+            }
             _ => false,
         }
     }
@@ -100,6 +128,10 @@ impl Input {
         if self.left_mouse_button_pressed {
             self.left_mouse_button_pressed = false;
         }
+    }
+
+    pub fn get_cursor_pos(&self) -> Vec2 {
+        self.cursor_pos
     }
     pub fn is_left_mouse_button_pressed(&self) -> bool {
         self.left_mouse_button_pressed

@@ -15,21 +15,31 @@ use crate::texture::{self, Texture};
 use crate::{instances::InstanceRaw, object_data::Vertex};
 
 impl Engine {
-    pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Texture {
-        let tex = Texture::from_bytes(&self.device, &self.queue, bytes, label)
-            .unwrap_or_else(|_| panic!("Could not create {label} texture"));
+    pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Result<Texture, &'static str> {
+        let tex = match Texture::from_bytes(
+            &self.device,
+            &self.queue,
+            bytes,
+            label,
+            self.texture_amt_created,
+        ) {
+            Ok(tex) => tex,
+            Err(_) => return Err("failed to create texture"),
+        };
 
         let texture_bind_group_layout = super::texture::create_bind_group_layout(&self.device);
         let texture_bind_group =
             texture::create_bind_group(&self.device, &texture_bind_group_layout, &tex);
 
-        self.texture_bind_groups
-            .insert(tex.label.clone(), texture_bind_group);
-        tex
+        self.tex_index_hash_bind
+            .insert(tex.index, texture_bind_group);
+
+        self.texture_amt_created += 1;
+        Ok(tex)
     }
 
     pub fn get_frame_time(&self) -> f64 {
-        self.last_frame.elapsed().as_secs_f64()
+        self.frame_time.elapsed().as_secs_f64()
     }
     pub fn get_average_tps(&mut self) -> u32 {
         (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
@@ -92,26 +102,27 @@ impl Engine {
             camera::create_bind_group(&device, &camera_buffer, &camera_bind_group_layout);
 
         let window_size_uniform = Windowniform {
-            size: [1. / size.x as f32, 1. / size.y as f32]
+            size: [1. / size.x as f32, 1. / size.y as f32],
         };
         let window_size_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("window size buffer"),
             contents: bytemuck::cast_slice(&[window_size_uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        let window_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-            label: Some("camera_bind_group_layout"),
-        });
+        let window_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                }],
+                label: Some("camera_bind_group_layout"),
+            });
         let window_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &window_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
@@ -122,8 +133,8 @@ impl Engine {
         });
 
         let instances = vec![];
-        let instance_data = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
-        let instance_buffer = super::instances::create_buffer(&device, &instance_data);
+        let instances_raw = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+        let instance_buffer = super::instances::create_buffer(&device, &instances_raw);
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
@@ -165,18 +176,20 @@ impl Engine {
             camera_buffer,
             instance_buffer,
             instances,
-            instances_raw: instance_data,
+            instances_raw,
             input: Input::new(),
-            last_frame: Instant::now(),
+            frame_time: Instant::now(),
             frame_time_this_sec: 0.,
             frames_passed_this_sec: 0,
             time_since_last_render: 0.,
             target_fps: None,
-            //target_tps: 5700,
-            instances_drawn: 0,
-            tex_bind_group_indexes: HashMap::new(),
-            texture_bind_groups,
+            target_tps: Some(100000),
+            instances_rendered: 0,
+            layer_hash_inst_vec: HashMap::new(),
+            tex_index_hash_bind: texture_bind_groups,
             window_bind_group,
+            texture_amt_created: 0,
+            inst_hash_tex_index: HashMap::new(),
         }
     }
 }
@@ -239,7 +252,11 @@ pub fn create_render_pipeline_layout(
 ) -> wgpu::PipelineLayout {
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[texture_bind_group_layout, camera_bind_group_layout, window_bind_group_layout],
+        bind_group_layouts: &[
+            texture_bind_group_layout,
+            camera_bind_group_layout,
+            window_bind_group_layout,
+        ],
         push_constant_ranges: &[],
     })
 }

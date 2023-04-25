@@ -7,6 +7,7 @@ pub struct Texture {
     pub view: wgpu::TextureView,
     pub sampler: wgpu::Sampler,
     pub label: String,
+    pub index: u32,
 }
 impl Texture {
     pub fn from_bytes(
@@ -14,9 +15,10 @@ impl Texture {
         queue: &wgpu::Queue,
         bytes: &[u8],
         label: &str,
+        index: u32,
     ) -> Result<Self> {
         let img = image::load_from_memory(bytes)?;
-        Ok(Self::from_image(device, queue, &img, label))
+        Ok(Self::from_image(device, queue, &img, label, index))
     }
 
     pub fn from_image(
@@ -24,6 +26,7 @@ impl Texture {
         queue: &wgpu::Queue,
         img: &image::DynamicImage,
         label: &str,
+        index: u32,
     ) -> Self {
         let rgba = img.to_rgba8();
         let dimensions = img.dimensions();
@@ -76,6 +79,7 @@ impl Texture {
             view,
             sampler,
             label: label.to_string(),
+            index,
         }
     }
 }

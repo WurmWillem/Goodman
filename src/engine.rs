@@ -9,7 +9,7 @@ use crate::{
     camera::Camera,
     instances::{self, Instance, InstanceRaw},
     math::Rect,
-    minor_types::{Input, Manager},
+    minor_types::{Input, Layer, Manager, InstIndex, TexIndex},
     object_data::{self, INDICES},
     texture::{self, Texture},
 };
@@ -18,6 +18,7 @@ mod engine_manager;
 
 pub struct Engine {
     input: Input,
+
     window: Window,
     background_color: wgpu::Color,
     surface: wgpu::Surface,
@@ -25,22 +26,29 @@ pub struct Engine {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
+
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     instance_buffer: wgpu::Buffer,
     camera_buffer: wgpu::Buffer,
+
     instances: Vec<Instance>,
     instances_raw: Vec<InstanceRaw>,
-    instances_drawn: usize,
-    tex_bind_group_indexes: HashMap<String, Vec<usize>>,
-    texture_bind_groups: HashMap<String, wgpu::BindGroup>,
+    instances_rendered: usize,
+
+    tex_index_hash_bind: HashMap<TexIndex, wgpu::BindGroup>,
+    layer_hash_inst_vec: HashMap<Layer, Vec<InstIndex>>,
+    inst_hash_tex_index: HashMap<InstIndex, TexIndex>,
+    texture_amt_created: u32,
+
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
-    last_frame: Instant,
+
+    frame_time: Instant,
     target_fps: Option<u32>,
-    //pub target_tps: u32,
+    target_tps: Option<u32>,
     frames_passed_this_sec: u64,
     frame_time_this_sec: f64,
     time_since_last_render: f64,
@@ -61,8 +69,12 @@ impl Engine {
                     self.handle_window_event(event, control_flow);
                 }
             }
-
             Event::MainEventsCleared => {
+                /*if let Some(tps) = self.target_tps {
+                    if self.get_frame_time() < 1. / tps as f64 {
+                        return;
+                    }
+                }*/
                 self.update();
                 manager.update(self.get_frame_time(), &self.input);
 
@@ -70,11 +82,12 @@ impl Engine {
                     println!("{}", self.get_average_tps());
                 }
                 self.input.reset_buttons();
-                
+
                 self.update_time();
+
                 match self.get_target_fps() {
                     Some(fps) => {
-                        if self.get_time_since_last_render() > 1. / fps as f64 {
+                        if self.get_time_since_last_render() >= 1. / fps as f64 {
                             self.window.request_redraw();
                         }
                     }
@@ -83,7 +96,6 @@ impl Engine {
                     }
                 }
             }
-
             Event::RedrawRequested(window_id) if window_id == self.window.id() => {
                 self.handle_rendering(&mut manager, control_flow);
             }
@@ -122,68 +134,68 @@ impl Engine {
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-        for (bind_group_label, tex_bind_group) in &self.texture_bind_groups {
-            if let Some(inst_vec) = self.tex_bind_group_indexes.get_mut(bind_group_label) {
-                render_pass.set_bind_group(0, tex_bind_group, &[]);
+        //let x = Instant::now();
+        for layer in Layer::iterator().rev() {
+            if let Some(inst_vec) = self.layer_hash_inst_vec.get_mut(&layer) {
                 for i in inst_vec.drain(..) {
-                    render_pass.draw_indexed(
-                        0..INDICES.len() as u32,
-                        0,
-                        (i as u32)..(i + 1) as u32,
-                    );
+                    if let Some(tex_index) = self.inst_hash_tex_index.get(&i) {
+                        if let Some(bind) = self.tex_index_hash_bind.get(&tex_index) {
+                            render_pass.set_bind_group(0, bind, &[]);
+                            render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
+                        }
+                    }
                 }
             }
         }
+        // let x = x.elapsed().as_micros(); //~400 micro
+        // println!("{x}");
         /*
-        foreach tex
-            if an instance uses tex
-                foreach instance that uses tex
-                    draw(inst)
-         */
+        foreach layer
+            if an instance is in layer
+                foreach instance in layer
+                    if tex in instance
+                        bind(tex)
+                        draw(instance)
+        */
 
         drop(render_pass);
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
-        self.instances_drawn = 0;
+        self.instances_rendered = 0;
         self.time_since_last_render = 0.;
         Ok(())
     }
 
-    pub fn draw_texture(&mut self, rect: Rect, texture: &Texture) {
-        let inst = Instance::new(rect);
-        if self.instances[self.instances_drawn] != inst {
-            self.instances[self.instances_drawn] = inst;
-            self.instances_raw[self.instances_drawn] = inst.to_raw();
+    pub fn draw_texture(&mut self, rect: &Rect, texture: &Texture, layer: Layer) {
+        let inst = Instance::new(*rect);
+        if self.instances_rendered < self.instances.len() {
+            if self.instances[self.instances_rendered] != inst {
+                self.instances[self.instances_rendered] = inst;
+                self.instances_raw[self.instances_rendered] = inst.to_raw();
+            }
+        } else {
+            self.instances.push(inst);
+            self.instances_raw.push(inst.to_raw());
         }
 
-        match self.tex_bind_group_indexes.get_mut(&texture.label) {
-            Some(index_vec) => index_vec.push(self.instances_drawn),
+        self.inst_hash_tex_index
+            .insert(self.instances_rendered as u32, texture.index);
+
+        match self.layer_hash_inst_vec.get_mut(&layer) {
+            Some(instance_vec) => instance_vec.push(self.instances_rendered as u32),
             None => {
-                self.tex_bind_group_indexes
-                    .insert(texture.label.to_string(), vec![self.instances_drawn]);
+                self.layer_hash_inst_vec
+                    .insert(layer, vec![self.instances_rendered as u32]);
             }
         }
-        self.instances_drawn += 1;
-    }
 
-    pub fn initialize_instances(&mut self, rects: Vec<Rect>) {
-        self.instances = rects
-            .iter()
-            .map(|rect| Instance::new(*rect / 350. - 1.))
-            .collect();
-        self.instances_raw = self
-            .instances
-            .iter()
-            .map(Instance::to_raw)
-            .collect::<Vec<_>>();
-
-        self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
+        self.instances_rendered += 1;
     }
 
     fn update_time(&mut self) {
-        let time_since_last_frame = self.last_frame.elapsed().as_secs_f64();
-        self.last_frame = Instant::now();
+        let time_since_last_frame = self.frame_time.elapsed().as_secs_f64();
+        self.frame_time = Instant::now();
 
         self.frame_time_this_sec += time_since_last_frame;
         self.time_since_last_render += time_since_last_frame;
@@ -226,12 +238,13 @@ impl Engine {
 
     fn update(&mut self) {
         if self.camera.movement_enabled {
-            self.camera.update(&self.input);
-            self.queue.write_buffer(
-                &self.camera_buffer,
-                0,
-                bytemuck::cast_slice(&[self.camera.uniform]),
-            );
+            if self.camera.update(&self.input) {
+                self.queue.write_buffer(
+                    &self.camera_buffer,
+                    0,
+                    bytemuck::cast_slice(&[self.camera.uniform]),
+                );
+            }
         }
     }
 

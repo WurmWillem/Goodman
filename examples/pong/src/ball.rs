@@ -58,6 +58,6 @@ impl Ball {
     }
 
     pub fn to_rect(self) -> Rect {
-        rect(self.pos, vec2(RADIUS * 2., RADIUS * 2.))
+        rect_vec(self.pos, vec2(RADIUS * 2., RADIUS * 2.))
     }
 }
