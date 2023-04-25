@@ -1,9 +1,9 @@
-use crate::prelude::{Engine, Texture};
 use self::Layer::*;
+use crate::prelude::{Engine, Texture};
 
 use cgmath::vec2;
-use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use std::slice::Iter;
+use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
 pub type Vec2 = cgmath::Vector2<f64>;
 pub type Vec3 = cgmath::Vector3<f64>;

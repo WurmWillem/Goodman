@@ -13,10 +13,9 @@ var<uniform> camera: CameraUniform;
 var<uniform> window_size: WindowSizeUniform;
 
 struct InstanceInput {
-    @location(5) matrix_0: vec4<f32>,
-    @location(6) matrix_1: vec4<f32>,
-    @location(7) matrix_2: vec4<f32>,
-    @location(8) matrix_3: vec4<f32>,
+    @location(5) vec2_0: vec2<f32>,
+    @location(6) vec2_1: vec2<f32>,
+    @location(7) vec2_2: vec2<f32>,
 };
 
 struct VertexInput {
@@ -39,16 +38,29 @@ fn vs_main(
     out.tex_coords = vertex.tex_coords;
 
     var instance_mat = mat4x4<f32>(
-        instance.matrix_0,
-        instance.matrix_1,
-        instance.matrix_2,
-        instance.matrix_3,
+        vec4<f32>(instance.vec2_0.x, instance.vec2_0.y, 0., 0.),
+        vec4<f32>(instance.vec2_1.x, instance.vec2_1.y, 0., 0.),
+        vec4<f32>(0., 0., 1., 0.),
+        vec4<f32>(instance.vec2_2.x, instance.vec2_2.y, 0., 1.),
     );  
     instance_mat.x.x *= window_size.x;
     instance_mat.y.y *= window_size.y;
-    instance_mat.w.x = instance.matrix_3.x * window_size.x * 2. - 1.;
-    instance_mat.w.y = instance.matrix_3.y * window_size.y * -2. + 1.;
+    instance_mat.w.x = instance_mat.w.x * window_size.x * 2. - 1.;
+    instance_mat.w.y = instance_mat.w.y * window_size.y * -2. + 1.;
 
+    
+    /*let inst0_x = instance.vec2_0.x * window_size.x;
+    let inst1_y = instance.vec2_1.y * window_size.y;
+    let inst2_x = instance.vec2_2.x * window_size.x * 2. - 1.;
+    let inst2_y = instance.vec2_2.y * window_size.y * -2. + 1.;
+
+    let x = vertex.pos.x * inst0_x + vertex.pos.x * instance.vec2_0.y;
+    let y = vertex.pos.y * instance.vec2_1.x + vertex.pos.y * inst1_y;
+    let w = inst2_x + inst2_y + 1.;
+
+    let updated_model = vec4<f32>(x + camera.pos.x, y + camera.pos.y, vertex.pos.z, w);
+    out.clip_position = updated_model;*/
+    
     let updated_pos = instance_mat * vec4<f32>(vertex.pos.x, vertex.pos.y, vertex.pos.z, 1.0);
     let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);
     out.clip_position = updated_model;

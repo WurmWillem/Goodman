@@ -1,3 +1,4 @@
+use crate::instances::INDICES;
 use std::{collections::HashMap, time::Instant};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -9,8 +10,7 @@ use crate::{
     camera::Camera,
     instances::{self, Instance, InstanceRaw},
     math::Rect,
-    minor_types::{Input, Layer, Manager, InstIndex, TexIndex},
-    object_data::{self, INDICES},
+    minor_types::{Input, InstIndex, Layer, Manager, TexIndex},
     texture::{self, Texture},
 };
 

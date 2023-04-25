@@ -8,11 +8,11 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::instances::Instance;
+use crate::instances::InstanceRaw;
+use crate::instances::{Instance, Vertex};
 use crate::minor_types::Windowniform;
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
-use crate::{instances::InstanceRaw, object_data::Vertex};
 
 impl Engine {
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Result<Texture, &'static str> {
@@ -151,7 +151,7 @@ impl Engine {
             &config,
         );
 
-        let (vertex_buffer, index_buffer) = super::object_data::create_buffers(&device);
+        let (vertex_buffer, index_buffer) = super::instances::create_buffers(&device);
 
         let background_color = wgpu::Color {
             r: 0.,
