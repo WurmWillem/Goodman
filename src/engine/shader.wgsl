@@ -19,7 +19,7 @@ struct InstanceInput {
 };
 
 struct VertexInput {
-    @location(0) pos: vec3<f32>,
+    @location(0) pos: vec2<f32>,
     @location(1) tex_coords: vec2<f32>,
 };
 
@@ -49,7 +49,7 @@ fn vs_main(
     instance_mat.w.x = instance_mat.w.x * window_size.x * 2. - 1.;
     instance_mat.w.y = instance_mat.w.y * window_size.y * -2. + 1.;
 
-    let updated_pos = instance_mat * vec4<f32>(vertex.pos.x, vertex.pos.y, vertex.pos.z, 1.0);
+    let updated_pos = instance_mat * vec4<f32>(vertex.pos.x, vertex.pos.y, 0., 1.);
     let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);
     out.clip_position = updated_model;
     //*/    

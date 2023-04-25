@@ -93,7 +93,6 @@ impl Engine {
         surface.configure(&device, &config);
 
         let texture_bind_group_layout = super::texture::create_bind_group_layout(&device);
-        let texture_bind_groups = HashMap::new();
 
         let camera = Camera::new(false);
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
@@ -135,7 +134,6 @@ impl Engine {
         let instances = vec![];
         let instances_raw = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
         let instance_buffer = super::instances::create_buffer(&device, &instances_raw);
-
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
         let render_pipeline_layout = super::engine_manager::create_render_pipeline_layout(
@@ -185,10 +183,10 @@ impl Engine {
             target_fps: None,
             target_tps: Some(100000),
             instances_rendered: 0,
-            layer_hash_inst_vec: HashMap::new(),
-            tex_index_hash_bind: texture_bind_groups,
             window_bind_group,
             texture_amt_created: 0,
+            layer_hash_inst_vec: HashMap::new(),
+            tex_index_hash_bind: HashMap::new(),
             inst_hash_tex_index: HashMap::new(),
         }
     }

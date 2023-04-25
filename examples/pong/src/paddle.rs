@@ -17,10 +17,10 @@ impl Paddle {
     }
 
     pub fn update(&mut self, up_pressed: bool, down_pressed: bool, frame_time: f64) {
-        if up_pressed && self.rect.y - self.rect.h * 0.5 > 0. {
+        if up_pressed && self.rect.y > 0. {
             self.rect.y -= SPEED * frame_time;
         }
-        if down_pressed && self.rect.y + self.rect.h * 0.5 < SCREEN_SIZE.y {
+        if down_pressed && self.rect.y + self.rect.h < SCREEN_SIZE.y {
             self.rect.y += SPEED * frame_time;
         }
     }

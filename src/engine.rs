@@ -136,10 +136,10 @@ impl Engine {
 
         //let x = Instant::now();
         for layer in Layer::iterator().rev() {
-            if let Some(inst_vec) = self.layer_hash_inst_vec.get_mut(&layer) {
+            if let Some(inst_vec) = self.layer_hash_inst_vec.get_mut(layer) {
                 for i in inst_vec.drain(..) {
                     if let Some(tex_index) = self.inst_hash_tex_index.get(&i) {
-                        if let Some(bind) = self.tex_index_hash_bind.get(&tex_index) {
+                        if let Some(bind) = self.tex_index_hash_bind.get(tex_index) {
                             render_pass.set_bind_group(0, bind, &[]);
                             render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
                         }
@@ -208,7 +208,7 @@ impl Engine {
     }
 
     fn update_instance_buffer(&mut self) {
-        if self.instance_buffer.size() == self.instances_raw.len() as u64 * 64 {
+        if self.instance_buffer.size() == self.instances_raw.len() as u64 * 24 {
             self.queue.write_buffer(
                 &self.instance_buffer,
                 0,
@@ -237,14 +237,12 @@ impl Engine {
     }
 
     fn update(&mut self) {
-        if self.camera.movement_enabled {
-            if self.camera.update(&self.input) {
-                self.queue.write_buffer(
-                    &self.camera_buffer,
-                    0,
-                    bytemuck::cast_slice(&[self.camera.uniform]),
-                );
-            }
+        if self.camera.movement_enabled && self.camera.update(&self.input) {
+            self.queue.write_buffer(
+                &self.camera_buffer,
+                0,
+                bytemuck::cast_slice(&[self.camera.uniform]),
+            );
         }
     }
 

@@ -15,7 +15,7 @@ async fn run() {
     let event_loop = EventLoop::new();
     let mut engine = Engine::new(SCREEN_SIZE, &event_loop).await;
 
-    //engine.set_fps(Some(144));
+    engine.set_fps(Some(144));
 
     let paddle_bytes = include_bytes!("assets/Computer.png");
     let paddle_0_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
@@ -52,17 +52,17 @@ impl Manager for Pong {
     }
 
     fn update(&mut self, frame_time: f64, input: &Input) {
-        self.left_paddle
+        /*self.left_paddle
             .update(input.is_w_pressed(), input.is_s_pressed(), frame_time);
         self.right_paddle.update(
             input.is_up_arrow_pressed(),
             input.is_down_arrow_pressed(),
             frame_time,
-        );
+        );*/
         self.ball.update(frame_time);
 
-        self.ball.resolve_collisions(&self.left_paddle);
-        self.ball.resolve_collisions(&self.right_paddle);
+        //self.ball.resolve_collisions(&self.left_paddle);
+        //self.ball.resolve_collisions(&self.right_paddle);
     }
 
     fn render(&self, engine: &mut Engine) {

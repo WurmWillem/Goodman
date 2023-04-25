@@ -30,19 +30,17 @@ impl Instance {
         let y = [mat4.y.x as f32, mat4.y.y as f32];
         let w = [mat4.w.x as f32, mat4.w.y as f32];
 
-        InstanceRaw {
-            model: [x, y, w],
-        }
+        InstanceRaw { model: [x, y, w] }
     }
 }
 
 const VERTEX_SCALE: f32 = 1.;
 #[rustfmt::skip]
 pub const VERTICES: &[Vertex] = &[
-    Vertex { position: [-1. * VERTEX_SCALE, -1. * VERTEX_SCALE, 0.0], tex_coords: [0.0, 1.0], },
-    Vertex { position: [1. * VERTEX_SCALE, -1. * VERTEX_SCALE, 0.0], tex_coords: [1.0, 1.0], },
-    Vertex { position: [1. * VERTEX_SCALE, 1. * VERTEX_SCALE, 0.0], tex_coords: [1.0, 0.0], },
-    Vertex { position: [-1. * VERTEX_SCALE, 1. * VERTEX_SCALE, 0.0], tex_coords: [0.0, 0.0], },
+    Vertex { position: [0. * VERTEX_SCALE, -2. * VERTEX_SCALE], tex_coords: [0.0, 1.0], },
+    Vertex { position: [2. * VERTEX_SCALE, -2. * VERTEX_SCALE], tex_coords: [1.0, 1.0], },
+    Vertex { position: [2. * VERTEX_SCALE, 0. * VERTEX_SCALE], tex_coords: [1.0, 0.0], },
+    Vertex { position: [0. * VERTEX_SCALE, 0. * VERTEX_SCALE], tex_coords: [0.0, 0.0], },
 ];
 
 #[rustfmt::skip]
@@ -85,7 +83,7 @@ impl InstanceRaw {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    position: [f32; 3],
+    position: [f32; 2],
     tex_coords: [f32; 2],
 }
 impl Vertex {
@@ -97,10 +95,10 @@ impl Vertex {
                 wgpu::VertexAttribute {
                     offset: 0,
                     shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
+                    format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    offset: std::mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
                     shader_location: 1,
                     format: wgpu::VertexFormat::Float32x2,
                 },
