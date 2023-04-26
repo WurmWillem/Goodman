@@ -8,11 +8,11 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::instances::Instance;
+use crate::instances::InstanceRaw;
+use crate::instances::{Instance, Vertex};
 use crate::minor_types::Windowniform;
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
-use crate::{instances::InstanceRaw, object_data::Vertex};
 
 impl Engine {
     pub fn create_texture(&mut self, bytes: &[u8], label: &str) -> Result<Texture, &'static str> {
@@ -38,11 +38,11 @@ impl Engine {
         Ok(tex)
     }
 
-    pub fn get_frame_time(&self) -> f64 {
-        self.frame_time.elapsed().as_secs_f64()
-    }
+    /*fn get_delta_time(&self) -> f64 {
+        self.delta_time.elapsed().as_secs_f64()
+    }*/
     pub fn get_average_tps(&mut self) -> u32 {
-        (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
+        (self.ticks_passed_this_sec as f64 / self.tick_time_this_sec) as u32
     }
     pub fn get_target_fps(&self) -> Option<u32> {
         self.target_fps
@@ -93,7 +93,6 @@ impl Engine {
         surface.configure(&device, &config);
 
         let texture_bind_group_layout = super::texture::create_bind_group_layout(&device);
-        let texture_bind_groups = HashMap::new();
 
         let camera = Camera::new(false);
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
@@ -135,7 +134,6 @@ impl Engine {
         let instances = vec![];
         let instances_raw = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
         let instance_buffer = super::instances::create_buffer(&device, &instances_raw);
-
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
         let render_pipeline_layout = super::engine_manager::create_render_pipeline_layout(
@@ -151,7 +149,7 @@ impl Engine {
             &config,
         );
 
-        let (vertex_buffer, index_buffer) = super::object_data::create_buffers(&device);
+        let (vertex_buffer, index_buffer) = super::instances::create_buffers(&device);
 
         let background_color = wgpu::Color {
             r: 0.,
@@ -161,34 +159,41 @@ impl Engine {
         };
 
         Self {
+            input: Input::new(),
             window,
+            window_bind_group,
+
             background_color,
             surface,
             device,
             queue,
             config,
             size: win_size,
+
             render_pipeline,
             vertex_buffer,
             index_buffer,
+
             camera,
             camera_bind_group,
             camera_buffer,
+
             instance_buffer,
             instances,
             instances_raw,
-            input: Input::new(),
-            frame_time: Instant::now(),
-            frame_time_this_sec: 0.,
-            frames_passed_this_sec: 0,
+            instances_rendered: 0,
+
+            last_delta_t: Instant::now(),
+            tick_time_this_sec: 0.,
+            ticks_passed_this_sec: 0,
             time_since_last_render: 0.,
+            average_delta_t: 0.,
             target_fps: None,
             target_tps: Some(100000),
-            instances_rendered: 0,
-            layer_hash_inst_vec: HashMap::new(),
-            tex_index_hash_bind: texture_bind_groups,
-            window_bind_group,
+
             texture_amt_created: 0,
+            layer_hash_inst_vec: HashMap::new(),
+            tex_index_hash_bind: HashMap::new(),
             inst_hash_tex_index: HashMap::new(),
         }
     }

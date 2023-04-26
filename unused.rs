@@ -143,6 +143,22 @@ fn old_draw_texture_partial() {
         }
 }
 
+fn bad_shader_code() {
+    /*
+    let inst0_x = instance.vec2_0.x * window_size.x;
+    let inst1_y = instance.vec2_1.y * window_size.y;
+    let inst2_x = instance.vec2_2.x * window_size.x * 2. - 1.;
+    let inst2_y = instance.vec2_2.y * window_size.y * -2. + 1.;
+
+    let x = vertex.pos.x * inst0_x + vertex.pos.y * instance.vec2_0.y;
+    let y = vertex.pos.x * instance.vec2_1.x + vertex.pos.y * inst1_y;
+    let w = inst2_x * vertex.pos.x + inst2_y * vertex.pos.y + 1.;
+    // let x = inst0_x * vertex.pos.x + vertex.pos.y * instance.vec2_1.y + inst2_x;
+
+    let updated_model = vec4<f32>(x + camera.pos.x, y + camera.pos.y, vertex.pos.z, w);
+    out.clip_position = updated_model;
+    */
+}
 
 
 
