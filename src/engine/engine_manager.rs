@@ -38,11 +38,11 @@ impl Engine {
         Ok(tex)
     }
 
-    pub fn get_frame_time(&self) -> f64 {
-        self.frame_time.elapsed().as_secs_f64()
-    }
+    /*fn get_delta_time(&self) -> f64 {
+        self.delta_time.elapsed().as_secs_f64()
+    }*/
     pub fn get_average_tps(&mut self) -> u32 {
-        (self.frames_passed_this_sec as f64 / self.frame_time_this_sec) as u32
+        (self.ticks_passed_this_sec as f64 / self.tick_time_this_sec) as u32
     }
     pub fn get_target_fps(&self) -> Option<u32> {
         self.target_fps
@@ -159,31 +159,38 @@ impl Engine {
         };
 
         Self {
+            input: Input::new(),
             window,
+            window_bind_group,
+
             background_color,
             surface,
             device,
             queue,
             config,
             size: win_size,
+
             render_pipeline,
             vertex_buffer,
             index_buffer,
+
             camera,
             camera_bind_group,
             camera_buffer,
+
             instance_buffer,
             instances,
             instances_raw,
-            input: Input::new(),
-            frame_time: Instant::now(),
-            frame_time_this_sec: 0.,
-            frames_passed_this_sec: 0,
+            instances_rendered: 0,
+
+            last_delta_t: Instant::now(),
+            tick_time_this_sec: 0.,
+            ticks_passed_this_sec: 0,
             time_since_last_render: 0.,
+            average_delta_t: 0.,
             target_fps: None,
             target_tps: Some(100000),
-            instances_rendered: 0,
-            window_bind_group,
+
             texture_amt_created: 0,
             layer_hash_inst_vec: HashMap::new(),
             tex_index_hash_bind: HashMap::new(),

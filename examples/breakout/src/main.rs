@@ -101,7 +101,7 @@ struct Ball {
     vel: Vec2,
 }
 impl Ball {
-    const RADIUS: f64 = 32.;
+    const DIAMETER: f64 = 64.;
     fn new(pos: Vec2) -> Self {
         Self {
             pos,
@@ -110,35 +110,36 @@ impl Ball {
     }
     fn update(&mut self, frame_time: f64) {
         self.pos += self.vel * frame_time;
+        let diameter = Self::DIAMETER;
 
-        if self.pos.x + Self::RADIUS > SCREEN_SIZE.x {
-            self.pos.x = SCREEN_SIZE.x - Self::RADIUS;
+        if self.pos.x + diameter > SCREEN_SIZE.x {
+            self.pos.x = SCREEN_SIZE.x - diameter;
             self.vel.x *= -1.;
-        } else if self.pos.x - Self::RADIUS < 0. {
-            self.pos.x = Self::RADIUS;
+        } else if self.pos.x < 0. {
+            self.pos.x = 0.;
             self.vel.x *= -1.;
         }
-        if self.pos.y + Self::RADIUS > SCREEN_SIZE.y {
+        if self.pos.y + diameter > SCREEN_SIZE.y {
             self.vel.y *= -1.;
-            self.pos.y = SCREEN_SIZE.y - Self::RADIUS;
-        } else if self.pos.y - Self::RADIUS < 0. {
-            self.pos.y = Self::RADIUS;
+            self.pos.y = SCREEN_SIZE.y - diameter;
+        } else if self.pos.y < 0. {
+            self.pos.y = 0.;
             self.vel.y *= -1.;
         }
     }
 
     fn resolve_paddle_collision(&mut self, paddle: &Paddle) {
-        if self.pos.x + Self::RADIUS > paddle.rect.x - paddle.rect.w * 0.5
-            && self.pos.x - Self::RADIUS < paddle.rect.x + paddle.rect.w * 0.5
-            && self.pos.y + Self::RADIUS > paddle.rect.y - paddle.rect.h * 0.5
+        if self.pos.x + Self::DIAMETER > paddle.rect.x
+            && self.pos.x < paddle.rect.x + paddle.rect.w
+            && self.pos.y + Self::DIAMETER > paddle.rect.y
         {
-            self.pos.y = paddle.rect.y - paddle.rect.h * 0.5 - Self::RADIUS;
+            self.pos.y = paddle.rect.y - Self::DIAMETER;
             self.vel.y *= -1.;
         }
     }
 
     fn to_rect(self) -> Rect {
-        rect_vec(self.pos, vec2(Ball::RADIUS * 2., Ball::RADIUS * 2.))
+        rect_vec(self.pos, vec2(Ball::DIAMETER, Ball::DIAMETER))
     }
 }
 
@@ -158,12 +159,11 @@ impl Paddle {
 
     fn update(&mut self, input: &Input, frame_time: f64) {
         let speed = Self::SPEED * frame_time;
-        let width = self.rect.w * 0.5;
 
-        if input.is_d_pressed() && self.rect.x + width < SCREEN_SIZE.x {
+        if input.is_d_pressed() && self.rect.x + self.rect.w < SCREEN_SIZE.x {
             self.rect.x += speed;
         }
-        if input.is_a_pressed() && self.rect.x - width > 0. {
+        if input.is_a_pressed() && self.rect.x > 0. {
             self.rect.x -= speed;
         }
     }

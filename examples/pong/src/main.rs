@@ -52,17 +52,18 @@ impl Manager for Pong {
     }
 
     fn update(&mut self, frame_time: f64, input: &Input) {
-        /*self.left_paddle
+        self.left_paddle
             .update(input.is_w_pressed(), input.is_s_pressed(), frame_time);
         self.right_paddle.update(
             input.is_up_arrow_pressed(),
             input.is_down_arrow_pressed(),
             frame_time,
-        );*/
+        );
         self.ball.update(frame_time);
 
-        //self.ball.resolve_collisions(&self.left_paddle);
-        //self.ball.resolve_collisions(&self.right_paddle);
+        self.ball.resolve_collisions_left_paddle(&self.left_paddle);
+        self.ball
+            .resolve_collisions_right_paddle(&self.right_paddle);
     }
 
     fn render(&self, engine: &mut Engine) {
