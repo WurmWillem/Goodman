@@ -6,6 +6,7 @@ mod minor_types;
 pub mod prelude;
 mod texture;
 
+use instances::Instance;
 use prelude::*;
 
 pub async fn run() {
@@ -15,13 +16,12 @@ pub async fn run() {
 
     let manager = StateManager::new(vec![]);
     state.enter_loop(manager, event_loop);*/
+    let inst = Instance::new(rect(10., 5., 100., 100.,), 20.).to_raw();
+    
 }
 
 struct StateManager;
 impl Manager for StateManager {
-    fn new(_textures: Vec<Texture>) -> Self {
-        Self {}
-    }
     fn update(&mut self, _frame_time: f64, _input: &Input) {}
     fn render(&self, _state: &mut Engine) {}
 }

@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::time::Instant;
 
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
@@ -10,7 +9,7 @@ use crate::camera::{self, Camera};
 use crate::engine::Engine;
 use crate::instances::InstanceRaw;
 use crate::instances::{Instance, Vertex};
-use crate::minor_types::Windowniform;
+use crate::minor_types::{Time, Windowniform};
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
 
@@ -41,21 +40,24 @@ impl Engine {
     /*fn get_delta_time(&self) -> f64 {
         self.delta_time.elapsed().as_secs_f64()
     }*/
-    pub fn get_average_tps(&mut self) -> u32 {
-        (self.ticks_passed_this_sec as f64 / self.tick_time_this_sec) as u32
+    pub fn get_average_tps(&self) -> u32 {
+        (self.time.ticks_passed_this_sec as f64 / self.time.tick_time_this_sec) as u32
     }
     pub fn get_target_fps(&self) -> Option<u32> {
-        self.target_fps
+        self.time.target_fps
     }
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
         self.size
     }
     pub fn get_time_since_last_render(&self) -> f64 {
-        self.time_since_last_render
+        self.time.time_since_last_render
     }
 
-    pub fn set_fps(&mut self, fps: Option<u32>) {
-        self.target_fps = fps;
+    pub fn set_target_fps(&mut self, fps: Option<u32>) {
+        self.time.target_fps = fps;
+    }
+    pub fn set_target_tps(&mut self, tps: Option<u32>) {
+        self.time.target_tps = tps;
     }
     pub fn set_background_color(&mut self, color: Color) {
         self.background_color = wgpu::Color {
@@ -66,8 +68,9 @@ impl Engine {
         }
     }
 
-    pub async fn new(size: Vec2, event_loop: &EventLoop<()>) -> Self {
-        let window = WindowBuilder::new() //350 - 1;
+    pub async fn new(size: Vec2, event_loop: &EventLoop<()>, win_resizable: bool) -> Self {
+        let window = WindowBuilder::new()
+            .with_resizable(win_resizable)
             .with_inner_size(PhysicalSize::new(size.x, size.y))
             .build(event_loop)
             .expect("Failed to build window");
@@ -183,13 +186,7 @@ impl Engine {
             instances_raw,
             instances_rendered: 0,
 
-            last_delta_t: Instant::now(),
-            tick_time_this_sec: 0.,
-            ticks_passed_this_sec: 0,
-            time_since_last_render: 0.,
-            average_delta_t: 0.,
-            target_fps: None,
-            target_tps: Some(100000),
+            time: Time::new(),
 
             texture_amt_created: 0,
             layer_hash_inst_vec: HashMap::new(),

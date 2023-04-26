@@ -1,5 +1,8 @@
-use crate::instances::INDICES;
-use std::{collections::HashMap, time::Instant};
+use crate::{
+    instances::INDICES,
+    minor_types::{DrawParams, Time},
+};
+use std::collections::HashMap;
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -18,7 +21,6 @@ mod engine_manager;
 
 pub struct Engine {
     input: Input,
-
     window: Window,
     background_color: wgpu::Color,
     surface: wgpu::Surface,
@@ -46,13 +48,7 @@ pub struct Engine {
     camera_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
 
-    target_fps: Option<u32>,
-    target_tps: Option<u32>,
-    ticks_passed_this_sec: u64,
-    tick_time_this_sec: f64,
-    time_since_last_render: f64,
-    last_delta_t: Instant,
-    average_delta_t: f64,
+    time: Time,
 }
 
 impl Engine {
@@ -71,24 +67,19 @@ impl Engine {
                 }
             }
             Event::MainEventsCleared => {
-                self.update_time();
-                //self.update_time(delta_t);
-                /*if let Some(tps) = self.target_tps {
-                    if self.get_frame_time() < 1. / tps as f64 {
-                        return;
-                    }
-                }*/
+                self.time.update();
+
                 self.update();
-                manager.update(self.average_delta_t, &self.input);
+                manager.update(self.time.average_delta_t, &self.input);
 
                 if self.input.is_left_mouse_button_pressed() {
-                    println!("{}", 1. / self.average_delta_t);
+                    println!("{}", 1. / self.time.average_delta_t);
                 }
                 self.input.reset_buttons();
 
                 match self.get_target_fps() {
                     Some(fps) => {
-                        if self.time_since_last_render >= 1. / fps as f64 {
+                        if self.time.time_since_last_render >= 1. / fps as f64 {
                             self.window.request_redraw();
                         }
                     }
@@ -164,12 +155,18 @@ impl Engine {
         output.present();
 
         self.instances_rendered = 0;
-        self.time_since_last_render = 0.;
+        self.time.time_since_last_render = 0.;
         Ok(())
     }
 
-    pub fn draw_texture(&mut self, rect: &Rect, texture: &Texture, layer: Layer) {
-        let inst = Instance::new(*rect);
+    pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
+        self.render_tex(rect, texture, 0., Layer::Layer1);
+    }
+    pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
+        self.render_tex(rect, texture, draw_params.rotation, draw_params.layer);
+    }
+    fn render_tex(&mut self, rect: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
+        let inst = Instance::new(*rect, rotation);
         if self.instances_rendered < self.instances.len() {
             if self.instances[self.instances_rendered] != inst {
                 self.instances[self.instances_rendered] = inst;
@@ -194,32 +191,13 @@ impl Engine {
         self.instances_rendered += 1;
     }
 
-    fn update_time(&mut self) {
-        let last_delta_t = self.last_delta_t.elapsed().as_secs_f64();
-        self.last_delta_t = Instant::now();
-
-        self.tick_time_this_sec += last_delta_t;
-        self.time_since_last_render += last_delta_t;
-        self.ticks_passed_this_sec += 1;
-
-        if self.tick_time_this_sec > 0.5 {
-            self.average_delta_t = self.tick_time_this_sec / self.ticks_passed_this_sec as f64;
-            //println!("{}", 1. / self.average_delta_t);
-            self.ticks_passed_this_sec = 0;
-            self.tick_time_this_sec = 0.;
-        }
-    }
-
     fn update_instance_buffer(&mut self) {
         if self.instance_buffer.size() == self.instances_raw.len() as u64 * 24 {
-            //let x = Instant::now();
             self.queue.write_buffer(
                 &self.instance_buffer,
                 0,
                 bytemuck::cast_slice(&self.instances_raw),
             );
-            //let x = x.elapsed().as_micros();
-            //println!("{x}");
         } else {
             self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
         }
@@ -231,9 +209,6 @@ impl Engine {
     {
         manager.render(self);
         self.update_instance_buffer();
-
-        // let x = Instant::now();
-
         match self.render() {
             Ok(_) => {}
             // Reconfigure the surface if lost

@@ -1,8 +1,8 @@
 use self::Layer::*;
-use crate::prelude::{Engine, Texture};
+use crate::prelude::Engine;
 
 use cgmath::vec2;
-use std::slice::Iter;
+use std::{slice::Iter, time::Instant};
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
 pub type Vec2 = cgmath::Vector2<f64>;
@@ -12,9 +12,63 @@ pub type InstIndex = u32;
 pub type TexIndex = u32;
 
 pub trait Manager {
-    fn new(textures: Vec<Texture>) -> Self;
     fn update(&mut self, frame_time: f64, input: &Input);
     fn render(&self, state: &mut Engine);
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DrawParams {
+    pub layer: Layer,
+    pub rotation: f64,
+}
+impl Default for DrawParams {
+    fn default() -> Self {
+        Self {
+            layer: Layer1,
+            rotation: 0.,
+        }
+    }
+}
+
+pub struct Time {
+    pub target_fps: Option<u32>,
+    pub target_tps: Option<u32>,
+    pub ticks_passed_this_sec: u64,
+    pub tick_time_this_sec: f64,
+    pub time_since_last_render: f64,
+    pub last_delta_t: Instant,
+    pub average_delta_t: f64,
+}
+impl Time {
+    pub fn new() -> Self {
+        Self {
+            last_delta_t: Instant::now(),
+            tick_time_this_sec: 0.,
+            ticks_passed_this_sec: 0,
+            time_since_last_render: 0.,
+            average_delta_t: 0.,
+            target_fps: None,
+            target_tps: None,
+        }
+    }
+    pub fn update(&mut self) {
+        if let Some(tps) = self.target_tps {
+            while self.last_delta_t.elapsed().as_secs_f64() < 1. / tps as f64 {}
+        }
+
+        let last_delta_t = self.last_delta_t.elapsed().as_secs_f64();
+        self.last_delta_t = Instant::now();
+
+        self.tick_time_this_sec += last_delta_t;
+        self.time_since_last_render += last_delta_t;
+        self.ticks_passed_this_sec += 1;
+
+        if self.tick_time_this_sec >= 0.5 {
+            self.average_delta_t = self.tick_time_this_sec / self.ticks_passed_this_sec as f64;
+            self.ticks_passed_this_sec = 0;
+            self.tick_time_this_sec = 0.;
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
