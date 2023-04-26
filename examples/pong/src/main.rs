@@ -37,7 +37,6 @@ struct Pong {
     right_paddle: Paddle,
     ball: Ball,
     textures: Vec<Texture>,
-    rot: f64,
 }
 impl Pong {
     fn new(textures: Vec<Texture>) -> Self {
@@ -50,7 +49,6 @@ impl Pong {
             right_paddle,
             ball,
             textures,
-            rot: 0.,
         }
     }
 }
@@ -64,18 +62,13 @@ impl Manager for Pong {
             delta_t,
         );
         self.ball.update(delta_t);
-        self.rot += 0.1;
         self.ball.resolve_collisions_left_paddle(&self.left_paddle);
         self.ball
             .resolve_collisions_right_paddle(&self.right_paddle);
     }
 
     fn render(&self, engine: &mut Engine) {
-        let draw_p = DrawParams {
-            rotation: self.rot,
-            ..Default::default()
-        };
-        engine.render_texture_ex(&self.left_paddle.rect, &self.textures[0], draw_p);
+        engine.render_texture(&self.left_paddle.rect, &self.textures[0]);
         engine.render_texture(&self.right_paddle.rect, &self.textures[1]);
         engine.render_texture(&self.ball.to_rect(), &self.textures[2]);
     }

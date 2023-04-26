@@ -55,7 +55,7 @@ impl Breakout {
 }
 impl Manager for Breakout {
     fn update(&mut self, delta_t: f64, input: &Input) {
-        /*self.paddle.update(input, delta_t);
+        self.paddle.update(input, delta_t);
         self.ball.update(delta_t);
 
         self.ball.resolve_paddle_collision(&self.paddle);
@@ -66,8 +66,8 @@ impl Manager for Breakout {
                     block.lives -= 1;
                 }
             });
-            //row.retain(|block| block.lives > 0);
-        });*/
+            row.retain(|block| block.lives > 0);
+        });
     }
 
     fn render(&self, state: &mut Engine) {
