@@ -36,10 +36,10 @@ impl Breakout {
         let ball = Ball::new(vec2(0., WINDOW_SIZE.y));
 
         let mut blocks = Vec::new();
-        for j in 0..8 {
+        for j in 0..100 {
             let mut row = Vec::new();
-            for i in 0..10 {
-                let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 100.);
+            for i in 0..100 {
+                let block = Block::new(i as f64 * 12., j as f64 * 9.);
                 row.push(block);
             }
             blocks.push(row);
@@ -55,7 +55,7 @@ impl Breakout {
 }
 impl Manager for Breakout {
     fn update(&mut self, delta_t: f64, input: &Input) {
-        self.paddle.update(input, delta_t);
+        /*self.paddle.update(input, delta_t);
         self.ball.update(delta_t);
 
         self.ball.resolve_paddle_collision(&self.paddle);
@@ -66,8 +66,8 @@ impl Manager for Breakout {
                     block.lives -= 1;
                 }
             });
-            row.retain(|block| block.lives > 0);
-        });
+            //row.retain(|block| block.lives > 0);
+        });*/
     }
 
     fn render(&self, state: &mut Engine) {
@@ -87,7 +87,7 @@ struct Block {
     lives: usize,
 }
 impl Block {
-    const SIZE: Vec2 = vec2(100., 50.);
+    const SIZE: Vec2 = vec2(12., 9.);
     pub fn new(x: f64, y: f64) -> Self {
         Self {
             rect: rect_vec(vec2(x, y), Self::SIZE),

@@ -25,10 +25,6 @@ impl Instance {
         let mat4 = Matrix4::from_translation(self.pos)
             * Matrix4::from_angle_z(Deg(self.rotation))
             * Matrix4::from_nonuniform_scale(self.size.x, self.size.y, 1.);
-        println!("{:?}", mat4[0]);
-        println!("{:?}", mat4[1]);
-        println!("{:?}", mat4[2]);
-        println!("{:?}", mat4[3]);
 
         let x = [mat4.x.x as f32, mat4.x.y as f32];
         let y = [mat4.y.x as f32, mat4.y.y as f32];

@@ -47,7 +47,7 @@ impl Engine {
         self.time.target_fps
     }
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.size
+        self.win_size
     }
     pub fn get_time_since_last_render(&self) -> f64 {
         self.time.time_since_last_render
@@ -171,7 +171,7 @@ impl Engine {
             device,
             queue,
             config,
-            size: win_size,
+            win_size,
 
             render_pipeline,
             vertex_buffer,

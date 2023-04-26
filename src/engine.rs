@@ -1,5 +1,6 @@
 use crate::{
     instances::INDICES,
+    math::rect,
     minor_types::{DrawParams, Time},
 };
 use std::collections::HashMap;
@@ -27,8 +28,7 @@ pub struct Engine {
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    size: winit::dpi::PhysicalSize<u32>,
-
+    win_size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -165,8 +165,12 @@ impl Engine {
     pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
         self.render_tex(rect, texture, draw_params.rotation, draw_params.layer);
     }
-    fn render_tex(&mut self, rect: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
-        let inst = Instance::new(*rect, rotation);
+    fn render_tex(&mut self, rect_: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
+        let width = rect_.w / self.win_size.width as f64;
+        let height = rect_.w / self.win_size.width as f64;
+        let rect = rect(rect_.x, rect_.y, width, height);
+        let inst = Instance::new(rect, rotation);
+
         if self.instances_rendered < self.instances.len() {
             if self.instances[self.instances_rendered] != inst {
                 self.instances[self.instances_rendered] = inst;
@@ -234,7 +238,7 @@ impl Engine {
 
     fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
+            self.win_size = new_size;
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);

@@ -72,7 +72,7 @@ impl Manager for Pong {
 
     fn render(&self, engine: &mut Engine) {
         let draw_p = DrawParams {
-            rotation: 0.,
+            rotation: self.rot,
             ..Default::default()
         };
         engine.render_texture_ex(&self.left_paddle.rect, &self.textures[0], draw_p);
