@@ -1,8 +1,5 @@
-use crate::{
-    instances::INDICES,
-    math::rect,
-    minor_types::{DrawParams, Time},
-};
+use egui_wgpu_backend::ScreenDescriptor;
+use egui_winit_platform::Platform;
 use std::collections::HashMap;
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -12,10 +9,13 @@ use winit::{
 
 use crate::{
     camera::Camera,
+    instances::INDICES,
     instances::{self, Instance, InstanceRaw},
+    math::rect,
     math::Rect,
+    minor_types::{DrawParams, Time},
     minor_types::{Input, InstIndex, Layer, Manager, TexIndex},
-    texture::{self, Texture},
+    texture::{self, Texture}, ui::create_ui,
 };
 
 mod engine_manager;
@@ -49,6 +49,9 @@ pub struct Engine {
     window_bind_group: wgpu::BindGroup,
 
     time: Time,
+
+    platform: Platform,
+    egui_rpass: egui_wgpu_backend::RenderPass,
 }
 
 impl Engine {
@@ -57,41 +60,45 @@ impl Engine {
         T: Manager + 'static,
     {
         env_logger::init();
-        event_loop.run(move |event, _, control_flow| match event {
-            Event::WindowEvent {
-                ref event,
-                window_id,
-            } if window_id == self.window.id() => {
-                if !self.input(event) {
-                    self.handle_window_event(event, control_flow);
+        event_loop.run(move |event, _, control_flow| {
+            self.platform.handle_event(&event);
+
+            match event {
+                Event::WindowEvent {
+                    ref event,
+                    window_id,
+                } if window_id == self.window.id() => {
+                    if !self.input(event) {
+                        self.handle_window_event(event, control_flow);
+                    }
                 }
-            }
-            Event::MainEventsCleared => {
-                self.time.update();
+                Event::MainEventsCleared => {
+                    self.time.update(&mut self.platform);
 
-                self.update();
-                manager.update(self.time.average_delta_t, &self.input);
+                    self.update();
+                    manager.update(self.time.average_delta_t, &self.input);
 
-                if self.input.is_left_mouse_button_pressed() {
-                    println!("{}", 1. / self.time.average_delta_t);
-                }
-                self.input.reset_buttons();
+                    if self.input.is_right_mouse_button_pressed() {
+                        println!("{}", 1. / self.time.average_delta_t);
+                    }
+                    self.input.reset_buttons();
 
-                match self.get_target_fps() {
-                    Some(fps) => {
-                        if self.time.time_since_last_render >= 1. / fps as f64 {
+                    match self.get_target_fps() {
+                        Some(fps) => {
+                            if self.time.time_since_last_render >= 1. / fps as f64 {
+                                self.window.request_redraw();
+                            }
+                        }
+                        None => {
                             self.window.request_redraw();
                         }
                     }
-                    None => {
-                        self.window.request_redraw();
-                    }
                 }
+                Event::RedrawRequested(window_id) if window_id == self.window.id() => {
+                    self.handle_rendering(&mut manager, control_flow);
+                }
+                _ => {}
             }
-            Event::RedrawRequested(window_id) if window_id == self.window.id() => {
-                self.handle_rendering(&mut manager, control_flow);
-            }
-            _ => {}
         });
     }
 
@@ -100,11 +107,13 @@ impl Engine {
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
+
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -150,6 +159,38 @@ impl Engine {
                         draw(instance)
         */
 
+        // Begin to draw the UI frame.
+        self.platform.begin_frame();
+
+        create_ui(&self.platform.context());
+
+        // End the UI frame. We could now handle the output and draw the UI with the backend.
+        let full_output = self.platform.end_frame(Some(&self.window));
+        let paint_jobs = self.platform.context().tessellate(full_output.shapes);
+
+        // Upload all resources for the GPU.
+        let screen_descriptor = ScreenDescriptor {
+            physical_width: self.config.width,
+            physical_height: self.config.height,
+            scale_factor: self.window.scale_factor() as f32,
+        };
+        let tdelta: egui::TexturesDelta = full_output.textures_delta;
+        self.egui_rpass
+            .add_textures(&self.device, &self.queue, &tdelta)
+            .expect("add texture ok");
+
+        self.egui_rpass
+            .update_buffers(&self.device, &self.queue, &paint_jobs, &screen_descriptor);
+
+        /*self.egui_rpass
+        .remove_textures(tdelta)
+        .expect("remove texture ok");*/
+
+        // Record all render passes.
+        self.egui_rpass
+            .execute_with_renderpass(&mut render_pass, &paint_jobs, &screen_descriptor)
+            .unwrap();
+
         drop(render_pass);
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
@@ -167,7 +208,7 @@ impl Engine {
     }
     fn render_tex(&mut self, rect_: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
         let width = rect_.w / self.win_size.width as f64;
-        let height = rect_.w / self.win_size.width as f64;
+        let height = rect_.h / self.win_size.height as f64;
         let rect = rect(rect_.x, rect_.y, width, height);
         let inst = Instance::new(rect, rotation);
 

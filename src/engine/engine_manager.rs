@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+//use egui::FontDefinitions;
+use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event_loop::EventLoop;
@@ -161,6 +163,18 @@ impl Engine {
             a: 1.,
         };
 
+        // We use the egui_winit_platform crate as the platform.
+        let platform = Platform::new(PlatformDescriptor {
+            physical_width: size.y as u32,
+            physical_height: size.x as u32,
+            scale_factor: window.scale_factor(),
+            font_definitions: egui::FontDefinitions::default(),
+            style: Default::default(),
+        });
+
+        // We use the egui_wgpu_backend crate as the render backend.
+        let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
+
         Self {
             input: Input::new(),
             window,
@@ -192,6 +206,8 @@ impl Engine {
             layer_hash_inst_vec: HashMap::new(),
             tex_index_hash_bind: HashMap::new(),
             inst_hash_tex_index: HashMap::new(),
+            platform,
+            egui_rpass,
         }
     }
 }

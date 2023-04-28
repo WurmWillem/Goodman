@@ -2,6 +2,7 @@ use self::Layer::*;
 use crate::prelude::Engine;
 
 use cgmath::vec2;
+use egui_winit_platform::Platform;
 use std::{slice::Iter, time::Instant};
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
@@ -51,10 +52,11 @@ impl Time {
             target_tps: None,
         }
     }
-    pub fn update(&mut self) {
+    pub fn update(&mut self, platform: &mut Platform) {
         if let Some(tps) = self.target_tps {
             while self.last_delta_t.elapsed().as_secs_f64() < 1. / tps as f64 {}
         }
+        platform.update_time(self.last_delta_t.elapsed().as_secs_f64());
 
         let last_delta_t = self.last_delta_t.elapsed().as_secs_f64();
         self.last_delta_t = Instant::now();
@@ -89,6 +91,7 @@ impl Layer {
 pub struct Input {
     cursor_pos: Vec2,
     left_mouse_button_pressed: bool,
+    right_mouse_button_pressed: bool,
     d_pressed: bool,
     a_pressed: bool,
     w_pressed: bool,
@@ -103,6 +106,7 @@ impl Input {
         Self {
             cursor_pos: vec2(0., 0.),
             left_mouse_button_pressed: false,
+            right_mouse_button_pressed: false,
             d_pressed: false,
             a_pressed: false,
             w_pressed: false,
@@ -168,6 +172,10 @@ impl Input {
                         self.left_mouse_button_pressed = is_pressed;
                         true
                     }
+                    MouseButton::Right => {
+                        self.right_mouse_button_pressed = is_pressed;
+                        true
+                    }
                     _ => false,
                 }
             }
@@ -182,6 +190,9 @@ impl Input {
         if self.left_mouse_button_pressed {
             self.left_mouse_button_pressed = false;
         }
+        if self.right_mouse_button_pressed {
+            self.right_mouse_button_pressed = false;
+        }
     }
 
     pub fn get_cursor_pos(&self) -> Vec2 {
@@ -189,6 +200,9 @@ impl Input {
     }
     pub fn is_left_mouse_button_pressed(&self) -> bool {
         self.left_mouse_button_pressed
+    }
+    pub fn is_right_mouse_button_pressed(&self) -> bool {
+        self.right_mouse_button_pressed
     }
     pub fn is_d_pressed(&self) -> bool {
         self.d_pressed

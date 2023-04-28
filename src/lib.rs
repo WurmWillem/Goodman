@@ -5,6 +5,7 @@ mod math;
 mod minor_types;
 pub mod prelude;
 mod texture;
+mod ui;
 
 use prelude::*;
 
