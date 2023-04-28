@@ -6,8 +6,8 @@ const DIAMETER: f64 = 48.;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ball {
-    pos: Vec2,
-    vel: Vec2,
+    pub pos: Vec2,
+    pub vel: Vec2,
 }
 impl Ball {
     pub fn new() -> Self {

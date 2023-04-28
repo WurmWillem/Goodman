@@ -14,7 +14,7 @@ use crate::{
     math::rect,
     math::Rect,
     minor_types::{DrawParams, Time},
-    minor_types::{Feature, Features, Input, InstIndex, Layer, Manager, TexIndex},
+    minor_types::{Feature, Features, Input, InstIndex, Layer, Manager, TexIndex, GoodManUI},
     texture::{self, Texture},
 };
 
@@ -54,6 +54,8 @@ pub struct Engine {
     egui_rpass: egui_wgpu_backend::RenderPass,
 
     features: Features,
+
+    game_ui: Option<GoodManUI>,
 }
 
 impl Engine {
@@ -81,7 +83,7 @@ impl Engine {
                     manager.update(self.time.average_delta_t, &self.input);
 
                     if self.input.is_right_mouse_button_pressed() {
-                        println!("{}", 1. / self.time.average_delta_t);
+                        println!("{}", self.get_average_tps());
                     }
                     self.input.reset_buttons();
 
@@ -165,6 +167,9 @@ impl Engine {
         self.platform.begin_frame();
 
         self.create_ui();
+        if let Some(game_ui) = &self.game_ui {
+            self.render_game_ui(game_ui);
+        }
 
         // End the UI frame. We could now handle the output and draw the UI with the backend.
         let full_output = self.platform.end_frame(Some(&self.window));
@@ -207,7 +212,7 @@ impl Engine {
     }
 
     fn create_ui(&self) {
-        if !self.features.ui_enabled {
+        if !self.features.engine_ui_enabled {
             return;
         }
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
@@ -220,6 +225,22 @@ impl Engine {
                 ui.label(format!("FPS: {:?}", self.get_average_tps()));
             }
             ui.label(format!("TPS: {:?}", self.get_average_tps()));
+        });
+    }
+
+    pub fn set_game_ui(&mut self, user_ui: GoodManUI) {
+        if !self.features.game_ui_enabled {
+            println!("game ui is disabled");
+            return;
+        }
+        self.game_ui = Some(user_ui);
+    }
+
+    fn render_game_ui(&self, game_ui: &GoodManUI) {
+        egui::Window::new(game_ui.title.clone()).show(&self.platform.context(), |ui| {
+            for label in &game_ui.labels {
+                ui.label(label);
+            }
         });
     }
 

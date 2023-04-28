@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-//use egui::FontDefinitions;
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
@@ -210,6 +209,8 @@ impl Engine {
             egui_rpass,
 
             features: Features::new(),
+
+            game_ui: None,
         }
     }
 }

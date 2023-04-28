@@ -74,21 +74,40 @@ impl Time {
     }
 }
 
+pub struct GoodManUI {
+    pub title: String,
+    pub labels: Vec<String>
+}
+impl GoodManUI {
+    pub fn new() -> Self {
+        Self {title: "".to_string(), labels: vec![]}
+    }
+    pub fn set_title(&mut self, label: &str) {
+        self.title = label.to_string();
+    }
+    pub fn add_label(&mut self, label: String) {
+        self.labels.push(label);
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Feature {
-    Ui,
+    EngineUi,
+    GameUi,
 }
 
 pub struct Features {
-    pub ui_enabled: bool,
+    pub engine_ui_enabled: bool,
+    pub game_ui_enabled: bool,
 }
 impl Features {
     pub fn new() -> Self {
-        Self { ui_enabled: false }
+        Self { engine_ui_enabled: false, game_ui_enabled: false }
     }
     pub fn enable_feature(&mut self, feature: Feature) {
         match feature {
-            Feature::Ui => self.ui_enabled = true,
+            Feature::EngineUi => self.engine_ui_enabled = true,
+            Feature::GameUi => self.game_ui_enabled = true,
         }
     }
 }

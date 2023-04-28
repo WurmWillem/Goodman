@@ -30,12 +30,13 @@ impl Manager for Pong {
     fn new(engine: &mut Engine) -> Self {
         engine.set_target_fps(Some(144));
         engine.set_target_tps(Some(1000 * 100));
-        engine.enable_feature(Feature::Ui);
+        engine.enable_feature(Feature::EngineUi);
+        engine.enable_feature(Feature::GameUi);
 
         let paddle_bytes = include_bytes!("assets/Computer.png");
-        let paddle_0_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
+        let left_paddle_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
         let paddle_bytes = include_bytes!("assets/Player.png");
-        let paddle_1_tex = engine.create_texture(paddle_bytes, "paddle1").unwrap();
+        let right_paddle_tex = engine.create_texture(paddle_bytes, "paddle1").unwrap();
         let ball_bytes = include_bytes!("assets/Ball.png");
         let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
 
@@ -47,9 +48,10 @@ impl Manager for Pong {
             left_paddle,
             right_paddle,
             ball,
-            textures: vec![paddle_0_tex, paddle_1_tex, ball_tex],
+            textures: vec![left_paddle_tex, right_paddle_tex, ball_tex],
         }
     }
+
     fn update(&mut self, delta_t: f64, input: &Input) {
         self.left_paddle
             .update(input.is_w_pressed(), input.is_s_pressed(), delta_t);
@@ -58,6 +60,7 @@ impl Manager for Pong {
             input.is_down_arrow_pressed(),
             delta_t,
         );
+
         self.ball.update(delta_t);
         self.ball.resolve_collisions_left_paddle(&self.left_paddle);
         self.ball
@@ -65,6 +68,11 @@ impl Manager for Pong {
     }
 
     fn render(&self, engine: &mut Engine) {
+        let mut ui = GoodManUI::new();
+        ui.set_title("Pong");
+        ui.add_label(format!("ball position: {} {}", self.ball.pos.x as u32, self.ball.pos.y as u32));
+        engine.set_game_ui(ui);
+
         engine.render_texture(&self.left_paddle.rect, &self.textures[0]);
         engine.render_texture(&self.right_paddle.rect, &self.textures[1]);
         engine.render_texture(&self.ball.to_rect(), &self.textures[2]);
