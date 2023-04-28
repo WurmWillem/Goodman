@@ -10,16 +10,7 @@ async fn run() {
     let event_loop = EventLoop::new();
     let mut engine: Engine = Engine::new(WINDOW_SIZE, &event_loop, false).await;
 
-    engine.set_target_fps(Some(144));
-
-    let paddle_bytes = include_bytes!("assets/paddle.png");
-    let paddle_tex = engine.create_texture(paddle_bytes, "paddle").unwrap();
-    let ball_bytes = include_bytes!("assets/ball.png");
-    let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
-    let block_bytes = include_bytes!("assets/block.png");
-    let block_tex = engine.create_texture(block_bytes, "block").unwrap();
-
-    let breakout = Breakout::new(vec![paddle_tex, ball_tex, block_tex]);
+    let breakout = Breakout::new(&mut engine);
 
     engine.enter_loop(breakout, event_loop);
 }
@@ -30,8 +21,17 @@ struct Breakout {
     blocks: Vec<Vec<Block>>,
     textures: Vec<Texture>,
 }
-impl Breakout {
-    fn new(textures: Vec<Texture>) -> Self {
+
+impl Manager for Breakout {
+    fn new(engine: &mut Engine) -> Self {
+        engine.set_target_fps(Some(144));
+
+        let paddle_bytes = include_bytes!("assets/paddle.png");
+        let paddle_tex = engine.create_texture(paddle_bytes, "paddle").unwrap();
+        let ball_bytes = include_bytes!("assets/ball.png");
+        let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
+        let block_bytes = include_bytes!("assets/block.png");
+        let block_tex = engine.create_texture(block_bytes, "block").unwrap();
         let paddle = Paddle::new(vec2(WINDOW_SIZE.x * 0.5, WINDOW_SIZE.y * 0.9));
         let ball = Ball::new(vec2(0., WINDOW_SIZE.y));
 
@@ -49,13 +49,8 @@ impl Breakout {
             ball,
             paddle,
             blocks,
-            textures,
+            textures: vec![paddle_tex, ball_tex, block_tex],
         }
-    }
-}
-impl Manager for Breakout {
-    fn new(_engine: &mut Engine) -> Self {
-        todo!()
     }
     fn update(&mut self, delta_t: f64, input: &Input) {
         self.paddle.update(input, delta_t);
