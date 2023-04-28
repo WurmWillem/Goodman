@@ -14,8 +14,8 @@ use crate::{
     math::rect,
     math::Rect,
     minor_types::{DrawParams, Time},
-    minor_types::{Input, InstIndex, Layer, Manager, TexIndex},
-    texture::{self, Texture}, ui::create_ui,
+    minor_types::{Feature, Features, Input, InstIndex, Layer, Manager, TexIndex},
+    texture::{self, Texture},
 };
 
 mod engine_manager;
@@ -52,6 +52,8 @@ pub struct Engine {
 
     platform: Platform,
     egui_rpass: egui_wgpu_backend::RenderPass,
+
+    features: Features,
 }
 
 impl Engine {
@@ -85,7 +87,7 @@ impl Engine {
 
                     match self.get_target_fps() {
                         Some(fps) => {
-                            if self.time.time_since_last_render >= 1. / fps as f64 {
+                            if self.time.time_since_last_render >= 0.995 / fps as f64 {
                                 self.window.request_redraw();
                             }
                         }
@@ -162,7 +164,7 @@ impl Engine {
         // Begin to draw the UI frame.
         self.platform.begin_frame();
 
-        create_ui(&self.platform.context());
+        self.create_ui();
 
         // End the UI frame. We could now handle the output and draw the UI with the backend.
         let full_output = self.platform.end_frame(Some(&self.window));
@@ -198,6 +200,27 @@ impl Engine {
         self.instances_rendered = 0;
         self.time.time_since_last_render = 0.;
         Ok(())
+    }
+
+    pub fn enable_feature(&mut self, feature: Feature) {
+        self.features.enable_feature(feature);
+    }
+
+    fn create_ui(&self) {
+        if !self.features.ui_enabled {
+            return;
+        }
+        egui::Window::new("Engine").show(&self.platform.context(), |ui| {
+            ui.heading("General");
+            ui.label(format!(
+                "window size: {:?}x{:?}",
+                self.win_size.width, self.win_size.height
+            ));
+            if let None = self.get_target_fps() {
+                ui.label(format!("FPS: {:?}", self.get_average_tps()));
+            }
+            ui.label(format!("TPS: {:?}", self.get_average_tps()));
+        });
     }
 
     pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {

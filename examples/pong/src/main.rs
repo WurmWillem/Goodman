@@ -15,19 +15,7 @@ async fn run() {
     let event_loop = EventLoop::new();
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
 
-    engine.set_target_fps(Some(144));
-    engine.set_target_tps(Some(144 * 10000));
-
-    let paddle_bytes = include_bytes!("assets/Computer.png");
-    let paddle_0_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
-
-    let paddle_bytes = include_bytes!("assets/Player.png");
-    let paddle_1_tex = engine.create_texture(paddle_bytes, "paddle1").unwrap();
-
-    let ball_bytes = include_bytes!("assets/Ball.png");
-    let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
-
-    let pong = Pong::new(vec![paddle_0_tex, paddle_1_tex, ball_tex]);
+    let pong = Pong::new(&mut engine);
 
     engine.enter_loop(pong, event_loop);
 }
@@ -38,8 +26,19 @@ struct Pong {
     ball: Ball,
     textures: Vec<Texture>,
 }
-impl Pong {
-    fn new(textures: Vec<Texture>) -> Self {
+impl Manager for Pong {
+    fn new(engine: &mut Engine) -> Self {
+        engine.set_target_fps(Some(144));
+        engine.set_target_tps(Some(1000 * 100));
+        engine.enable_feature(Feature::Ui);
+
+        let paddle_bytes = include_bytes!("assets/Computer.png");
+        let paddle_0_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
+        let paddle_bytes = include_bytes!("assets/Player.png");
+        let paddle_1_tex = engine.create_texture(paddle_bytes, "paddle1").unwrap();
+        let ball_bytes = include_bytes!("assets/Ball.png");
+        let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
+
         let left_paddle = Paddle::new(80., WINDOW_SIZE.y * 0.5);
         let right_paddle = Paddle::new(WINDOW_SIZE.x - 80., WINDOW_SIZE.y * 0.5);
         let ball = Ball::new();
@@ -48,11 +47,9 @@ impl Pong {
             left_paddle,
             right_paddle,
             ball,
-            textures,
+            textures: vec![paddle_0_tex, paddle_1_tex, ball_tex],
         }
     }
-}
-impl Manager for Pong {
     fn update(&mut self, delta_t: f64, input: &Input) {
         self.left_paddle
             .update(input.is_w_pressed(), input.is_s_pressed(), delta_t);

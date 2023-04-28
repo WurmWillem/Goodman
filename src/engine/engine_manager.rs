@@ -11,7 +11,7 @@ use crate::camera::{self, Camera};
 use crate::engine::Engine;
 use crate::instances::InstanceRaw;
 use crate::instances::{Instance, Vertex};
-use crate::minor_types::{Time, Windowniform};
+use crate::minor_types::{Features, Time, Windowniform};
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
 
@@ -43,7 +43,7 @@ impl Engine {
         self.delta_time.elapsed().as_secs_f64()
     }*/
     pub fn get_average_tps(&self) -> u32 {
-        (self.time.ticks_passed_this_sec as f64 / self.time.tick_time_this_sec) as u32
+        (1. / self.time.average_delta_t) as u32
     }
     pub fn get_target_fps(&self) -> Option<u32> {
         self.time.target_fps
@@ -208,6 +208,8 @@ impl Engine {
             inst_hash_tex_index: HashMap::new(),
             platform,
             egui_rpass,
+
+            features: Features::new(),
         }
     }
 }

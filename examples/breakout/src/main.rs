@@ -54,6 +54,9 @@ impl Breakout {
     }
 }
 impl Manager for Breakout {
+    fn new(_engine: &mut Engine) -> Self {
+        todo!()
+    }
     fn update(&mut self, delta_t: f64, input: &Input) {
         self.paddle.update(input, delta_t);
         self.ball.update(delta_t);

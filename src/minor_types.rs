@@ -13,8 +13,9 @@ pub type InstIndex = u32;
 pub type TexIndex = u32;
 
 pub trait Manager {
+    fn new(engine: &mut Engine) -> Self;
     fn update(&mut self, frame_time: f64, input: &Input);
-    fn render(&self, state: &mut Engine);
+    fn render(&self, engine: &mut Engine);
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -54,7 +55,7 @@ impl Time {
     }
     pub fn update(&mut self, platform: &mut Platform) {
         if let Some(tps) = self.target_tps {
-            while self.last_delta_t.elapsed().as_secs_f64() < 1. / tps as f64 {}
+            while self.last_delta_t.elapsed().as_secs_f64() < 0.99 / tps as f64 {}
         }
         platform.update_time(self.last_delta_t.elapsed().as_secs_f64());
 
@@ -69,6 +70,25 @@ impl Time {
             self.average_delta_t = self.tick_time_this_sec / self.ticks_passed_this_sec as f64;
             self.ticks_passed_this_sec = 0;
             self.tick_time_this_sec = 0.;
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Feature {
+    Ui,
+}
+
+pub struct Features {
+    pub ui_enabled: bool,
+}
+impl Features {
+    pub fn new() -> Self {
+        Self { ui_enabled: false }
+    }
+    pub fn enable_feature(&mut self, feature: Feature) {
+        match feature {
+            Feature::Ui => self.ui_enabled = true,
         }
     }
 }
