@@ -1,8 +1,9 @@
 use self::Layer::*;
-use crate::prelude::{Engine, Texture};
+use crate::prelude::Engine;
 
 use cgmath::vec2;
-use std::slice::Iter;
+use egui_winit_platform::Platform;
+use std::{slice::Iter, time::Instant};
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
 pub type Vec2 = cgmath::Vector2<f64>;
@@ -12,9 +13,103 @@ pub type InstIndex = u32;
 pub type TexIndex = u32;
 
 pub trait Manager {
-    fn new(textures: Vec<Texture>) -> Self;
+    fn new(engine: &mut Engine) -> Self;
     fn update(&mut self, frame_time: f64, input: &Input);
-    fn render(&self, state: &mut Engine);
+    fn render(&self, engine: &mut Engine);
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DrawParams {
+    pub layer: Layer,
+    pub rotation: f64,
+}
+impl Default for DrawParams {
+    fn default() -> Self {
+        Self {
+            layer: Layer1,
+            rotation: 0.,
+        }
+    }
+}
+
+pub struct Time {
+    pub target_fps: Option<u32>,
+    pub target_tps: Option<u32>,
+    pub ticks_passed_this_sec: u64,
+    pub tick_time_this_sec: f64,
+    pub time_since_last_render: f64,
+    pub last_delta_t: Instant,
+    pub average_delta_t: f64,
+}
+impl Time {
+    pub fn new() -> Self {
+        Self {
+            last_delta_t: Instant::now(),
+            tick_time_this_sec: 0.,
+            ticks_passed_this_sec: 0,
+            time_since_last_render: 0.,
+            average_delta_t: 0.,
+            target_fps: None,
+            target_tps: None,
+        }
+    }
+    pub fn update(&mut self, platform: &mut Platform) {
+        if let Some(tps) = self.target_tps {
+            while self.last_delta_t.elapsed().as_secs_f64() < 0.99 / tps as f64 {}
+        }
+        platform.update_time(self.last_delta_t.elapsed().as_secs_f64());
+
+        let last_delta_t = self.last_delta_t.elapsed().as_secs_f64();
+        self.last_delta_t = Instant::now();
+
+        self.tick_time_this_sec += last_delta_t;
+        self.time_since_last_render += last_delta_t;
+        self.ticks_passed_this_sec += 1;
+
+        if self.tick_time_this_sec >= 0.5 {
+            self.average_delta_t = self.tick_time_this_sec / self.ticks_passed_this_sec as f64;
+            self.ticks_passed_this_sec = 0;
+            self.tick_time_this_sec = 0.;
+        }
+    }
+}
+
+pub struct GoodManUI {
+    pub title: String,
+    pub labels: Vec<String>
+}
+impl GoodManUI {
+    pub fn new() -> Self {
+        Self {title: "".to_string(), labels: vec![]}
+    }
+    pub fn set_title(&mut self, label: &str) {
+        self.title = label.to_string();
+    }
+    pub fn add_label(&mut self, label: String) {
+        self.labels.push(label);
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Feature {
+    EngineUi,
+    GameUi,
+}
+
+pub struct Features {
+    pub engine_ui_enabled: bool,
+    pub game_ui_enabled: bool,
+}
+impl Features {
+    pub fn new() -> Self {
+        Self { engine_ui_enabled: false, game_ui_enabled: false }
+    }
+    pub fn enable_feature(&mut self, feature: Feature) {
+        match feature {
+            Feature::EngineUi => self.engine_ui_enabled = true,
+            Feature::GameUi => self.game_ui_enabled = true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -35,6 +130,7 @@ impl Layer {
 pub struct Input {
     cursor_pos: Vec2,
     left_mouse_button_pressed: bool,
+    right_mouse_button_pressed: bool,
     d_pressed: bool,
     a_pressed: bool,
     w_pressed: bool,
@@ -49,6 +145,7 @@ impl Input {
         Self {
             cursor_pos: vec2(0., 0.),
             left_mouse_button_pressed: false,
+            right_mouse_button_pressed: false,
             d_pressed: false,
             a_pressed: false,
             w_pressed: false,
@@ -114,6 +211,10 @@ impl Input {
                         self.left_mouse_button_pressed = is_pressed;
                         true
                     }
+                    MouseButton::Right => {
+                        self.right_mouse_button_pressed = is_pressed;
+                        true
+                    }
                     _ => false,
                 }
             }
@@ -128,6 +229,9 @@ impl Input {
         if self.left_mouse_button_pressed {
             self.left_mouse_button_pressed = false;
         }
+        if self.right_mouse_button_pressed {
+            self.right_mouse_button_pressed = false;
+        }
     }
 
     pub fn get_cursor_pos(&self) -> Vec2 {
@@ -135,6 +239,9 @@ impl Input {
     }
     pub fn is_left_mouse_button_pressed(&self) -> bool {
         self.left_mouse_button_pressed
+    }
+    pub fn is_right_mouse_button_pressed(&self) -> bool {
+        self.right_mouse_button_pressed
     }
     pub fn is_d_pressed(&self) -> bool {
         self.d_pressed

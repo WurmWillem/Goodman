@@ -5,7 +5,7 @@ use ball::Ball;
 mod paddle;
 use paddle::Paddle;
 
-pub const SCREEN_SIZE: Vec2 = vec2(1200., 800.);
+pub const WINDOW_SIZE: Vec2 = vec2(1200., 800.);
 
 fn main() {
     block_on(run());
@@ -13,20 +13,9 @@ fn main() {
 
 async fn run() {
     let event_loop = EventLoop::new();
-    let mut engine = Engine::new(SCREEN_SIZE, &event_loop).await;
+    let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
 
-    engine.set_fps(Some(144));
-
-    let paddle_bytes = include_bytes!("assets/Computer.png");
-    let paddle_0_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
-
-    let paddle_bytes = include_bytes!("assets/Player.png");
-    let paddle_1_tex = engine.create_texture(paddle_bytes, "paddle1").unwrap();
-
-    let ball_bytes = include_bytes!("assets/Ball.png");
-    let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
-
-    let pong = Pong::new(vec![paddle_0_tex, paddle_1_tex, ball_tex]);
+    let pong = Pong::new(&mut engine);
 
     engine.enter_loop(pong, event_loop);
 }
@@ -38,37 +27,54 @@ struct Pong {
     textures: Vec<Texture>,
 }
 impl Manager for Pong {
-    fn new(textures: Vec<Texture>) -> Self {
-        let left_paddle = Paddle::new(80., SCREEN_SIZE.y * 0.5);
-        let right_paddle = Paddle::new(SCREEN_SIZE.x - 80., SCREEN_SIZE.y * 0.5);
+    fn new(engine: &mut Engine) -> Self {
+        engine.set_target_fps(Some(144));
+        engine.set_target_tps(Some(1000 * 100));
+        engine.enable_feature(Feature::EngineUi);
+        engine.enable_feature(Feature::GameUi);
+
+        let paddle_bytes = include_bytes!("assets/Computer.png");
+        let left_paddle_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
+        let paddle_bytes = include_bytes!("assets/Player.png");
+        let right_paddle_tex = engine.create_texture(paddle_bytes, "paddle1").unwrap();
+        let ball_bytes = include_bytes!("assets/Ball.png");
+        let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
+
+        let left_paddle = Paddle::new(80., WINDOW_SIZE.y * 0.5);
+        let right_paddle = Paddle::new(WINDOW_SIZE.x - 80., WINDOW_SIZE.y * 0.5);
         let ball = Ball::new();
 
         Self {
             left_paddle,
             right_paddle,
             ball,
-            textures,
+            textures: vec![left_paddle_tex, right_paddle_tex, ball_tex],
         }
     }
 
-    fn update(&mut self, frame_time: f64, input: &Input) {
+    fn update(&mut self, delta_t: f64, input: &Input) {
         self.left_paddle
-            .update(input.is_w_pressed(), input.is_s_pressed(), frame_time);
+            .update(input.is_w_pressed(), input.is_s_pressed(), delta_t);
         self.right_paddle.update(
             input.is_up_arrow_pressed(),
             input.is_down_arrow_pressed(),
-            frame_time,
+            delta_t,
         );
-        self.ball.update(frame_time);
 
+        self.ball.update(delta_t);
         self.ball.resolve_collisions_left_paddle(&self.left_paddle);
         self.ball
             .resolve_collisions_right_paddle(&self.right_paddle);
     }
 
     fn render(&self, engine: &mut Engine) {
-        engine.draw_texture(&self.left_paddle.rect, &self.textures[0], Layer1);
-        engine.draw_texture(&self.right_paddle.rect, &self.textures[1], Layer1);
-        engine.draw_texture(&self.ball.to_rect(), &self.textures[2], Layer1);
+        let mut ui = GoodManUI::new();
+        ui.set_title("Pong");
+        ui.add_label(format!("ball position: {} {}", self.ball.pos.x as u32, self.ball.pos.y as u32));
+        engine.set_game_ui(ui);
+
+        engine.render_texture(&self.left_paddle.rect, &self.textures[0]);
+        engine.render_texture(&self.right_paddle.rect, &self.textures[1]);
+        engine.render_texture(&self.ball.to_rect(), &self.textures[2]);
     }
 }

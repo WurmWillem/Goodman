@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::time::Instant;
 
+use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::event_loop::EventLoop;
@@ -10,7 +10,7 @@ use crate::camera::{self, Camera};
 use crate::engine::Engine;
 use crate::instances::InstanceRaw;
 use crate::instances::{Instance, Vertex};
-use crate::minor_types::Windowniform;
+use crate::minor_types::{Features, Time, Windowniform};
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
 
@@ -41,21 +41,24 @@ impl Engine {
     /*fn get_delta_time(&self) -> f64 {
         self.delta_time.elapsed().as_secs_f64()
     }*/
-    pub fn get_average_tps(&mut self) -> u32 {
-        (self.ticks_passed_this_sec as f64 / self.tick_time_this_sec) as u32
+    pub fn get_average_tps(&self) -> u32 {
+        (1. / self.time.average_delta_t) as u32
     }
     pub fn get_target_fps(&self) -> Option<u32> {
-        self.target_fps
+        self.time.target_fps
     }
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.size
+        self.win_size
     }
     pub fn get_time_since_last_render(&self) -> f64 {
-        self.time_since_last_render
+        self.time.time_since_last_render
     }
 
-    pub fn set_fps(&mut self, fps: Option<u32>) {
-        self.target_fps = fps;
+    pub fn set_target_fps(&mut self, fps: Option<u32>) {
+        self.time.target_fps = fps;
+    }
+    pub fn set_target_tps(&mut self, tps: Option<u32>) {
+        self.time.target_tps = tps;
     }
     pub fn set_background_color(&mut self, color: Color) {
         self.background_color = wgpu::Color {
@@ -66,8 +69,9 @@ impl Engine {
         }
     }
 
-    pub async fn new(size: Vec2, event_loop: &EventLoop<()>) -> Self {
-        let window = WindowBuilder::new() //350 - 1;
+    pub async fn new(size: Vec2, event_loop: &EventLoop<()>, win_resizable: bool) -> Self {
+        let window = WindowBuilder::new()
+            .with_resizable(win_resizable)
             .with_inner_size(PhysicalSize::new(size.x, size.y))
             .build(event_loop)
             .expect("Failed to build window");
@@ -158,6 +162,18 @@ impl Engine {
             a: 1.,
         };
 
+        // We use the egui_winit_platform crate as the platform.
+        let platform = Platform::new(PlatformDescriptor {
+            physical_width: size.y as u32,
+            physical_height: size.x as u32,
+            scale_factor: window.scale_factor(),
+            font_definitions: egui::FontDefinitions::default(),
+            style: Default::default(),
+        });
+
+        // We use the egui_wgpu_backend crate as the render backend.
+        let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
+
         Self {
             input: Input::new(),
             window,
@@ -168,7 +184,7 @@ impl Engine {
             device,
             queue,
             config,
-            size: win_size,
+            win_size,
 
             render_pipeline,
             vertex_buffer,
@@ -183,18 +199,18 @@ impl Engine {
             instances_raw,
             instances_rendered: 0,
 
-            last_delta_t: Instant::now(),
-            tick_time_this_sec: 0.,
-            ticks_passed_this_sec: 0,
-            time_since_last_render: 0.,
-            average_delta_t: 0.,
-            target_fps: None,
-            target_tps: Some(100000),
+            time: Time::new(),
 
             texture_amt_created: 0,
             layer_hash_inst_vec: HashMap::new(),
             tex_index_hash_bind: HashMap::new(),
             inst_hash_tex_index: HashMap::new(),
+            platform,
+            egui_rpass,
+
+            features: Features::new(),
+
+            game_ui: None,
         }
     }
 }

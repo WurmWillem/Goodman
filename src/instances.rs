@@ -13,11 +13,11 @@ pub struct Instance {
     pub rotation: f64,
 }
 impl Instance {
-    pub fn new(rect: Rect) -> Self {
+    pub fn new(rect: Rect, rotation: f64) -> Self {
         Self {
             pos: vec3(rect.x, rect.y, 0.),
             size: vec2(rect.w, rect.h),
-            rotation: 0.,
+            rotation,
         }
     }
 

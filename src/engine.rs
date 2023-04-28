@@ -1,5 +1,6 @@
-use crate::instances::INDICES;
-use std::{collections::HashMap, time::Instant};
+use egui_wgpu_backend::ScreenDescriptor;
+use egui_winit_platform::Platform;
+use std::collections::HashMap;
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -8,9 +9,12 @@ use winit::{
 
 use crate::{
     camera::Camera,
+    instances::INDICES,
     instances::{self, Instance, InstanceRaw},
+    math::rect,
     math::Rect,
-    minor_types::{Input, InstIndex, Layer, Manager, TexIndex},
+    minor_types::{DrawParams, Time},
+    minor_types::{Feature, Features, Input, InstIndex, Layer, Manager, TexIndex, GoodManUI},
     texture::{self, Texture},
 };
 
@@ -18,15 +22,13 @@ mod engine_manager;
 
 pub struct Engine {
     input: Input,
-
     window: Window,
     background_color: wgpu::Color,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    size: winit::dpi::PhysicalSize<u32>,
-
+    win_size: winit::dpi::PhysicalSize<u32>,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -46,13 +48,14 @@ pub struct Engine {
     camera_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
 
-    target_fps: Option<u32>,
-    target_tps: Option<u32>,
-    ticks_passed_this_sec: u64,
-    tick_time_this_sec: f64,
-    time_since_last_render: f64,
-    last_delta_t: Instant,
-    average_delta_t: f64,
+    time: Time,
+
+    platform: Platform,
+    egui_rpass: egui_wgpu_backend::RenderPass,
+
+    features: Features,
+
+    game_ui: Option<GoodManUI>,
 }
 
 impl Engine {
@@ -61,46 +64,45 @@ impl Engine {
         T: Manager + 'static,
     {
         env_logger::init();
-        event_loop.run(move |event, _, control_flow| match event {
-            Event::WindowEvent {
-                ref event,
-                window_id,
-            } if window_id == self.window.id() => {
-                if !self.input(event) {
-                    self.handle_window_event(event, control_flow);
-                }
-            }
-            Event::MainEventsCleared => {
-                self.update_time();
-                //self.update_time(delta_t);
-                /*if let Some(tps) = self.target_tps {
-                    if self.get_frame_time() < 1. / tps as f64 {
-                        return;
+        event_loop.run(move |event, _, control_flow| {
+            self.platform.handle_event(&event);
+
+            match event {
+                Event::WindowEvent {
+                    ref event,
+                    window_id,
+                } if window_id == self.window.id() => {
+                    if !self.input(event) {
+                        self.handle_window_event(event, control_flow);
                     }
-                }*/
-                self.update();
-                manager.update(self.average_delta_t, &self.input);
-
-                if self.input.is_left_mouse_button_pressed() {
-                    println!("{}", 1. / self.average_delta_t);
                 }
-                self.input.reset_buttons();
+                Event::MainEventsCleared => {
+                    self.time.update(&mut self.platform);
 
-                match self.get_target_fps() {
-                    Some(fps) => {
-                        if self.time_since_last_render >= 1. / fps as f64 {
+                    self.update();
+                    manager.update(self.time.average_delta_t, &self.input);
+
+                    if self.input.is_right_mouse_button_pressed() {
+                        println!("{}", self.get_average_tps());
+                    }
+                    self.input.reset_buttons();
+
+                    match self.get_target_fps() {
+                        Some(fps) => {
+                            if self.time.time_since_last_render >= 0.995 / fps as f64 {
+                                self.window.request_redraw();
+                            }
+                        }
+                        None => {
                             self.window.request_redraw();
                         }
                     }
-                    None => {
-                        self.window.request_redraw();
-                    }
                 }
+                Event::RedrawRequested(window_id) if window_id == self.window.id() => {
+                    self.handle_rendering(&mut manager, control_flow);
+                }
+                _ => {}
             }
-            Event::RedrawRequested(window_id) if window_id == self.window.id() => {
-                self.handle_rendering(&mut manager, control_flow);
-            }
-            _ => {}
         });
     }
 
@@ -109,11 +111,13 @@ impl Engine {
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
+
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Render Pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -159,17 +163,99 @@ impl Engine {
                         draw(instance)
         */
 
+        // Begin to draw the UI frame.
+        self.platform.begin_frame();
+
+        self.create_ui();
+        if let Some(game_ui) = &self.game_ui {
+            self.render_game_ui(game_ui);
+        }
+
+        // End the UI frame. We could now handle the output and draw the UI with the backend.
+        let full_output = self.platform.end_frame(Some(&self.window));
+        let paint_jobs = self.platform.context().tessellate(full_output.shapes);
+
+        // Upload all resources for the GPU.
+        let screen_descriptor = ScreenDescriptor {
+            physical_width: self.config.width,
+            physical_height: self.config.height,
+            scale_factor: self.window.scale_factor() as f32,
+        };
+        let tdelta: egui::TexturesDelta = full_output.textures_delta;
+        self.egui_rpass
+            .add_textures(&self.device, &self.queue, &tdelta)
+            .expect("add texture ok");
+
+        self.egui_rpass
+            .update_buffers(&self.device, &self.queue, &paint_jobs, &screen_descriptor);
+
+        /*self.egui_rpass
+        .remove_textures(tdelta)
+        .expect("remove texture ok");*/
+
+        // Record all render passes.
+        self.egui_rpass
+            .execute_with_renderpass(&mut render_pass, &paint_jobs, &screen_descriptor)
+            .unwrap();
+
         drop(render_pass);
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
         self.instances_rendered = 0;
-        self.time_since_last_render = 0.;
+        self.time.time_since_last_render = 0.;
         Ok(())
     }
 
-    pub fn draw_texture(&mut self, rect: &Rect, texture: &Texture, layer: Layer) {
-        let inst = Instance::new(*rect);
+    pub fn enable_feature(&mut self, feature: Feature) {
+        self.features.enable_feature(feature);
+    }
+
+    fn create_ui(&self) {
+        if !self.features.engine_ui_enabled {
+            return;
+        }
+        egui::Window::new("Engine").show(&self.platform.context(), |ui| {
+            ui.heading("General");
+            ui.label(format!(
+                "window size: {:?}x{:?}",
+                self.win_size.width, self.win_size.height
+            ));
+            if let None = self.get_target_fps() {
+                ui.label(format!("FPS: {:?}", self.get_average_tps()));
+            }
+            ui.label(format!("TPS: {:?}", self.get_average_tps()));
+        });
+    }
+
+    pub fn set_game_ui(&mut self, user_ui: GoodManUI) {
+        if !self.features.game_ui_enabled {
+            println!("game ui is disabled");
+            return;
+        }
+        self.game_ui = Some(user_ui);
+    }
+
+    fn render_game_ui(&self, game_ui: &GoodManUI) {
+        egui::Window::new(game_ui.title.clone()).show(&self.platform.context(), |ui| {
+            for label in &game_ui.labels {
+                ui.label(label);
+            }
+        });
+    }
+
+    pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
+        self.render_tex(rect, texture, 0., Layer::Layer1);
+    }
+    pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
+        self.render_tex(rect, texture, draw_params.rotation, draw_params.layer);
+    }
+    fn render_tex(&mut self, rect_: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
+        let width = rect_.w / self.win_size.width as f64;
+        let height = rect_.h / self.win_size.height as f64;
+        let rect = rect(rect_.x, rect_.y, width, height);
+        let inst = Instance::new(rect, rotation);
+
         if self.instances_rendered < self.instances.len() {
             if self.instances[self.instances_rendered] != inst {
                 self.instances[self.instances_rendered] = inst;
@@ -194,32 +280,13 @@ impl Engine {
         self.instances_rendered += 1;
     }
 
-    fn update_time(&mut self) {
-        let last_delta_t = self.last_delta_t.elapsed().as_secs_f64();
-        self.last_delta_t = Instant::now();
-
-        self.tick_time_this_sec += last_delta_t;
-        self.time_since_last_render += last_delta_t;
-        self.ticks_passed_this_sec += 1;
-
-        if self.tick_time_this_sec > 0.5 {
-            self.average_delta_t = self.tick_time_this_sec / self.ticks_passed_this_sec as f64;
-            //println!("{}", 1. / self.average_delta_t);
-            self.ticks_passed_this_sec = 0;
-            self.tick_time_this_sec = 0.;
-        }
-    }
-
     fn update_instance_buffer(&mut self) {
         if self.instance_buffer.size() == self.instances_raw.len() as u64 * 24 {
-            //let x = Instant::now();
             self.queue.write_buffer(
                 &self.instance_buffer,
                 0,
                 bytemuck::cast_slice(&self.instances_raw),
             );
-            //let x = x.elapsed().as_micros();
-            //println!("{x}");
         } else {
             self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
         }
@@ -231,9 +298,6 @@ impl Engine {
     {
         manager.render(self);
         self.update_instance_buffer();
-
-        // let x = Instant::now();
-
         match self.render() {
             Ok(_) => {}
             // Reconfigure the surface if lost
@@ -259,7 +323,7 @@ impl Engine {
 
     fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
         if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
+            self.win_size = new_size;
             self.config.width = new_size.width;
             self.config.height = new_size.height;
             self.surface.configure(&self.device, &self.config);

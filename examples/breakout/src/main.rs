@@ -4,22 +4,13 @@ fn main() {
     block_on(run());
 }
 
-const SCREEN_SIZE: Vec2 = vec2(1200., 900.);
+const WINDOW_SIZE: Vec2 = vec2(1200., 900.);
 
 async fn run() {
     let event_loop = EventLoop::new();
-    let mut engine: Engine = Engine::new(SCREEN_SIZE, &event_loop).await;
+    let mut engine: Engine = Engine::new(WINDOW_SIZE, &event_loop, false).await;
 
-    engine.set_fps(Some(144));
-
-    let paddle_bytes = include_bytes!("assets/paddle.png");
-    let paddle_tex = engine.create_texture(paddle_bytes, "paddle").unwrap();
-    let ball_bytes = include_bytes!("assets/ball.png");
-    let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
-    let block_bytes = include_bytes!("assets/block.png");
-    let block_tex = engine.create_texture(block_bytes, "block").unwrap();
-
-    let breakout = Breakout::new(vec![paddle_tex, ball_tex, block_tex]);
+    let breakout = Breakout::new(&mut engine);
 
     engine.enter_loop(breakout, event_loop);
 }
@@ -30,16 +21,25 @@ struct Breakout {
     blocks: Vec<Vec<Block>>,
     textures: Vec<Texture>,
 }
+
 impl Manager for Breakout {
-    fn new(textures: Vec<Texture>) -> Self {
-        let paddle = Paddle::new(vec2(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.9));
-        let ball = Ball::new(vec2(0., SCREEN_SIZE.y));
+    fn new(engine: &mut Engine) -> Self {
+        engine.set_target_fps(Some(144));
+
+        let paddle_bytes = include_bytes!("assets/paddle.png");
+        let paddle_tex = engine.create_texture(paddle_bytes, "paddle").unwrap();
+        let ball_bytes = include_bytes!("assets/ball.png");
+        let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
+        let block_bytes = include_bytes!("assets/block.png");
+        let block_tex = engine.create_texture(block_bytes, "block").unwrap();
+        let paddle = Paddle::new(vec2(WINDOW_SIZE.x * 0.5, WINDOW_SIZE.y * 0.9));
+        let ball = Ball::new(vec2(0., WINDOW_SIZE.y));
 
         let mut blocks = Vec::new();
-        for j in 0..8 {
+        for j in 0..100 {
             let mut row = Vec::new();
-            for i in 0..10 {
-                let block = Block::new(i as f64 * 100. + 150., j as f64 * 50. + 100.);
+            for i in 0..100 {
+                let block = Block::new(i as f64 * 12., j as f64 * 9.);
                 row.push(block);
             }
             blocks.push(row);
@@ -49,13 +49,12 @@ impl Manager for Breakout {
             ball,
             paddle,
             blocks,
-            textures,
+            textures: vec![paddle_tex, ball_tex, block_tex],
         }
     }
-
-    fn update(&mut self, frame_time: f64, input: &Input) {
-        self.paddle.update(input, frame_time);
-        self.ball.update(frame_time);
+    fn update(&mut self, delta_t: f64, input: &Input) {
+        self.paddle.update(input, delta_t);
+        self.ball.update(delta_t);
 
         self.ball.resolve_paddle_collision(&self.paddle);
 
@@ -70,12 +69,12 @@ impl Manager for Breakout {
     }
 
     fn render(&self, state: &mut Engine) {
-        state.draw_texture(&self.paddle.rect, &self.textures[0], Layer1);
-        state.draw_texture(&self.ball.to_rect(), &self.textures[1], Layer1);
+        state.render_texture(&self.paddle.rect, &self.textures[0]);
+        state.render_texture(&self.ball.to_rect(), &self.textures[1]);
 
         self.blocks.iter().for_each(|row| {
             row.iter().for_each(|block| {
-                state.draw_texture(&block.rect, &self.textures[2], Layer1);
+                state.render_texture(&block.rect, &self.textures[2]);
             })
         });
     }
@@ -86,7 +85,7 @@ struct Block {
     lives: usize,
 }
 impl Block {
-    const SIZE: Vec2 = vec2(100., 50.);
+    const SIZE: Vec2 = vec2(12., 9.);
     pub fn new(x: f64, y: f64) -> Self {
         Self {
             rect: rect_vec(vec2(x, y), Self::SIZE),
@@ -108,20 +107,20 @@ impl Ball {
             vel: vec2(400., -400.),
         }
     }
-    fn update(&mut self, frame_time: f64) {
-        self.pos += self.vel * frame_time;
+    fn update(&mut self, delta_t: f64) {
+        self.pos += self.vel * delta_t;
         let diameter = Self::DIAMETER;
 
-        if self.pos.x + diameter > SCREEN_SIZE.x {
-            self.pos.x = SCREEN_SIZE.x - diameter;
+        if self.pos.x + diameter > WINDOW_SIZE.x {
+            self.pos.x = WINDOW_SIZE.x - diameter;
             self.vel.x *= -1.;
         } else if self.pos.x < 0. {
             self.pos.x = 0.;
             self.vel.x *= -1.;
         }
-        if self.pos.y + diameter > SCREEN_SIZE.y {
+        if self.pos.y + diameter > WINDOW_SIZE.y {
             self.vel.y *= -1.;
-            self.pos.y = SCREEN_SIZE.y - diameter;
+            self.pos.y = WINDOW_SIZE.y - diameter;
         } else if self.pos.y < 0. {
             self.pos.y = 0.;
             self.vel.y *= -1.;
@@ -157,10 +156,10 @@ impl Paddle {
         }
     }
 
-    fn update(&mut self, input: &Input, frame_time: f64) {
-        let speed = Self::SPEED * frame_time;
+    fn update(&mut self, input: &Input, delta_t: f64) {
+        let speed = Self::SPEED * delta_t;
 
-        if input.is_d_pressed() && self.rect.x + self.rect.w < SCREEN_SIZE.x {
+        if input.is_d_pressed() && self.rect.x + self.rect.w < WINDOW_SIZE.x {
             self.rect.x += speed;
         }
         if input.is_a_pressed() && self.rect.x > 0. {

@@ -5,6 +5,7 @@ mod math;
 mod minor_types;
 pub mod prelude;
 mod texture;
+mod ui;
 
 use prelude::*;
 
@@ -19,7 +20,7 @@ pub async fn run() {
 
 struct StateManager;
 impl Manager for StateManager {
-    fn new(_textures: Vec<Texture>) -> Self {
+    fn new(_engine: &mut Engine) -> Self {
         Self {}
     }
     fn update(&mut self, _frame_time: f64, _input: &Input) {}
