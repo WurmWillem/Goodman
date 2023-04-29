@@ -42,6 +42,17 @@ impl Rect {
             h: bottom - top,
         })
     }
+
+    pub fn xy(&self) -> Vec2 {
+        vec2(self.x, self.y)
+    }
+    pub fn wh(&self) -> Vec2 {
+        vec2(self.w, self.h)
+    }
+    pub fn xy_add(&mut self, var: Vec2) {
+        self.x += var.x;
+        self.y += var.y;
+    }
 }
 impl Div<f64> for Rect {
     #[inline]

@@ -17,6 +17,7 @@ log = "0.4"
 pollster = "0.2"
 bytemuck = { version = "1.12", features = [ "derive" ] }
 anyhow = "1.0"
+spin_sleep = "1.1.1"
 
 
 [dependencies.image]
@@ -31,5 +32,5 @@ path = "examples/pong/src/main.rs"
 name = "breakout"
 path = "examples/breakout/src/main.rs"
 [[bin]] 
-name = "test"
-path = "examples/test_examplee/src/main.rs"
+name = "shooter"
+path = "examples/shooter/src/main.rs"

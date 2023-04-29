@@ -13,7 +13,11 @@ fn main() {
 
 async fn run() {
     let event_loop = EventLoop::new();
+
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
+    engine.set_target_fps(Some(144));
+    engine.set_target_tps(Some(100 * 1000));
+    engine.enable_feature(Feature::EngineUi);
 
     let pong = Pong::new(&mut engine);
 
@@ -28,11 +32,6 @@ struct Pong {
 }
 impl Manager for Pong {
     fn new(engine: &mut Engine) -> Self {
-        engine.set_target_fps(Some(144));
-        engine.set_target_tps(Some(1000 * 100));
-        engine.enable_feature(Feature::EngineUi);
-        engine.enable_feature(Feature::GameUi);
-
         let paddle_bytes = include_bytes!("assets/Computer.png");
         let left_paddle_tex = engine.create_texture(paddle_bytes, "paddle0").unwrap();
         let paddle_bytes = include_bytes!("assets/Player.png");
@@ -68,10 +67,14 @@ impl Manager for Pong {
     }
 
     fn render(&self, engine: &mut Engine) {
-        let mut ui = GoodManUI::new();
+        /*let mut ui = GoodManUI::new();
         ui.set_title("Pong");
         ui.add_label(format!("ball position: {} {}", self.ball.pos.x as u32, self.ball.pos.y as u32));
-        engine.set_game_ui(ui);
+        engine.set_game_ui(ui);*/
+        /*let x = DrawParams {
+
+        }
+        engine.render_texture_ex(rect, texture, draw_params)*/
 
         engine.render_texture(&self.left_paddle.rect, &self.textures[0]);
         engine.render_texture(&self.right_paddle.rect, &self.textures[1]);

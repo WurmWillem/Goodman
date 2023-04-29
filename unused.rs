@@ -160,7 +160,29 @@ fn bad_shader_code() {
     */
 }
 
+fn old_time_code() {
+    /*//let i = Instant::now();
+            let tick_len = 1000000000. * 0.93 / tps as f64;
+            
+            
 
+            let nano_to_sleep = tick_len - self.last_delta_t.elapsed().as_nanos() as f64;
+            //x = i.elapsed().as_nanos() as f64;
+            //println!("{}", micro_to_sleep);
+            //x = self.last_delta_t.elapsed().as_nanos() as f64;
+            /*if micro_to_sleep - 100 > 0 {
+                //micro_to_sleep -= 100;
+            }*/
+            //println!("{}", self.last_delta_t.elapsed().as_nanos());
+            if nano_to_sleep > 0. {
+                //let i = Instant::now();
+                spin_sleep::sleep(Duration::from_nanos(nano_to_sleep as u64));
+                //let i = i.elapsed().as_nanos();
+                //x = i as f64;
+                //println!("i = {i}");
+            }
+            //while self.last_delta_t.elapsed().as_secs_f64() < 0.99 / tps as f64 {}*/
+}
 
 
 use goodman::prelude::*;

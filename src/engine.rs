@@ -13,8 +13,8 @@ use crate::{
     instances::{self, Instance, InstanceRaw},
     math::rect,
     math::Rect,
-    minor_types::{DrawParams, Time},
-    minor_types::{Feature, Features, Input, InstIndex, Layer, Manager, TexIndex, GoodManUI},
+    minor_types::{DrawParams, TimeManager},
+    minor_types::{Feature, Features, GoodManUI, Input, InstIndex, Layer, Manager, TexIndex},
     texture::{self, Texture},
 };
 
@@ -48,7 +48,7 @@ pub struct Engine {
     camera_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
 
-    time: Time,
+    time: TimeManager,
 
     platform: Platform,
     egui_rpass: egui_wgpu_backend::RenderPass,
@@ -64,6 +64,7 @@ impl Engine {
         T: Manager + 'static,
     {
         env_logger::init();
+        self.time.loop_helper.loop_start_s();
         event_loop.run(move |event, _, control_flow| {
             self.platform.handle_event(&event);
 
@@ -83,11 +84,11 @@ impl Engine {
                     manager.update(self.time.average_delta_t, &self.input);
 
                     if self.input.is_right_mouse_button_pressed() {
-                        println!("{}", self.get_average_tps());
+                        println!("{}", 1. / self.time.average_delta_t);
                     }
                     self.input.reset_buttons();
 
-                    match self.get_target_fps() {
+                    match self.time.target_fps {
                         Some(fps) => {
                             if self.time.time_since_last_render >= 0.995 / fps as f64 {
                                 self.window.request_redraw();
@@ -221,7 +222,7 @@ impl Engine {
                 "window size: {:?}x{:?}",
                 self.win_size.width, self.win_size.height
             ));
-            if let None = self.get_target_fps() {
+            if self.time.target_fps.is_none() {
                 ui.label(format!("FPS: {:?}", self.get_average_tps()));
             }
             ui.label(format!("TPS: {:?}", self.get_average_tps()));
@@ -307,8 +308,6 @@ impl Engine {
             // All other errors (Outdated, Timeout) should be resolved by the next frame
             Err(e) => eprintln!("{e:?}"),
         }
-        // let x = x.elapsed().as_micros();
-        // println!("{x}");
     }
 
     fn update(&mut self) {
