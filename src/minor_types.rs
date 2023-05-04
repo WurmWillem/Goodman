@@ -42,7 +42,9 @@ pub struct TimeManager {
 }
 impl TimeManager {
     pub fn new() -> Self {
-        let loop_helper = LoopHelper::builder().report_interval_s(0.1).build_with_target_rate(1000);
+        let loop_helper = LoopHelper::builder()
+            .report_interval_s(0.1)
+            .build_with_target_rate(1000);
         Self {
             loop_helper,
             time_since_last_render: 0.,
@@ -52,7 +54,7 @@ impl TimeManager {
         }
     }
     pub fn update(&mut self, platform: &mut Platform) {
-        if let Some(_) = self.target_tps {
+        if self.target_tps.is_some() {
             self.loop_helper.loop_sleep();
         }
         let last_delta_t = self.loop_helper.loop_start_s();

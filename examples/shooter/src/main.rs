@@ -12,7 +12,7 @@ async fn run() {
     let background_color = Color::new(223., 173., 96., 255.);
     engine.set_background_color(background_color);
     engine.set_target_fps(Some(144));
-    engine.set_target_tps(Some(1 * 1000));
+    engine.set_target_tps(Some(100 * 1000));
     engine.enable_feature(Feature::EngineUi);
 
     let game = Game::new(&mut engine);
@@ -58,7 +58,7 @@ struct Player {
     vel: Vec2,
 }
 impl Player {
-    const ACC: f64 = 5000.;
+    const ACC: f64 = 5.;
     fn new(pos: Vec2) -> Self {
         let rect = rect(pos.x, pos.y, 128., 128.);
         Self {
@@ -68,16 +68,16 @@ impl Player {
     }
     fn update(&mut self, delta_t: f64, input: &Input) {
         if input.is_w_pressed() {
-            self.vel.y -= Self::ACC * delta_t;
+            self.vel.y -= Self::ACC;
         }
         if input.is_s_pressed() {
-            self.vel.y += Self::ACC * delta_t;
+            self.vel.y += Self::ACC;
         }
         if input.is_a_pressed() {
-            self.vel.x -= Self::ACC * delta_t;
+            self.vel.x -= Self::ACC;
         }
         if input.is_d_pressed() {
-            self.vel.x += Self::ACC * delta_t;
+            self.vel.x += Self::ACC;
         }
         self.vel *= 0.99;
         self.rect.xy_add(self.vel * delta_t);

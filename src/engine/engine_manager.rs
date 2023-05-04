@@ -57,7 +57,9 @@ impl Engine {
     pub fn set_target_tps(&mut self, tps: Option<u32>) {
         self.time.target_tps = tps;
         if let Some(tps) = tps {
-            self.time.loop_helper.set_target_rate(tps)
+            self.time
+                .loop_helper
+                .set_target_rate((tps as f32 * 1.05) as u32)
         }
     }
     pub fn set_background_color(&mut self, color: Color) {
@@ -247,7 +249,7 @@ pub fn create_surface_format(surface_caps: &wgpu::SurfaceCapabilities) -> wgpu::
         .formats
         .iter()
         .copied()
-        .find(|f| f.describe().srgb)
+        .find(|f| f.is_srgb())
         .unwrap_or(surface_caps.formats[0])
 }
 

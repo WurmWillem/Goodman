@@ -64,7 +64,6 @@ impl Engine {
         T: Manager + 'static,
     {
         env_logger::init();
-        self.time.loop_helper.loop_start_s();
         event_loop.run(move |event, _, control_flow| {
             self.platform.handle_event(&event);
 
@@ -164,40 +163,44 @@ impl Engine {
                         draw(instance)
         */
 
-        // Begin to draw the UI frame.
-        self.platform.begin_frame();
+        if self.features.engine_ui_enabled || self.features.game_ui_enabled {
+            // Begin to draw the UI frame.
+            self.platform.begin_frame();
 
-        self.create_ui();
-        if let Some(game_ui) = &self.game_ui {
-            self.render_game_ui(game_ui);
+            self.create_ui();
+            if let Some(game_ui) = &self.game_ui {
+                self.render_game_ui(game_ui);
+            }
+
+            let full_output = self.platform.end_frame(Some(&self.window));
+            let paint_jobs = self.platform.context().tessellate(full_output.shapes);
+
+            // Upload all resources for the GPU.
+            let screen_descriptor = ScreenDescriptor {
+                physical_width: self.config.width,
+                physical_height: self.config.height,
+                scale_factor: self.window.scale_factor() as f32,
+            };
+            let tdelta: egui::TexturesDelta = full_output.textures_delta;
+            self.egui_rpass
+                .add_textures(&self.device, &self.queue, &tdelta)
+                .expect("add texture ok");
+
+            self.egui_rpass.update_buffers(
+                &self.device,
+                &self.queue,
+                &paint_jobs,
+                &screen_descriptor,
+            );
+
+            self.egui_rpass
+                .remove_textures(tdelta)
+                .expect("remove texture ok");
+
+            self.egui_rpass
+                .execute_with_renderpass(&mut render_pass, &paint_jobs, &screen_descriptor)
+                .unwrap();
         }
-
-        // End the UI frame. We could now handle the output and draw the UI with the backend.
-        let full_output = self.platform.end_frame(Some(&self.window));
-        let paint_jobs = self.platform.context().tessellate(full_output.shapes);
-
-        // Upload all resources for the GPU.
-        let screen_descriptor = ScreenDescriptor {
-            physical_width: self.config.width,
-            physical_height: self.config.height,
-            scale_factor: self.window.scale_factor() as f32,
-        };
-        let tdelta: egui::TexturesDelta = full_output.textures_delta;
-        self.egui_rpass
-            .add_textures(&self.device, &self.queue, &tdelta)
-            .expect("add texture ok");
-
-        self.egui_rpass
-            .update_buffers(&self.device, &self.queue, &paint_jobs, &screen_descriptor);
-
-        /*self.egui_rpass
-        .remove_textures(tdelta)
-        .expect("remove texture ok");*/
-
-        // Record all render passes.
-        self.egui_rpass
-            .execute_with_renderpass(&mut render_pass, &paint_jobs, &screen_descriptor)
-            .unwrap();
 
         drop(render_pass);
         self.queue.submit(std::iter::once(encoder.finish()));
@@ -217,7 +220,6 @@ impl Engine {
             return;
         }
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
-            ui.heading("General");
             ui.label(format!(
                 "window size: {:?}x{:?}",
                 self.win_size.width, self.win_size.height
