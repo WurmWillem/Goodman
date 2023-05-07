@@ -10,7 +10,7 @@ use crate::camera::{self, Camera};
 use crate::engine::Engine;
 use crate::instances::InstanceRaw;
 use crate::instances::{Instance, Vertex};
-use crate::minor_types::{Features, Time, Windowniform};
+use crate::minor_types::{Features, TimeManager, Windowniform};
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
 
@@ -44,9 +44,6 @@ impl Engine {
     pub fn get_average_tps(&self) -> u32 {
         (1. / self.time.average_delta_t) as u32
     }
-    pub fn get_target_fps(&self) -> Option<u32> {
-        self.time.target_fps
-    }
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
         self.win_size
     }
@@ -59,13 +56,18 @@ impl Engine {
     }
     pub fn set_target_tps(&mut self, tps: Option<u32>) {
         self.time.target_tps = tps;
+        if let Some(tps) = tps {
+            self.time
+                .loop_helper
+                .set_target_rate((tps as f32 * 1.05) as u32)
+        }
     }
     pub fn set_background_color(&mut self, color: Color) {
         self.background_color = wgpu::Color {
-            r: color.r,
-            g: color.g,
-            b: color.b,
-            a: color.a,
+            r: color.r / 255.,
+            g: color.g / 255.,
+            b: color.b / 255.,
+            a: color.a / 255.,
         }
     }
 
@@ -174,6 +176,8 @@ impl Engine {
         // We use the egui_wgpu_backend crate as the render backend.
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
+        let time = TimeManager::new();
+
         Self {
             input: Input::new(),
             window,
@@ -199,7 +203,7 @@ impl Engine {
             instances_raw,
             instances_rendered: 0,
 
-            time: Time::new(),
+            time,
 
             texture_amt_created: 0,
             layer_hash_inst_vec: HashMap::new(),
@@ -218,7 +222,7 @@ impl Engine {
 pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> wgpu::Adapter {
     instance
         .request_adapter(&wgpu::RequestAdapterOptionsBase {
-            power_preference: wgpu::PowerPreference::default(),
+            power_preference: wgpu::PowerPreference::HighPerformance,
             force_fallback_adapter: false,
             compatible_surface: Some(surface),
         })
@@ -245,7 +249,7 @@ pub fn create_surface_format(surface_caps: &wgpu::SurfaceCapabilities) -> wgpu::
         .formats
         .iter()
         .copied()
-        .find(|f| f.describe().srgb)
+        .find(|f| f.is_srgb())
         .unwrap_or(surface_caps.formats[0])
 }
 

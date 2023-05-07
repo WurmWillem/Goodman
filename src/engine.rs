@@ -13,8 +13,8 @@ use crate::{
     instances::{self, Instance, InstanceRaw},
     math::rect,
     math::Rect,
-    minor_types::{DrawParams, Time},
-    minor_types::{Feature, Features, Input, InstIndex, Layer, Manager, TexIndex, GoodManUI},
+    minor_types::{DrawParams, TimeManager},
+    minor_types::{Feature, Features, GoodManUI, Input, InstIndex, Layer, Manager, TexIndex},
     texture::{self, Texture},
 };
 
@@ -48,7 +48,7 @@ pub struct Engine {
     camera_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
 
-    time: Time,
+    time: TimeManager,
 
     platform: Platform,
     egui_rpass: egui_wgpu_backend::RenderPass,
@@ -83,11 +83,11 @@ impl Engine {
                     manager.update(self.time.average_delta_t, &self.input);
 
                     if self.input.is_right_mouse_button_pressed() {
-                        println!("{}", self.get_average_tps());
+                        println!("{}", 1. / self.time.average_delta_t);
                     }
                     self.input.reset_buttons();
 
-                    match self.get_target_fps() {
+                    match self.time.target_fps {
                         Some(fps) => {
                             if self.time.time_since_last_render >= 0.995 / fps as f64 {
                                 self.window.request_redraw();
@@ -163,40 +163,44 @@ impl Engine {
                         draw(instance)
         */
 
-        // Begin to draw the UI frame.
-        self.platform.begin_frame();
+        if self.features.engine_ui_enabled || self.features.game_ui_enabled {
+            // Begin to draw the UI frame.
+            self.platform.begin_frame();
 
-        self.create_ui();
-        if let Some(game_ui) = &self.game_ui {
-            self.render_game_ui(game_ui);
+            self.create_ui();
+            if let Some(game_ui) = &self.game_ui {
+                self.render_game_ui(game_ui);
+            }
+
+            let full_output = self.platform.end_frame(Some(&self.window));
+            let paint_jobs = self.platform.context().tessellate(full_output.shapes);
+
+            // Upload all resources for the GPU.
+            let screen_descriptor = ScreenDescriptor {
+                physical_width: self.config.width,
+                physical_height: self.config.height,
+                scale_factor: self.window.scale_factor() as f32,
+            };
+            let tdelta: egui::TexturesDelta = full_output.textures_delta;
+            self.egui_rpass
+                .add_textures(&self.device, &self.queue, &tdelta)
+                .expect("add texture ok");
+
+            self.egui_rpass.update_buffers(
+                &self.device,
+                &self.queue,
+                &paint_jobs,
+                &screen_descriptor,
+            );
+
+            self.egui_rpass
+                .remove_textures(tdelta)
+                .expect("remove texture ok");
+
+            self.egui_rpass
+                .execute_with_renderpass(&mut render_pass, &paint_jobs, &screen_descriptor)
+                .unwrap();
         }
-
-        // End the UI frame. We could now handle the output and draw the UI with the backend.
-        let full_output = self.platform.end_frame(Some(&self.window));
-        let paint_jobs = self.platform.context().tessellate(full_output.shapes);
-
-        // Upload all resources for the GPU.
-        let screen_descriptor = ScreenDescriptor {
-            physical_width: self.config.width,
-            physical_height: self.config.height,
-            scale_factor: self.window.scale_factor() as f32,
-        };
-        let tdelta: egui::TexturesDelta = full_output.textures_delta;
-        self.egui_rpass
-            .add_textures(&self.device, &self.queue, &tdelta)
-            .expect("add texture ok");
-
-        self.egui_rpass
-            .update_buffers(&self.device, &self.queue, &paint_jobs, &screen_descriptor);
-
-        /*self.egui_rpass
-        .remove_textures(tdelta)
-        .expect("remove texture ok");*/
-
-        // Record all render passes.
-        self.egui_rpass
-            .execute_with_renderpass(&mut render_pass, &paint_jobs, &screen_descriptor)
-            .unwrap();
 
         drop(render_pass);
         self.queue.submit(std::iter::once(encoder.finish()));
@@ -216,12 +220,11 @@ impl Engine {
             return;
         }
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
-            ui.heading("General");
             ui.label(format!(
                 "window size: {:?}x{:?}",
                 self.win_size.width, self.win_size.height
             ));
-            if let None = self.get_target_fps() {
+            if self.time.target_fps.is_none() {
                 ui.label(format!("FPS: {:?}", self.get_average_tps()));
             }
             ui.label(format!("TPS: {:?}", self.get_average_tps()));
@@ -307,8 +310,6 @@ impl Engine {
             // All other errors (Outdated, Timeout) should be resolved by the next frame
             Err(e) => eprintln!("{e:?}"),
         }
-        // let x = x.elapsed().as_micros();
-        // println!("{x}");
     }
 
     fn update(&mut self) {

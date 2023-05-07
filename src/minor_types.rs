@@ -3,7 +3,8 @@ use crate::prelude::Engine;
 
 use cgmath::vec2;
 use egui_winit_platform::Platform;
-use std::{slice::Iter, time::Instant};
+use spin_sleep::LoopHelper;
+use std::slice::Iter;
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
 pub type Vec2 = cgmath::Vector2<f64>;
@@ -32,55 +33,51 @@ impl Default for DrawParams {
     }
 }
 
-pub struct Time {
+pub struct TimeManager {
+    pub loop_helper: LoopHelper,
     pub target_fps: Option<u32>,
     pub target_tps: Option<u32>,
-    pub ticks_passed_this_sec: u64,
-    pub tick_time_this_sec: f64,
     pub time_since_last_render: f64,
-    pub last_delta_t: Instant,
     pub average_delta_t: f64,
 }
-impl Time {
+impl TimeManager {
     pub fn new() -> Self {
+        let loop_helper = LoopHelper::builder()
+            .report_interval_s(0.1)
+            .build_with_target_rate(1000);
         Self {
-            last_delta_t: Instant::now(),
-            tick_time_this_sec: 0.,
-            ticks_passed_this_sec: 0,
+            loop_helper,
             time_since_last_render: 0.,
-            average_delta_t: 0.,
+            average_delta_t: 1. / 100000.,
             target_fps: None,
             target_tps: None,
         }
     }
     pub fn update(&mut self, platform: &mut Platform) {
-        if let Some(tps) = self.target_tps {
-            while self.last_delta_t.elapsed().as_secs_f64() < 0.99 / tps as f64 {}
+        if self.target_tps.is_some() {
+            self.loop_helper.loop_sleep();
         }
-        platform.update_time(self.last_delta_t.elapsed().as_secs_f64());
+        let last_delta_t = self.loop_helper.loop_start_s();
 
-        let last_delta_t = self.last_delta_t.elapsed().as_secs_f64();
-        self.last_delta_t = Instant::now();
-
-        self.tick_time_this_sec += last_delta_t;
+        platform.update_time(last_delta_t);
         self.time_since_last_render += last_delta_t;
-        self.ticks_passed_this_sec += 1;
 
-        if self.tick_time_this_sec >= 0.5 {
-            self.average_delta_t = self.tick_time_this_sec / self.ticks_passed_this_sec as f64;
-            self.ticks_passed_this_sec = 0;
-            self.tick_time_this_sec = 0.;
+        if let Some(avg_tps) = self.loop_helper.report_rate() {
+            self.average_delta_t = 1. / avg_tps;
         }
     }
 }
 
 pub struct GoodManUI {
     pub title: String,
-    pub labels: Vec<String>
+    pub labels: Vec<String>,
 }
 impl GoodManUI {
     pub fn new() -> Self {
-        Self {title: "".to_string(), labels: vec![]}
+        Self {
+            title: "".to_string(),
+            labels: vec![],
+        }
     }
     pub fn set_title(&mut self, label: &str) {
         self.title = label.to_string();
@@ -102,7 +99,10 @@ pub struct Features {
 }
 impl Features {
     pub fn new() -> Self {
-        Self { engine_ui_enabled: false, game_ui_enabled: false }
+        Self {
+            engine_ui_enabled: false,
+            game_ui_enabled: false,
+        }
     }
     pub fn enable_feature(&mut self, feature: Feature) {
         match feature {
