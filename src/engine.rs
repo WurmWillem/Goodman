@@ -143,6 +143,7 @@ impl Engine {
         for layer in Layer::iterator().rev() {
             if let Some(inst_vec) = self.layer_hash_inst_vec.get_mut(layer) {
                 for i in inst_vec.drain(..) {
+                    //Check if into_iter() is better
                     if let Some(tex_index) = self.inst_hash_tex_index.get(&i) {
                         if let Some(bind) = self.tex_index_hash_bind.get(tex_index) {
                             render_pass.set_bind_group(0, bind, &[]);
@@ -167,7 +168,7 @@ impl Engine {
             // Begin to draw the UI frame.
             self.platform.begin_frame();
 
-            self.create_ui();
+            self.render_ui();
             if let Some(game_ui) = &self.game_ui {
                 self.render_game_ui(game_ui);
             }
@@ -215,7 +216,7 @@ impl Engine {
         self.features.enable_feature(feature);
     }
 
-    fn create_ui(&self) {
+    fn render_ui(&self) {
         if !self.features.engine_ui_enabled {
             return;
         }
@@ -224,9 +225,11 @@ impl Engine {
                 "window size: {:?}x{:?}",
                 self.win_size.width, self.win_size.height
             ));
-            if self.time.target_fps.is_none() {
-                ui.label(format!("FPS: {:?}", self.get_average_tps()));
-            }
+            let fps = match self.time.target_fps {
+                Some(fps_) => fps_,
+                None => self.get_average_tps(),
+            };
+            ui.label(format!("FPS: {:?}", fps));
             ui.label(format!("TPS: {:?}", self.get_average_tps()));
         });
     }
