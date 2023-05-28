@@ -22,13 +22,17 @@ mod engine_manager;
 
 pub struct Engine {
     input: Input,
+
     window: Window,
-    background_color: wgpu::Color,
+    win_size: winit::dpi::PhysicalSize<u32>,
+    win_background_color: wgpu::Color,
+    window_bind_group: wgpu::BindGroup,
+
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    win_size: winit::dpi::PhysicalSize<u32>,
+
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -46,9 +50,11 @@ pub struct Engine {
 
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
-    window_bind_group: wgpu::BindGroup,
 
     time: TimeManager,
+
+    target_fps: Option<u32>,
+    target_tps: Option<u32>,
 
     platform: Platform,
     egui_rpass: egui_wgpu_backend::RenderPass,
@@ -64,6 +70,13 @@ impl Engine {
         T: Manager + 'static,
     {
         env_logger::init();
+
+        let report_interval = match self.features.average_tps {
+            Some(report_interval) => report_interval,
+            None => 0.1
+        };
+        self.time = TimeManager::new(report_interval);
+        
         event_loop.run(move |event, _, control_flow| {
             self.platform.handle_event(&event);
 
@@ -80,14 +93,14 @@ impl Engine {
                     self.time.update(&mut self.platform);
 
                     self.update();
-                    manager.update(self.time.average_delta_t, &self.input);
+                    manager.update(self.time.get_necessary_delta_t(), &self.input);
 
-                    if self.input.is_right_mouse_button_pressed() {
+                    /*if self.input.is_right_mouse_button_pressed() {
                         println!("{}", 1. / self.time.average_delta_t);
-                    }
+                    }*/
                     self.input.reset_buttons();
 
-                    match self.time.target_fps {
+                    match self.target_fps {
                         Some(fps) => {
                             if self.time.time_since_last_render >= 0.995 / fps as f64 {
                                 self.window.request_redraw();
@@ -124,7 +137,7 @@ impl Engine {
                 view: &view,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(self.background_color),
+                    load: wgpu::LoadOp::Clear(self.win_background_color),
                     store: true,
                 },
             })],
@@ -225,8 +238,8 @@ impl Engine {
                 "window size: {:?}x{:?}",
                 self.win_size.width, self.win_size.height
             ));
-            let fps = match self.time.target_fps {
-                Some(fps_) => fps_,
+            let fps = match self.target_fps {
+                Some(fps) => fps,
                 None => self.get_average_tps(),
             };
             ui.label(format!("FPS: {:?}", fps));

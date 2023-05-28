@@ -42,7 +42,7 @@ impl Engine {
         self.delta_time.elapsed().as_secs_f64()
     }*/
     pub fn get_average_tps(&self) -> u32 {
-        (1. / self.time.average_delta_t) as u32
+        self.time.get_average_tps()
     }
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
         self.win_size
@@ -52,18 +52,14 @@ impl Engine {
     }
 
     pub fn set_target_fps(&mut self, fps: Option<u32>) {
-        self.time.target_fps = fps;
+        self.target_fps = fps;
     }
     pub fn set_target_tps(&mut self, tps: Option<u32>) {
-        self.time.target_tps = tps;
-        if let Some(tps) = tps {
-            self.time
-                .loop_helper
-                .set_target_rate((tps as f32 * 1.05) as u32)
-        }
+        self.target_tps = tps;
+        self.time.set_target_tps(tps)
     }
     pub fn set_background_color(&mut self, color: Color) {
-        self.background_color = wgpu::Color {
+        self.win_background_color = wgpu::Color {
             r: color.r / 255.,
             g: color.g / 255.,
             b: color.b / 255.,
@@ -176,14 +172,14 @@ impl Engine {
         // We use the egui_wgpu_backend crate as the render backend.
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
-        let time = TimeManager::new();
+        let time = TimeManager::new(0.1);
 
         Self {
             input: Input::new(),
             window,
             window_bind_group,
 
-            background_color,
+            win_background_color: background_color,
             surface,
             device,
             queue,
@@ -215,6 +211,9 @@ impl Engine {
             features: Features::new(),
 
             game_ui: None,
+
+            target_fps: None,
+            target_tps: None,
         }
     }
 }
