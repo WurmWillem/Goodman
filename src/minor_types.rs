@@ -35,9 +35,11 @@ impl Default for DrawParams {
 
 pub struct TimeManager {
     pub time_since_last_render: f64,
+    pub stuff: Vec<Vec2>,
     loop_helper: LoopHelper,
     last_delta_t: f64,
     average_delta_t: f64,
+    time_passed: f64,
     use_target_tps: bool,
     use_average_tps: bool,
 }
@@ -47,8 +49,10 @@ impl TimeManager {
             .report_interval_s(report_interval)
             .build_with_target_rate(1000); // Probably gets overwritten later with engine.set_target_tps()
         Self {
+            stuff: vec![],
             loop_helper,
             time_since_last_render: 0.,
+            time_passed: 0.,
             last_delta_t: 1.,
             average_delta_t: 1. / 100000.,
             use_target_tps: false,
@@ -65,11 +69,17 @@ impl TimeManager {
         self.last_delta_t = self.loop_helper.loop_start_s();
         self.time_since_last_render += self.last_delta_t;
         platform.update_time(self.last_delta_t);
+        self.time_passed += self.last_delta_t;
 
         // Update average delta_t
         if let Some(avg_tps) = self.loop_helper.report_rate() {
             self.average_delta_t = 1. / avg_tps;
+            self.stuff.push(vec2(self.time_passed, avg_tps));
         }
+    }
+
+    pub fn update_stuff(&mut self) {
+        self.stuff.retain(|vec| vec.x >= self.time_passed - 10.)
     }
 
     pub fn set_target_tps(&mut self, tps: Option<u32>) {

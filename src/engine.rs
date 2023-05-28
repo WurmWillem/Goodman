@@ -178,6 +178,7 @@ impl Engine {
         */
 
         if self.features.engine_ui_enabled || self.features.game_ui_enabled {
+            self.time.update_stuff();
             // Begin to draw the UI frame.
             self.platform.begin_frame();
 
@@ -233,7 +234,15 @@ impl Engine {
         if !self.features.engine_ui_enabled {
             return;
         }
+
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
+            
+            let tps_points: egui::plot::PlotPoints = self.time.stuff.iter().map(|vec| {
+                [vec.x, vec.y]
+            }).collect();
+            let line = egui::plot::Line::new(tps_points);
+            egui::plot::Plot::new("sd").view_aspect(2.).show(ui, |plot_ui| plot_ui.line(line));
+
             ui.label(format!(
                 "window size: {:?}x{:?}",
                 self.win_size.width, self.win_size.height
