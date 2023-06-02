@@ -108,7 +108,7 @@ impl Engine {
 
                     match self.target_fps {
                         Some(fps) => {
-                            if self.time.time_since_last_render >= 0.995 / fps as f64 {
+                            if self.time.get_time_since_last_render() >= 0.995 / fps as f64 {
                                 self.window.request_redraw();
                             }
                         }
@@ -126,10 +126,7 @@ impl Engine {
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        //let x = Instant::now();
         let output = self.surface.get_current_texture()?;
-        //let x = x.elapsed().as_micros();
-        //println!("{x}");
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -165,7 +162,6 @@ impl Engine {
         for layer in Layer::iterator().rev() {
             if let Some(inst_vec) = self.layer_hash_inst_vec.get_mut(layer) {
                 for i in inst_vec.drain(..) {
-                    //Check if into_iter() is better
                     if let Some(tex_index) = self.inst_hash_tex_index.get(&i) {
                         if let Some(bind) = self.tex_index_hash_bind.get(tex_index) {
                             render_pass.set_bind_group(0, bind, &[]);
@@ -187,7 +183,8 @@ impl Engine {
         */
 
         if self.features.engine_ui_enabled || self.features.game_ui_enabled {
-            self.time.update_stuff();
+            self.time.update_graph();
+
             // Begin to draw the UI frame.
             self.platform.begin_frame();
 
@@ -231,7 +228,7 @@ impl Engine {
         output.present();
 
         self.instances_rendered = 0;
-        self.time.time_since_last_render = 0.;
+        self.time.reset_time_since_last_render();
         Ok(())
     }
 
@@ -246,10 +243,12 @@ impl Engine {
 
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
             let tps_points: egui::plot::PlotPoints =
-                self.time.stuff.iter().map(|vec| [vec.x, vec.y]).collect();
+                self.time.graph_vec.iter().map(|vec| [vec.x, vec.y]).collect();
             let line = egui::plot::Line::new(tps_points);
+
             egui::plot::Plot::new("sd")
                 .view_aspect(2.)
+                .include_y(0.)
                 .show(ui, |plot_ui| plot_ui.line(line));
 
             ui.label(format!(

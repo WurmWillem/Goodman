@@ -48,7 +48,7 @@ impl Engine {
         self.win_size
     }
     pub fn get_time_since_last_render(&self) -> f64 {
-        self.time.time_since_last_render
+        self.time.get_time_since_last_render()
     }
 
     pub fn set_target_fps(&mut self, fps: Option<u32>) {

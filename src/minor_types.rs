@@ -34,12 +34,12 @@ impl Default for DrawParams {
 }
 
 pub struct TimeManager {
-    pub time_since_last_render: f64,
-    pub stuff: Vec<Vec2>,
+    time_since_last_render: f64,
+    pub graph_vec: Vec<Vec2>,
     loop_helper: LoopHelper,
     last_delta_t: f64,
     average_delta_t: f64,
-    time_passed: f64,
+    time_passed_since_creation: f64,
     use_target_tps: bool,
     use_average_tps: bool,
 }
@@ -48,11 +48,12 @@ impl TimeManager {
         let loop_helper = LoopHelper::builder()
             .report_interval_s(0.1)
             .build_with_target_rate(144);
+
         Self {
-            stuff: vec![],
+            graph_vec: vec![],
             loop_helper,
             time_since_last_render: 0.,
-            time_passed: 0.,
+            time_passed_since_creation: 0.,
             last_delta_t: 1.,
             average_delta_t: 1. / 100000.,
             use_target_tps: false,
@@ -75,18 +76,20 @@ impl TimeManager {
         // Get delta_t of last tick and update necessary systems accordingly
         self.last_delta_t = self.loop_helper.loop_start_s();
         self.time_since_last_render += self.last_delta_t;
+        self.time_passed_since_creation += self.last_delta_t;
+
         platform.update_time(self.last_delta_t);
-        self.time_passed += self.last_delta_t;
 
         // Update average delta_t
         if let Some(avg_tps) = self.loop_helper.report_rate() {
             self.average_delta_t = 1. / avg_tps;
-            self.stuff.push(vec2(self.time_passed, avg_tps));
+            self.graph_vec.push(vec2(self.time_passed_since_creation, avg_tps));
+            //println!("{}", avg_tps)
         }
     }
 
-    pub fn update_stuff(&mut self) {
-        self.stuff.retain(|vec| vec.x >= self.time_passed - 10.)
+    pub fn update_graph(&mut self) {
+        self.graph_vec.retain(|vec| vec.x >= self.time_passed_since_creation - 10.)
     }
 
     pub fn set_target_tps(&mut self, tps: Option<u32>) {
@@ -99,6 +102,10 @@ impl TimeManager {
         }
     }
 
+    pub fn reset_time_since_last_render(&mut self) {
+        self.time_since_last_render = 0.;
+    }
+
     pub fn get_relevant_delta_t(&self) -> f64 {
         if self.use_average_tps {
             return self.average_delta_t;
@@ -108,6 +115,10 @@ impl TimeManager {
 
     pub fn get_average_tps(&self) -> u32 {
         (1. / self.average_delta_t) as u32
+    }
+
+    pub fn get_time_since_last_render(&self) -> f64 {
+        self.time_since_last_render
     }
 }
 
