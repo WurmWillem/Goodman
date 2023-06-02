@@ -172,7 +172,7 @@ impl Engine {
         // We use the egui_wgpu_backend crate as the render backend.
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
-        let time = TimeManager::new(0.1);
+        let time = TimeManager::new();
 
         Self {
             input: Input::new(),
@@ -262,7 +262,7 @@ pub fn create_config(
         format: *surface_format,
         width: size.width,
         height: size.height,
-        present_mode: surface_caps.present_modes[0],
+        present_mode: wgpu::PresentMode::Immediate, //Used to be surface_caps.present_modes[0]
         alpha_mode: surface_caps.alpha_modes[0],
         view_formats: vec![],
     }

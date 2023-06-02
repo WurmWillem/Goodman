@@ -73,10 +73,16 @@ impl Engine {
 
         let report_interval = match self.features.average_tps {
             Some(report_interval) => report_interval,
-            None => 0.1
+            None => 0.1,
         };
-        self.time = TimeManager::new(report_interval);
-        
+        let target_tps = match self.target_tps {
+            Some(tps) => tps,
+            None => 1000,
+        };
+
+        self.time
+            .create_new_loop_helper(report_interval, target_tps);
+
         event_loop.run(move |event, _, control_flow| {
             self.platform.handle_event(&event);
 
@@ -93,11 +99,11 @@ impl Engine {
                     self.time.update(&mut self.platform);
 
                     self.update();
-                    manager.update(self.time.get_necessary_delta_t(), &self.input);
+                    manager.update(self.time.get_relevant_delta_t(), &self.input);
 
-                    /*if self.input.is_right_mouse_button_pressed() {
-                        println!("{}", 1. / self.time.average_delta_t);
-                    }*/
+                    if self.input.is_right_mouse_button_pressed() {
+                        println!("{}", self.time.get_average_tps());
+                    }
                     self.input.reset_buttons();
 
                     match self.target_fps {
@@ -120,7 +126,10 @@ impl Engine {
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        //let x = Instant::now();
         let output = self.surface.get_current_texture()?;
+        //let x = x.elapsed().as_micros();
+        //println!("{x}");
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -236,12 +245,12 @@ impl Engine {
         }
 
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
-            
-            let tps_points: egui::plot::PlotPoints = self.time.stuff.iter().map(|vec| {
-                [vec.x, vec.y]
-            }).collect();
+            let tps_points: egui::plot::PlotPoints =
+                self.time.stuff.iter().map(|vec| [vec.x, vec.y]).collect();
             let line = egui::plot::Line::new(tps_points);
-            egui::plot::Plot::new("sd").view_aspect(2.).show(ui, |plot_ui| plot_ui.line(line));
+            egui::plot::Plot::new("sd")
+                .view_aspect(2.)
+                .show(ui, |plot_ui| plot_ui.line(line));
 
             ui.label(format!(
                 "window size: {:?}x{:?}",

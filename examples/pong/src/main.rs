@@ -16,9 +16,9 @@ async fn run() {
 
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
     engine.set_target_fps(Some(144));
-    engine.set_target_tps(Some(1 * 1000));
+    engine.set_target_tps(Some(100 * 1000));
     engine.enable_feature(Feature::EngineUi);
-    engine.enable_feature(Feature::AverageTPS(0.1));
+    engine.enable_feature(Feature::AverageTPS(0.5));
 
     let pong = Pong::new(&mut engine);
 

@@ -44,10 +44,10 @@ pub struct TimeManager {
     use_average_tps: bool,
 }
 impl TimeManager {
-    pub fn new(report_interval: f64) -> Self {
+    pub fn new() -> Self {
         let loop_helper = LoopHelper::builder()
-            .report_interval_s(report_interval)
-            .build_with_target_rate(1000); // Probably gets overwritten later with engine.set_target_tps()
+            .report_interval_s(0.1)
+            .build_with_target_rate(144);
         Self {
             stuff: vec![],
             loop_helper,
@@ -59,6 +59,13 @@ impl TimeManager {
             use_average_tps: false,
         }
     }
+
+    pub fn create_new_loop_helper(&mut self, report_interval: f64, target_tps: u32) {
+        self.loop_helper = LoopHelper::builder()
+            .report_interval_s(report_interval)
+            .build_with_target_rate(target_tps);
+    }
+
     pub fn update(&mut self, platform: &mut Platform) {
         // Sleep until 1 / target_tps is reached
         if self.use_target_tps {
@@ -92,10 +99,10 @@ impl TimeManager {
         }
     }
 
-    pub fn get_necessary_delta_t(&self) -> f64 {
+    pub fn get_relevant_delta_t(&self) -> f64 {
         if self.use_average_tps {
             return self.average_delta_t;
-        } 
+        }
         return self.last_delta_t;
     }
 
