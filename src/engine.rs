@@ -39,7 +39,6 @@ pub struct Engine {
     instance_buffer: wgpu::Buffer,
     camera_buffer: wgpu::Buffer,
 
-    instances: Vec<Instance>,
     instances_raw: Vec<InstanceRaw>,
     instances_rendered: usize,
 
@@ -227,6 +226,7 @@ impl Engine {
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
+        self.instances_raw = Vec::with_capacity(self.instances_rendered);
         self.instances_rendered = 0;
         self.time.reset_time_since_last_render();
         Ok(())
@@ -261,6 +261,7 @@ impl Engine {
             };
             ui.label(format!("FPS: {:?}", fps));
             ui.label(format!("TPS: {:?}", self.get_average_tps()));
+            ui.label(format!("textures rendered this frame: {:?}", self.instances_rendered));
         });
     }
 
@@ -290,17 +291,9 @@ impl Engine {
         let width = rect_.w / self.win_size.width as f64;
         let height = rect_.h / self.win_size.height as f64;
         let rect = rect(rect_.x, rect_.y, width, height);
-        let inst = Instance::new(rect, rotation);
+        let inst_raw = Instance::new(rect, rotation).to_raw();
 
-        if self.instances_rendered < self.instances.len() {
-            if self.instances[self.instances_rendered] != inst {
-                self.instances[self.instances_rendered] = inst;
-                self.instances_raw[self.instances_rendered] = inst.to_raw();
-            }
-        } else {
-            self.instances.push(inst);
-            self.instances_raw.push(inst.to_raw());
-        }
+        self.instances_raw.push(inst_raw);
 
         self.inst_hash_tex_index
             .insert(self.instances_rendered as u32, texture.index);

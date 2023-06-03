@@ -10,6 +10,9 @@ async fn run() {
     let event_loop = EventLoop::new();
     let mut engine: Engine = Engine::new(WINDOW_SIZE, &event_loop, false).await;
 
+    engine.set_target_fps(Some(144));
+    engine.enable_feature(Feature::EngineUi);
+
     let breakout = Breakout::new(&mut engine);
 
     engine.enter_loop(breakout, event_loop);
@@ -24,8 +27,6 @@ struct Breakout {
 
 impl Manager for Breakout {
     fn new(engine: &mut Engine) -> Self {
-        engine.set_target_fps(Some(144));
-
         let paddle_bytes = include_bytes!("assets/paddle.png");
         let paddle_tex = engine.create_texture(paddle_bytes, "paddle").unwrap();
         let ball_bytes = include_bytes!("assets/ball.png");
@@ -52,7 +53,7 @@ impl Manager for Breakout {
             textures: vec![paddle_tex, ball_tex, block_tex],
         }
     }
-    fn update(&mut self, delta_t: f64, input: &Input) {
+    fn update(&mut self, delta_t: f64, input: &Input) { //400k - 700k, 10k textures
         self.paddle.update(input, delta_t);
         self.ball.update(delta_t);
 
@@ -69,6 +70,13 @@ impl Manager for Breakout {
     }
 
     fn render(&self, state: &mut Engine) {
+        /*self.blocks.iter_mut().for_each(|row| {
+            if row.len() > 0 {
+                row.remove(0);
+                return;
+            }
+        });*/
+
         state.render_texture(&self.paddle.rect, &self.textures[0]);
         state.render_texture(&self.ball.to_rect(), &self.textures[1]);
 
@@ -104,7 +112,7 @@ impl Ball {
     fn new(pos: Vec2) -> Self {
         Self {
             pos,
-            vel: vec2(400., -400.),
+            vel: vec2(40000., -40000.),
         }
     }
     fn update(&mut self, delta_t: f64) {

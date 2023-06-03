@@ -195,7 +195,6 @@ impl Engine {
             camera_buffer,
 
             instance_buffer,
-            instances,
             instances_raw,
             instances_rendered: 0,
 

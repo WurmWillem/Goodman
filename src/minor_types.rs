@@ -33,13 +33,28 @@ impl Default for DrawParams {
     }
 }
 
+/*pub struct TextureRenderer;
+impl TextureRenderer {
+    pub fn new() -> TextureRenderer {
+        Self {}
+    }
+    pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
+        self.render_tex(rect, texture, 0., Layer::Layer1);
+    }
+    pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
+        self.render_tex(rect, texture, draw_params.rotation, draw_params.layer);
+    }
+}*/
+
 pub struct TimeManager {
-    time_since_last_render: f64,
     pub graph_vec: Vec<Vec2>,
+
     loop_helper: LoopHelper,
+    time_since_last_render: f64,
     last_delta_t: f64,
     average_delta_t: f64,
     time_passed_since_creation: f64,
+
     use_target_tps: bool,
     use_average_tps: bool,
 }
