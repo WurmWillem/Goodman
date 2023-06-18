@@ -76,7 +76,7 @@ impl TimeManager {
         }
     }
 
-    pub fn create_new_loop_helper(&mut self, report_interval: f64, target_tps: u32) {
+    pub fn replace_loop_helper(&mut self, report_interval: f64, target_tps: u32) {
         self.loop_helper = LoopHelper::builder()
             .report_interval_s(report_interval)
             .build_with_target_rate(target_tps);
@@ -110,7 +110,7 @@ impl TimeManager {
     pub fn set_target_tps(&mut self, tps: Option<u32>) {
         match tps {
             Some(tps) => {
-                self.loop_helper.set_target_rate((tps as f32 * 1.05) as u32);
+                self.loop_helper.set_target_rate(tps);
                 self.use_target_tps = true;
             }
             None => self.use_target_tps = false,

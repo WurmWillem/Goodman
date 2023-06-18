@@ -62,7 +62,6 @@ pub struct Engine {
 
     game_ui: Option<GoodManUI>,
 }
-
 impl Engine {
     pub fn enter_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
@@ -80,7 +79,7 @@ impl Engine {
         };
 
         self.time
-            .create_new_loop_helper(report_interval, target_tps);
+            .replace_loop_helper(report_interval, target_tps);
 
         event_loop.run(move |event, _, control_flow| {
             self.platform.handle_event(&event);

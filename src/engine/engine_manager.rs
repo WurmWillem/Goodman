@@ -54,7 +54,12 @@ impl Engine {
     pub fn set_target_fps(&mut self, fps: Option<u32>) {
         self.target_fps = fps;
     }
-    pub fn set_target_tps(&mut self, tps: Option<u32>) {
+    pub fn set_target_tps(&mut self, mut tps: Option<u32>) {
+        if let Some(tps_) = tps {
+            let tps_ = (1.05 * tps_ as f32) as u32;
+            tps = Some(tps_)
+        }
+
         self.target_tps = tps;
         self.time.set_target_tps(tps)
     }
