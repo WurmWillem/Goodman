@@ -42,7 +42,7 @@ pub struct Engine {
     instances_raw: Vec<InstanceRaw>,
     instances_rendered: usize,
 
-    tex_index_hash_bind: HashMap<TexIndex, wgpu::BindGroup>,
+    tex_bindgroup_vec: Vec<wgpu::BindGroup>,
     layer_hash_inst_vec: HashMap<Layer, Vec<InstIndex>>,
     inst_hash_tex_index: HashMap<InstIndex, TexIndex>,
     texture_amt_created: u32,
@@ -78,8 +78,7 @@ impl Engine {
             None => 1000,
         };
 
-        self.time
-            .replace_loop_helper(report_interval, target_tps);
+        self.time.replace_loop_helper(report_interval, target_tps);
 
         event_loop.run(move |event, _, control_flow| {
             self.platform.handle_event(&event);
@@ -156,20 +155,19 @@ impl Engine {
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-        //let x = Instant::now();
+        // let x = std::time::Instant::now();
         for layer in Layer::iterator().rev() {
             if let Some(inst_vec) = self.layer_hash_inst_vec.get_mut(layer) {
                 for i in inst_vec.drain(..) {
-                    if let Some(tex_index) = self.inst_hash_tex_index.get(&i) {
-                        if let Some(bind) = self.tex_index_hash_bind.get(tex_index) {
-                            render_pass.set_bind_group(0, bind, &[]);
-                            render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
-                        }
+                    if let Some(tex_bind_index) = self.inst_hash_tex_index.get(&i) {
+                        let tex_bind_index = *tex_bind_index as usize;
+                        render_pass.set_bind_group(0, &self.tex_bindgroup_vec[tex_bind_index], &[]);
+                        render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
                     }
                 }
             }
         }
-        // let x = x.elapsed().as_micros(); //~400 micro
+        // let x = x.elapsed().as_micros(); //~230 micro, 10k tex
         // println!("{x}");
         /*
         foreach layer
@@ -241,8 +239,12 @@ impl Engine {
         }
 
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
-            let tps_points: egui::plot::PlotPoints =
-                self.time.graph_vec.iter().map(|vec| [vec.x, vec.y]).collect();
+            let tps_points: egui::plot::PlotPoints = self
+                .time
+                .graph_vec
+                .iter()
+                .map(|vec| [vec.x, vec.y])
+                .collect();
             let line = egui::plot::Line::new(tps_points);
 
             egui::plot::Plot::new("sd")
@@ -260,7 +262,10 @@ impl Engine {
             };
             ui.label(format!("FPS: {:?}", fps));
             ui.label(format!("TPS: {:?}", self.get_average_tps()));
-            ui.label(format!("textures rendered this frame: {:?}", self.instances_rendered));
+            ui.label(format!(
+                "textures rendered this frame: {:?}",
+                self.instances_rendered
+            ));
         });
     }
 

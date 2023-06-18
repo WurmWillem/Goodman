@@ -10,7 +10,7 @@ use crate::camera::{self, Camera};
 use crate::engine::Engine;
 use crate::instances::InstanceRaw;
 use crate::instances::{Instance, Vertex};
-use crate::minor_types::{Features, TimeManager, Windowniform};
+use crate::minor_types::{Features, TimeManager, WindowUniform};
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
 
@@ -31,16 +31,12 @@ impl Engine {
         let texture_bind_group =
             texture::create_bind_group(&self.device, &texture_bind_group_layout, &tex);
 
-        self.tex_index_hash_bind
-            .insert(tex.index, texture_bind_group);
+        self.tex_bindgroup_vec.push(texture_bind_group);
 
         self.texture_amt_created += 1;
         Ok(tex)
     }
 
-    /*fn get_delta_time(&self) -> f64 {
-        self.delta_time.elapsed().as_secs_f64()
-    }*/
     pub fn get_average_tps(&self) -> u32 {
         self.time.get_average_tps()
     }
@@ -107,7 +103,7 @@ impl Engine {
         let camera_bind_group =
             camera::create_bind_group(&device, &camera_buffer, &camera_bind_group_layout);
 
-        let window_size_uniform = Windowniform {
+        let window_size_uniform = WindowUniform {
             size: [1. / size.x as f32, 1. / size.y as f32],
         };
         let window_size_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -207,8 +203,9 @@ impl Engine {
 
             texture_amt_created: 0,
             layer_hash_inst_vec: HashMap::new(),
-            tex_index_hash_bind: HashMap::new(),
             inst_hash_tex_index: HashMap::new(),
+            tex_bindgroup_vec: vec![],
+
             platform,
             egui_rpass,
 

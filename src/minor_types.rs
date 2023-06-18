@@ -98,13 +98,15 @@ impl TimeManager {
         // Update average delta_t
         if let Some(avg_tps) = self.loop_helper.report_rate() {
             self.average_delta_t = 1. / avg_tps;
-            self.graph_vec.push(vec2(self.time_passed_since_creation, avg_tps));
+            self.graph_vec
+                .push(vec2(self.time_passed_since_creation, avg_tps));
             //println!("{}", avg_tps)
         }
     }
 
     pub fn update_graph(&mut self) {
-        self.graph_vec.retain(|vec| vec.x >= self.time_passed_since_creation - 10.)
+        self.graph_vec
+            .retain(|vec| vec.x >= self.time_passed_since_creation - 10.)
     }
 
     pub fn set_target_tps(&mut self, tps: Option<u32>) {
@@ -394,6 +396,6 @@ impl Color {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Windowniform {
+pub struct WindowUniform {
     pub size: [f32; 2],
 }
