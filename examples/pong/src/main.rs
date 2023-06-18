@@ -18,6 +18,7 @@ async fn run() {
     engine.set_target_fps(Some(144));
     engine.set_target_tps(Some(100 * 1000));
     engine.enable_feature(Feature::EngineUi);
+    //engine.enable_feature(Feature::AverageTPS(0.1));
 
     let pong = Pong::new(&mut engine);
 

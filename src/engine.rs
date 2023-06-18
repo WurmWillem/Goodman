@@ -22,20 +22,23 @@ mod engine_manager;
 
 pub struct Engine {
     input: Input,
+
     window: Window,
-    background_color: wgpu::Color,
+    win_size: winit::dpi::PhysicalSize<u32>,
+    win_background_color: wgpu::Color,
+    window_bind_group: wgpu::BindGroup,
+
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    win_size: winit::dpi::PhysicalSize<u32>,
+
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     instance_buffer: wgpu::Buffer,
     camera_buffer: wgpu::Buffer,
 
-    instances: Vec<Instance>,
     instances_raw: Vec<InstanceRaw>,
     instances_rendered: usize,
 
@@ -46,9 +49,11 @@ pub struct Engine {
 
     camera: Camera,
     camera_bind_group: wgpu::BindGroup,
-    window_bind_group: wgpu::BindGroup,
 
     time: TimeManager,
+
+    target_fps: Option<u32>,
+    target_tps: Option<u32>,
 
     platform: Platform,
     egui_rpass: egui_wgpu_backend::RenderPass,
@@ -64,6 +69,19 @@ impl Engine {
         T: Manager + 'static,
     {
         env_logger::init();
+
+        let report_interval = match self.features.average_tps {
+            Some(report_interval) => report_interval,
+            None => 0.1,
+        };
+        let target_tps = match self.target_tps {
+            Some(tps) => tps,
+            None => 1000,
+        };
+
+        self.time
+            .create_new_loop_helper(report_interval, target_tps);
+
         event_loop.run(move |event, _, control_flow| {
             self.platform.handle_event(&event);
 
@@ -80,16 +98,16 @@ impl Engine {
                     self.time.update(&mut self.platform);
 
                     self.update();
-                    manager.update(self.time.average_delta_t, &self.input);
+                    manager.update(self.time.get_relevant_delta_t(), &self.input);
 
                     if self.input.is_right_mouse_button_pressed() {
-                        println!("{}", 1. / self.time.average_delta_t);
+                        println!("{}", self.time.get_average_tps());
                     }
                     self.input.reset_buttons();
 
-                    match self.time.target_fps {
+                    match self.target_fps {
                         Some(fps) => {
-                            if self.time.time_since_last_render >= 0.995 / fps as f64 {
+                            if self.time.get_time_since_last_render() >= 0.995 / fps as f64 {
                                 self.window.request_redraw();
                             }
                         }
@@ -124,7 +142,7 @@ impl Engine {
                 view: &view,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(self.background_color),
+                    load: wgpu::LoadOp::Clear(self.win_background_color),
                     store: true,
                 },
             })],
@@ -164,10 +182,12 @@ impl Engine {
         */
 
         if self.features.engine_ui_enabled || self.features.game_ui_enabled {
+            self.time.update_graph();
+
             // Begin to draw the UI frame.
             self.platform.begin_frame();
 
-            self.create_ui();
+            self.render_ui();
             if let Some(game_ui) = &self.game_ui {
                 self.render_game_ui(game_ui);
             }
@@ -206,8 +226,9 @@ impl Engine {
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
+        self.instances_raw = Vec::with_capacity(self.instances_rendered);
         self.instances_rendered = 0;
-        self.time.time_since_last_render = 0.;
+        self.time.reset_time_since_last_render();
         Ok(())
     }
 
@@ -215,19 +236,32 @@ impl Engine {
         self.features.enable_feature(feature);
     }
 
-    fn create_ui(&self) {
+    fn render_ui(&self) {
         if !self.features.engine_ui_enabled {
             return;
         }
+
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
+            let tps_points: egui::plot::PlotPoints =
+                self.time.graph_vec.iter().map(|vec| [vec.x, vec.y]).collect();
+            let line = egui::plot::Line::new(tps_points);
+
+            egui::plot::Plot::new("sd")
+                .view_aspect(2.)
+                .include_y(0.)
+                .show(ui, |plot_ui| plot_ui.line(line));
+
             ui.label(format!(
                 "window size: {:?}x{:?}",
                 self.win_size.width, self.win_size.height
             ));
-            if self.time.target_fps.is_none() {
-                ui.label(format!("FPS: {:?}", self.get_average_tps()));
-            }
+            let fps = match self.target_fps {
+                Some(fps) => fps,
+                None => self.get_average_tps(),
+            };
+            ui.label(format!("FPS: {:?}", fps));
             ui.label(format!("TPS: {:?}", self.get_average_tps()));
+            ui.label(format!("textures rendered this frame: {:?}", self.instances_rendered));
         });
     }
 
@@ -257,17 +291,9 @@ impl Engine {
         let width = rect_.w / self.win_size.width as f64;
         let height = rect_.h / self.win_size.height as f64;
         let rect = rect(rect_.x, rect_.y, width, height);
-        let inst = Instance::new(rect, rotation);
+        let inst_raw = Instance::new(rect, rotation).to_raw();
 
-        if self.instances_rendered < self.instances.len() {
-            if self.instances[self.instances_rendered] != inst {
-                self.instances[self.instances_rendered] = inst;
-                self.instances_raw[self.instances_rendered] = inst.to_raw();
-            }
-        } else {
-            self.instances.push(inst);
-            self.instances_raw.push(inst.to_raw());
-        }
+        self.instances_raw.push(inst_raw);
 
         self.inst_hash_tex_index
             .insert(self.instances_rendered as u32, texture.index);

@@ -42,28 +42,24 @@ impl Engine {
         self.delta_time.elapsed().as_secs_f64()
     }*/
     pub fn get_average_tps(&self) -> u32 {
-        (1. / self.time.average_delta_t) as u32
+        self.time.get_average_tps()
     }
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
         self.win_size
     }
     pub fn get_time_since_last_render(&self) -> f64 {
-        self.time.time_since_last_render
+        self.time.get_time_since_last_render()
     }
 
     pub fn set_target_fps(&mut self, fps: Option<u32>) {
-        self.time.target_fps = fps;
+        self.target_fps = fps;
     }
     pub fn set_target_tps(&mut self, tps: Option<u32>) {
-        self.time.target_tps = tps;
-        if let Some(tps) = tps {
-            self.time
-                .loop_helper
-                .set_target_rate((tps as f32 * 1.05) as u32)
-        }
+        self.target_tps = tps;
+        self.time.set_target_tps(tps)
     }
     pub fn set_background_color(&mut self, color: Color) {
-        self.background_color = wgpu::Color {
+        self.win_background_color = wgpu::Color {
             r: color.r / 255.,
             g: color.g / 255.,
             b: color.b / 255.,
@@ -183,7 +179,7 @@ impl Engine {
             window,
             window_bind_group,
 
-            background_color,
+            win_background_color: background_color,
             surface,
             device,
             queue,
@@ -199,7 +195,6 @@ impl Engine {
             camera_buffer,
 
             instance_buffer,
-            instances,
             instances_raw,
             instances_rendered: 0,
 
@@ -215,6 +210,9 @@ impl Engine {
             features: Features::new(),
 
             game_ui: None,
+
+            target_fps: None,
+            target_tps: None,
         }
     }
 }
@@ -263,7 +261,7 @@ pub fn create_config(
         format: *surface_format,
         width: size.width,
         height: size.height,
-        present_mode: surface_caps.present_modes[0],
+        present_mode: wgpu::PresentMode::Immediate, //Used to be surface_caps.present_modes[0]
         alpha_mode: surface_caps.alpha_modes[0],
         view_formats: vec![],
     }
