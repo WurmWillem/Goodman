@@ -305,12 +305,16 @@ impl Input {
         }
     }
     pub fn reset_buttons(&mut self) {
-        if self.left_mouse_button_pressed {
-            self.left_mouse_button_pressed = false;
-        }
-        if self.right_mouse_button_pressed {
-            self.right_mouse_button_pressed = false;
-        }
+        self.left_mouse_button_pressed = false;
+        self.right_mouse_button_pressed = false;
+        self.d_pressed = false;
+        self.a_pressed = false;
+        self.w_pressed = false;
+        self.s_pressed = false;
+        self.right_arrow_pressed = false;
+        self.left_arrow_pressed = false;
+        self.up_arrow_pressed = false;
+        self.down_arrow_pressed = false;
     }
 
     pub fn get_cursor_pos(&self) -> Vec2 {

@@ -87,27 +87,49 @@ impl Manager for Game {
     fn update(&mut self, _delta_t: f64, input: &Input) {
         let mut where_to_move = (0, 0);
         if input.is_w_pressed() {
-            where_to_move.1 = 1;
+            where_to_move.1 = -1;
         }
         if input.is_d_pressed() {
             where_to_move.0 = 1;
         }
         if input.is_s_pressed() {
-            where_to_move.1 = -1;
+            where_to_move.1 = 1;
         }
         if input.is_a_pressed() {
             where_to_move.0 = -1;
         }
 
+        let mut already_moved = vec![];
         for j in 0..self.grid.len() {
             for i in 0..self.grid.len() {
                 if let Object::Character(char) = self.grid[j][i] {
                     if self.character_data.is_you(char) {
-                        if let Some(row) = self.grid.get(j + where_to_move.1 as usize) {
-                            if let Some(object) = row.get(i + where_to_move.0 as usize) {
+                        if where_to_move == (0, 0) {
+                            continue;
+                        } 
+
+                        let mut should_continue = false;
+                        for m in already_moved.iter() {
+                            if *m == (i, j) {
+                                should_continue = true;
+                                break;
+                            }
+                        }
+                        if should_continue {
+                            continue
+                        }
+
+                        let indexes = (
+                            (i as i32 + where_to_move.0) as usize,
+                            (j as i32 + where_to_move.1) as usize,
+                        );                        
+                        
+                        if let Some(row) = self.grid.get(indexes.1) {
+                            if let Some(object) = row.get(indexes.0) {
                                 if *object == Object::Empty {
-                                    self.grid[j + where_to_move.1 as usize]
-                                        [i + where_to_move.0 as usize] = self.grid[j][i];
+                                    self.grid[indexes.1][indexes.0] = self.grid[j][i];
+                                    self.grid[j][i] = Object::Empty;
+                                    already_moved.push(indexes);
                                 }
                             }
                         }
