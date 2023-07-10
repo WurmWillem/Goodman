@@ -61,10 +61,10 @@ impl Engine {
     }
     pub fn set_background_color(&mut self, color: Color) {
         self.win_background_color = wgpu::Color {
-            r: color.r / 255.,
-            g: color.g / 255.,
-            b: color.b / 255.,
-            a: color.a / 255.,
+            r: color.r,
+            g: color.g,
+            b: color.b,
+            a: color.a,
         }
     }
 

@@ -31,6 +31,6 @@ path = "examples/pong/src/main.rs"
 [[bin]]
 name = "b"
 path = "examples/breakout/src/main.rs"
-#[[bin]] 
-#name = "shooter"
-#path = "examples/shooter/src/main.rs"
+[[bin]] 
+name = "baba"
+path = "examples/baba/src/main.rs"

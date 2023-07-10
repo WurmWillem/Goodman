@@ -119,6 +119,10 @@ impl TimeManager {
         }
     }
 
+    pub fn set_use_target_tps(&mut self, use_target_tps: bool) {
+        self.use_target_tps = use_target_tps;
+    }
+
     pub fn reset_time_since_last_render(&mut self) {
         self.time_since_last_render = 0.;
     }

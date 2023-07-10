@@ -73,9 +73,19 @@ impl Engine {
             Some(report_interval) => report_interval,
             None => 0.1,
         };
+
+        // If target_fps in some and target_tps is None than the loop helper will run at fps
+        let fps = match self.target_fps {
+            Some(fps) => {
+                self.time.set_use_target_tps(true);
+                fps
+            }
+            None => 1000, // Doesn't matter because if target_fps is None and target_tps is None than use_target_tps is false
+        };
+
         let target_tps = match self.target_tps {
             Some(tps) => tps,
-            None => 1000,
+            None => fps,
         };
 
         self.time.replace_loop_helper(report_interval, target_tps);
@@ -105,7 +115,11 @@ impl Engine {
 
                     match self.target_fps {
                         Some(fps) => {
-                            if self.time.get_time_since_last_render() >= 0.995 / fps as f64 {
+                            if self.target_tps.is_some() {
+                                if self.time.get_time_since_last_render() >= 0.995 / fps as f64 {
+                                    self.window.request_redraw();
+                                }
+                            } else {
                                 self.window.request_redraw();
                             }
                         }
