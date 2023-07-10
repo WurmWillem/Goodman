@@ -9,9 +9,9 @@ edition = "2021"
 wgpu = "0.16"
 winit = "0.28"
 cgmath = "0.18"
-egui = "0.21.0"
-egui_wgpu_backend = "0.23.0"
-egui_winit_platform = "0.18"
+egui = "0.22"
+egui_wgpu_backend = "0.24"
+egui_winit_platform = "0.19"
 env_logger = "0.10"
 log = "0.4"
 pollster = "0.2"
@@ -26,11 +26,11 @@ default-features = false
 features = ["png", "jpeg"]
 
 [[bin]]
-name = "pong"
+name = "p"
 path = "examples/pong/src/main.rs"
 [[bin]]
-name = "breakout"
+name = "b"
 path = "examples/breakout/src/main.rs"
-[[bin]] 
-name = "shooter"
-path = "examples/shooter/src/main.rs"
+#[[bin]] 
+#name = "shooter"
+#path = "examples/shooter/src/main.rs"

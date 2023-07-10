@@ -76,12 +76,6 @@ impl TimeManager {
         }
     }
 
-    pub fn replace_loop_helper(&mut self, report_interval: f64, target_tps: u32) {
-        self.loop_helper = LoopHelper::builder()
-            .report_interval_s(report_interval)
-            .build_with_target_rate(target_tps);
-    }
-
     pub fn update(&mut self, platform: &mut Platform) {
         // Sleep until 1 / target_tps is reached
         if self.use_target_tps {
@@ -102,6 +96,12 @@ impl TimeManager {
                 .push(vec2(self.time_passed_since_creation, avg_tps));
             //println!("{}", avg_tps)
         }
+    }
+
+    pub fn replace_loop_helper(&mut self, report_interval: f64, target_tps: u32) {
+        self.loop_helper = LoopHelper::builder()
+            .report_interval_s(report_interval)
+            .build_with_target_rate(target_tps);
     }
 
     pub fn update_graph(&mut self) {
