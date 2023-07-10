@@ -25,12 +25,24 @@ async fn run() {
 enum Object {
     Empty,
     Is,
-    Character(Characters),
+    Character(Character),
+    Noun(Noun),
+    Property(Property),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Characters {
+enum Character {
     Kirb,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Noun {
+    Kirb,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Property {
+    You,
 }
 
 struct AllCharacterData {
@@ -42,9 +54,16 @@ impl AllCharacterData {
             kirb: CharacterData::new(),
         }
     }
-    fn is_you(&self, char: Characters) -> bool {
+    fn is_you(&self, char: Character) -> bool {
         match char {
-            Characters::Kirb => self.kirb.is_you,
+            Character::Kirb => self.kirb.is_you,
+        }
+    }
+    fn set_char_to_property(&mut self, noun: Noun, property: Property) {
+        match noun {
+            Noun::Kirb => match property {
+                Property::You => self.kirb.is_you = true,
+            },
         }
     }
 }
@@ -54,7 +73,7 @@ struct CharacterData {
 }
 impl CharacterData {
     fn new() -> Self {
-        Self { is_you: true }
+        Self { is_you: false }
     }
 }
 struct Game {
@@ -75,7 +94,12 @@ impl Manager for Game {
             }
             grid.push(row);
         }
-        grid[0][0] = Object::Character(Characters::Kirb);
+        grid[0][0] = Object::Character(Character::Kirb);
+        grid[3][5] = Object::Character(Character::Kirb);
+
+        grid[5][0] = Object::Noun(Noun::Kirb);
+        grid[5][1] = Object::Is;
+        grid[5][2] = Object::Property(Property::You);
 
         Self {
             grid,
@@ -106,7 +130,7 @@ impl Manager for Game {
                     if self.character_data.is_you(char) {
                         if where_to_move == (0, 0) {
                             continue;
-                        } 
+                        }
 
                         let mut should_continue = false;
                         for m in already_moved.iter() {
@@ -116,14 +140,14 @@ impl Manager for Game {
                             }
                         }
                         if should_continue {
-                            continue
+                            continue;
                         }
 
                         let indexes = (
                             (i as i32 + where_to_move.0) as usize,
                             (j as i32 + where_to_move.1) as usize,
-                        );                        
-                        
+                        );
+
                         if let Some(row) = self.grid.get(indexes.1) {
                             if let Some(object) = row.get(indexes.0) {
                                 if *object == Object::Empty {
@@ -137,6 +161,36 @@ impl Manager for Game {
                 }
             }
         }
+
+        //if already_moved.len() > 0 {
+            for j in 0..self.grid.len() {
+                for i in 0..self.grid.len() {
+                    if self.grid[j][i] != Object::Is {
+                        continue;
+                    }
+                    let mut noun = None;
+                    if let Some(object) = self.grid[j].get(i - 1) {
+                        if let Object::Noun(n) = *object {
+                            noun = Some(n);
+                        }
+                    }
+
+                    let mut property = None;
+                    if let Some(object) = self.grid[j].get(i + 1) {
+                        if let Object::Property(p) = *object {
+                            property = Some(p);
+                        }
+                    }
+
+                    if let Some(noun) = noun {
+                        if let Some(property) = property {
+                            self.character_data.set_char_to_property(noun, property);
+                            println!("d")
+                        }
+                    }
+                }
+            }
+        //}
     }
 
     fn render(&self, engine: &mut Engine) {
