@@ -12,8 +12,8 @@ async fn run() {
 
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
     engine.set_target_fps(Some(144));
-    engine.set_target_tps(Some(1000000));
-    engine.enable_feature(Feature::EngineUi);
+    //engine.set_target_tps(Some(1000000));
+    //engine.enable_feature(Feature::EngineUi);
     //engine.enable_feature(Feature::AverageTPS(0.1));
 
     let game = Game::new(&mut engine);
@@ -59,10 +59,17 @@ impl AllCharacterData {
             Character::Kirb => self.kirb.is_you,
         }
     }
-    fn set_char_to_property(&mut self, noun: Noun, property: Property) {
+    fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
         match noun {
             Noun::Kirb => match property {
-                Property::You => self.kirb.is_you = true,
+                Property::You => self.kirb.is_you = enable,
+            },
+        }
+    }
+    fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
+        match noun {
+            Noun::Kirb => match property {
+                Property::You => self.kirb.is_you,
             },
         }
     }
@@ -79,6 +86,7 @@ impl CharacterData {
 struct Game {
     grid: Vec<Vec<Object>>,
     character_data: AllCharacterData,
+    noun_prop_combi: Vec<NounPropCombi>,
     textures: Vec<Texture>,
 }
 impl Manager for Game {
@@ -96,7 +104,7 @@ impl Manager for Game {
             }
             grid.push(row);
         }
-        grid[0][0] = Object::Character(Character::Kirb);
+        // grid[0][0] = Object::Character(Character::Kirb);
         grid[3][5] = Object::Character(Character::Kirb);
 
         grid[5][0] = Object::Noun(Noun::Kirb);
@@ -106,12 +114,12 @@ impl Manager for Game {
         Self {
             grid,
             character_data: AllCharacterData::new(),
+            noun_prop_combi: vec![],
             textures: vec![kirb_tex, text_tex],
         }
     }
 
     fn start(&mut self) {
-        println!("ds");
         self.update_character_data();
     }
 
@@ -186,10 +194,7 @@ impl Manager for Game {
         if !moves.is_empty() {
             self.update_character_data();
         }
-        
     }
-
-    
 
     fn render(&self, engine: &mut Engine) {
         let size = vec2(
@@ -227,7 +232,6 @@ impl Game {
                         noun = Some(n);
                     }
                 }
-
                 let mut property = None;
                 if let Some(object) = self.grid[j].get(i + 1) {
                     if let Object::Property(p) = *object {
@@ -237,10 +241,40 @@ impl Game {
 
                 if let Some(noun) = noun {
                     if let Some(property) = property {
-                        self.character_data.set_char_to_property(noun, property);
+                        if !self.character_data.get_if_enabled(noun, property) {
+                            self.character_data
+                                .set_char_to_property(noun, property, true);
+                            let npc = NounPropCombi {
+                                j,
+                                n: (i - 1, noun),
+                                p: (i + 1, property),
+                            };
+                            self.noun_prop_combi.push(npc);
+                        }
                     }
                 }
             }
+        }
+        let mut i = 0;
+        let mut to_remove = vec![];
+        for npc in &self.noun_prop_combi {
+            let is_index = if npc.p.0 > npc.n.0 {
+                npc.p.0 - 1
+            } else {
+                npc.p.0 + 1
+            };
+            if self.grid[npc.j][npc.n.0] != Object::Noun(npc.n.1)
+                || self.grid[npc.j][npc.p.0] != Object::Property(npc.p.1)
+                || self.grid[npc.j][is_index] != Object::Is
+            {
+                self.character_data
+                    .set_char_to_property(npc.n.1, npc.p.1, false);
+                to_remove.push(i);
+            }
+            i += 1;
+        }
+        for r in to_remove {
+            self.noun_prop_combi.remove(r);
         }
     }
 
@@ -250,6 +284,12 @@ impl Game {
         self.grid[next_j][next_i] = self.grid[j][i];
         self.grid[j][i] = Object::Empty;
     }
+}
+
+struct NounPropCombi {
+    j: usize,
+    n: (usize, Noun),
+    p: (usize, Property),
 }
 
 fn make_usize_tup(i: (i32, i32), u: (usize, usize)) -> (usize, usize) {
