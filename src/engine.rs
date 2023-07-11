@@ -89,6 +89,7 @@ impl Engine {
         };
 
         self.time.replace_loop_helper(report_interval, target_tps);
+        manager.start();
 
         event_loop.run(move |event, _, control_flow| {
             self.platform.handle_event(&event);

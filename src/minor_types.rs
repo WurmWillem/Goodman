@@ -15,6 +15,7 @@ pub type TexIndex = u32;
 
 pub trait Manager {
     fn new(engine: &mut Engine) -> Self;
+    fn start(&mut self) {}
     fn update(&mut self, frame_time: f64, input: &Input);
     fn render(&self, engine: &mut Engine);
 }

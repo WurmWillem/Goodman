@@ -12,7 +12,7 @@ async fn run() {
 
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
     engine.set_target_fps(Some(144));
-    //engine.set_target_tps(Some(144));
+    engine.set_target_tps(Some(1000000));
     engine.enable_feature(Feature::EngineUi);
     //engine.enable_feature(Feature::AverageTPS(0.1));
 
@@ -110,6 +110,11 @@ impl Manager for Game {
         }
     }
 
+    fn start(&mut self) {
+        println!("ds");
+        self.update_character_data();
+    }
+
     fn update(&mut self, _delta_t: f64, input: &Input) {
         let mut where_to_move = (0, 0);
         if input.is_w_pressed() {
@@ -174,11 +179,43 @@ impl Manager for Game {
         for push in pushes {
             self.move_object(push);
         }
-        for mov in moves {
-            self.move_object(mov);
+        for mov in &moves {
+            self.move_object(*mov);
         }
 
-        //if already_moved.len() > 0 {
+        if !moves.is_empty() {
+            self.update_character_data();
+        }
+        
+    }
+
+    
+
+    fn render(&self, engine: &mut Engine) {
+        let size = vec2(
+            WINDOW_SIZE.y / self.grid.len() as f64,
+            WINDOW_SIZE.x / self.grid[0].len() as f64,
+        );
+        for j in 0..self.grid.len() {
+            for i in 0..self.grid.len() {
+                if self.grid[j][i] == Object::Empty {
+                    continue;
+                };
+                let pos = vec2(i as f64 * size.x, j as f64 * size.y);
+                let index;
+
+                if self.grid[j][i] == Object::Character(Character::Kirb) {
+                    index = 0;
+                } else {
+                    index = 1;
+                }
+                engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
+            }
+        }
+    }
+}
+impl Game {
+    fn update_character_data(&mut self) {
         for j in 0..self.grid.len() {
             for i in 0..self.grid.len() {
                 if self.grid[j][i] != Object::Is {
@@ -207,30 +244,6 @@ impl Manager for Game {
         }
     }
 
-    fn render(&self, engine: &mut Engine) {
-        let size = vec2(
-            WINDOW_SIZE.y / self.grid.len() as f64,
-            WINDOW_SIZE.x / self.grid[0].len() as f64,
-        );
-        for j in 0..self.grid.len() {
-            for i in 0..self.grid.len() {
-                if self.grid[j][i] == Object::Empty {
-                    continue;
-                };
-                let pos = vec2(i as f64 * size.x, j as f64 * size.y);
-                let index;
-
-                if self.grid[j][i] == Object::Character(Character::Kirb) {
-                    index = 0;
-                } else {
-                    index = 1;
-                }
-                engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
-            }
-        }
-    }
-}
-impl Game {
     fn move_object(&mut self, object: ((usize, usize), (usize, usize))) {
         let (i, j) = object.0;
         let (next_i, next_j) = object.1;
