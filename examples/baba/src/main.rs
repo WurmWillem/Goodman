@@ -60,7 +60,7 @@ impl Manager for Game {
             grid.push(row);
         }
 
-        grid[0][0] = Object::Character(Character::Flag);
+        grid[2][2] = Object::Character(Character::Flag);
         grid[3][5] = Object::Character(Character::Baba);
 
         grid[5][3] = Object::Noun(Noun::Baba);
@@ -124,29 +124,41 @@ impl Manager for Game {
                             continue;
                         }
 
-                        
                         let next_grid_pos = make_usize_tup(where_to_move, (i, j));
-                        let mut grid_pos = vec![((i, j), next_grid_pos)];
+                        let mut moves_to_make = vec![((i, j), next_grid_pos)];
 
                         loop {
-                            if self.grid.get(grid_pos[grid_pos.len() - 1].1.1).is_none() {
-                                break
+                            let next_pos = moves_to_make[moves_to_make.len() - 1].1;
+                            if self.grid.get(next_pos.1).is_none() {
+                                break;
                             }
-                            if let Some(row) = self.grid.get(grid_pos[grid_pos.len() - 1].1.1) {
-                                if let Some(object) = row.get(grid_pos[grid_pos.len() - 1].1.0) {
+                            if let Some(row) = self.grid.get(next_pos.1) {
+                                if let Some(object) = row.get(next_pos.0) {
                                     if *object == Object::Empty {
-                                        for m in grid_pos.iter().rev() {
+                                        for m in moves_to_make.iter().rev() {
                                             moves.push(*m);
                                         }
-                                        break
+                                        break;
                                     } else {
-                                        let next_grid_pos =
-                                            make_usize_tup(where_to_move, grid_pos[grid_pos.len() - 1].1);
-                                        grid_pos.push((grid_pos[grid_pos.len() - 1].1, next_grid_pos));
+                                        let current_pos = next_pos;
+                                        let next_pos = make_usize_tup(where_to_move, current_pos);
+
+                                        if let Object::Character(char) =
+                                            self.grid[current_pos.1][current_pos.0]
+                                        {
+                                            if self.character_data.get_if_enabled(
+                                                char.get_corresponding_noun(),
+                                                Property::Win,
+                                            ) {
+                                                println!("Win!");
+                                            }
+                                        }
+
+                                        moves_to_make.push((current_pos, next_pos));
                                     }
                                 }
-                                if row.get(grid_pos[grid_pos.len() - 1].1.0).is_none() {
-                                    break
+                                if row.get(next_pos.0).is_none() {
+                                    break;
                                 }
                             }
                         }
@@ -180,8 +192,7 @@ impl Manager for Game {
             }
         }
         /*let pos = vec2(6. * size.x, 5. * size.y);
-        engine.render_texture(&rect_vec(pos, size), &self.textures[0]);
-        */
+        engine.render_texture(&rect_vec(pos, size), &self.textures[0]);*/
     }
 }
 impl Game {
@@ -221,6 +232,7 @@ impl Game {
                 self.update_npcs(noun, property, (i, j), Direction::Ver);
             }
         }
+
         let mut i = 0;
         let mut to_remove = vec![];
         for npc in &self.noun_prop_combi {
@@ -283,9 +295,7 @@ impl Game {
         }
     }
 
-    fn move_object(&mut self, object: ((usize, usize), (usize, usize))) {
-        let (i, j) = object.0;
-        let (next_i, next_j) = object.1;
+    fn move_object(&mut self, ((i, j), (next_i, next_j)): ((usize, usize), (usize, usize))) {
         self.grid[next_j][next_i] = self.grid[j][i];
         self.grid[j][i] = Object::Empty;
     }

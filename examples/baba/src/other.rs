@@ -26,6 +26,14 @@ pub enum Character {
     Baba,
     Flag,
 }
+impl Character {
+    pub fn get_corresponding_noun(&self) -> Noun {
+        match self {
+            Character::Baba => Noun::Baba,
+            Character::Flag => Noun::Flag,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Noun {
@@ -78,13 +86,18 @@ impl AllCharacterData {
             },
         }
     }
-    /*fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
+    pub fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
         match noun {
-            Noun::Kirb => match property {
-                Property::You => self.kirb.is_you,
+            Noun::Baba => match property {
+                Property::You => self.baba.is_you,
+                Property::Win => self.baba.is_win,
+            },
+            Noun::Flag => match property {
+                Property::You => self.flag.is_you,
+                Property::Win => self.flag.is_win,
             },
         }
-    }*/
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
