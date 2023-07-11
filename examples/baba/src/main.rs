@@ -1,4 +1,9 @@
 use goodman::prelude::*;
+use other::{
+    make_usize_tup, AllCharacterData, Character, Direction, Noun, NounPropCombi, Object, Property,
+};
+
+mod other;
 
 pub const WINDOW_SIZE: Vec2 = vec2(800., 800.);
 const GRID_SIZE: (usize, usize) = (10, 10);
@@ -12,8 +17,8 @@ async fn run() {
 
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
     engine.set_target_fps(Some(144));
-    //engine.set_target_tps(Some(1000000));
-    //engine.enable_feature(Feature::EngineUi);
+    // engine.set_target_tps(Some(1000000));
+    // engine.enable_feature(Feature::EngineUi);
     //engine.enable_feature(Feature::AverageTPS(0.1));
 
     let game = Game::new(&mut engine);
@@ -21,82 +26,6 @@ async fn run() {
     engine.enter_loop(game, event_loop);
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum Object {
-    Empty,
-    Is,
-    Character(Character),
-    Noun(Noun),
-    Property(Property),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum Character {
-    Kirb,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum Noun {
-    Kirb,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum Property {
-    You,
-}
-
-struct AllCharacterData {
-    kirb: CharacterData,
-}
-impl AllCharacterData {
-    fn new() -> Self {
-        Self {
-            kirb: CharacterData::new(),
-        }
-    }
-    fn is_you(&self, char: Character) -> bool {
-        match char {
-            Character::Kirb => self.kirb.is_you,
-        }
-    }
-    fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
-        let i = if enable { 1 } else { -1 };
-        match noun {
-            Noun::Kirb => match property {
-                Property::You => {
-                    self.kirb.is_you_counter = (self.kirb.is_you_counter as i32 + i) as usize;
-                    self.kirb.is_you = self.kirb.is_you_counter > 0
-                }
-            },
-        }
-    }
-    /*fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
-        match noun {
-            Noun::Kirb => match property {
-                Property::You => self.kirb.is_you,
-            },
-        }
-    }*/
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum Direction {
-    Hor,
-    Ver,
-}
-
-struct CharacterData {
-    is_you: bool,
-    is_you_counter: usize,
-}
-impl CharacterData {
-    fn new() -> Self {
-        Self {
-            is_you: false,
-            is_you_counter: 0,
-        }
-    }
-}
 struct Game {
     grid: Vec<Vec<Object>>,
     character_data: AllCharacterData,
@@ -105,14 +34,22 @@ struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
+        let bytes = include_bytes!("assets/is.png");
+        let is_tex = engine.create_texture(bytes, "is").unwrap();
+
+        let bytes = include_bytes!("assets/you.png");
+        let you_tex = engine.create_texture(bytes, "you").unwrap();
+        let bytes = include_bytes!("assets/win.png");
+        let win_tex = engine.create_texture(bytes, "win").unwrap();
+
         let bytes = include_bytes!("assets/baba c.png");
         let baba_c_tex = engine.create_texture(bytes, "baba c").unwrap();
-        let bytes = include_bytes!("assets/check.png");
+        let bytes = include_bytes!("assets/baba.png");
         let baba_tex = engine.create_texture(bytes, "baba").unwrap();
-        let bytes = include_bytes!("assets/you.png");
-        let is_tex = engine.create_texture(bytes, "is").unwrap();
-        let bytes = include_bytes!("assets/check.png");
-        let you_tex = engine.create_texture(bytes, "you").unwrap();
+        let bytes = include_bytes!("assets/flag c.png");
+        let flag_c_tex = engine.create_texture(bytes, "flag c").unwrap();
+        let bytes = include_bytes!("assets/flag.png");
+        let flag_tex = engine.create_texture(bytes, "flag").unwrap();
 
         let mut grid = vec![];
         for _ in 0..GRID_SIZE.1 {
@@ -122,22 +59,33 @@ impl Manager for Game {
             }
             grid.push(row);
         }
-        // grid[0][0] = Object::Character(Character::Kirb);
-        grid[3][5] = Object::Character(Character::Kirb);
 
-        grid[5][0] = Object::Noun(Noun::Kirb);
+        grid[0][0] = Object::Character(Character::Flag);
+        grid[3][5] = Object::Character(Character::Baba);
+
+        grid[5][0] = Object::Noun(Noun::Baba);
         grid[5][1] = Object::Is;
         grid[5][2] = Object::Property(Property::You);
 
+        grid[7][0] = Object::Noun(Noun::Flag);
+        grid[7][1] = Object::Is;
+        grid[7][2] = Object::Property(Property::You);
+
+        /*grid[2][0] = Object::Noun(Noun::Flag);
+        grid[2][1] = Object::Is;
+        grid[2][2] = Object::Property(Property::You);
+
         grid[5][4] = Object::Noun(Noun::Kirb);
         grid[6][4] = Object::Is;
-        grid[7][4] = Object::Property(Property::You);
+        grid[7][4] = Object::Property(Property::You);*/
 
         Self {
             grid,
             character_data: AllCharacterData::new(),
             noun_prop_combi: vec![],
-            textures: vec![baba_c_tex, baba_tex, is_tex, you_tex],
+            textures: vec![
+                is_tex, you_tex, win_tex, baba_tex, flag_tex, baba_c_tex, flag_c_tex,
+            ],
         }
     }
 
@@ -187,7 +135,7 @@ impl Manager for Game {
                             if let Some(object) = row.get(next_grid_pos.0) {
                                 if *object == Object::Empty {
                                     moves.push(((i, j), next_grid_pos));
-                                } else if !matches!(object, Object::Character(_)) {
+                                } else  {
                                     let next_next_grid_pos =
                                         make_usize_tup(where_to_move, next_grid_pos);
 
@@ -229,19 +177,8 @@ impl Manager for Game {
                     continue;
                 };
                 let pos = vec2(i as f64 * size.x, j as f64 * size.y);
-                
-                let index;
-                if self.grid[j][i] == Object::Character(Character::Kirb) {
-                    index = 0;
-                } else if self.grid[j][i] == Object::Noun(Noun::Kirb) {
-                    index = 1;
-                } else if self.grid[j][i] == Object::Is {
-                    index = 2
-                } else if self.grid[j][i] == Object::Property(Property::You) {
-                    index = 3
-                } else {
-                    index = 99;
-                }
+
+                let index = self.grid[j][i].get_tex_index();
                 engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
             }
         }
@@ -324,14 +261,20 @@ impl Game {
         }
     }
 
-    fn update_npcs(&mut self, noun: Option<Noun>, property: Option<Property>, (i, j): (usize, usize), dir: Direction) {
+    fn update_npcs(
+        &mut self,
+        noun: Option<Noun>,
+        property: Option<Property>,
+        (i, j): (usize, usize),
+        dir: Direction,
+    ) {
         if let Some(noun) = noun {
             if let Some(property) = property {
                 let npc;
                 if dir == Direction::Hor {
                     npc = NounPropCombi::new(j, (i - 1, noun), (i + 1, property), dir);
                 } else {
-                    npc = NounPropCombi::new(i, (j -1, noun), (j + 1, property), dir)
+                    npc = NounPropCombi::new(i, (j - 1, noun), (j + 1, property), dir)
                 }
                 if !self.noun_prop_combi.contains(&npc) {
                     self.character_data
@@ -349,21 +292,4 @@ impl Game {
         self.grid[next_j][next_i] = self.grid[j][i];
         self.grid[j][i] = Object::Empty;
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-struct NounPropCombi {
-    row_or_col: usize,
-    n: (usize, Noun),
-    p: (usize, Property),
-    dir: Direction,
-}
-impl NounPropCombi {
-    fn new(row_or_col: usize, n: (usize, Noun), p: (usize, Property), dir: Direction) -> Self {
-        Self { row_or_col, n, p, dir }
-    }
-}
-
-fn make_usize_tup(i: (i32, i32), u: (usize, usize)) -> (usize, usize) {
-    ((i.0 + u.0 as i32) as usize, (i.1 + u.1 as i32) as usize)
 }

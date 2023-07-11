@@ -53,20 +53,21 @@ impl Manager for Breakout {
             textures: vec![paddle_tex, ball_tex, block_tex],
         }
     }
-    fn update(&mut self, delta_t: f64, input: &Input) { //400k - 700k, 10k textures
-                                                        /*self.paddle.update(input, delta_t);
-                                                        self.ball.update(delta_t);
+    fn update(&mut self, delta_t: f64, input: &Input) {
+        //400k - 700k, 10k textures
+        self.paddle.update(input, delta_t);
+        self.ball.update(delta_t);
 
-                                                        self.ball.resolve_paddle_collision(&self.paddle);
+        self.ball.resolve_paddle_collision(&self.paddle);
 
-                                                        self.blocks.iter_mut().for_each(|row| {
-                                                            row.iter_mut().for_each(|mut block| {
-                                                                if resolve_collision(&mut self.ball.to_rect(), &mut self.ball.vel, block.rect) {
-                                                                    block.lives -= 1;
-                                                                }
-                                                            });
-                                                            row.retain(|block| block.lives > 0);
-                                                        });*/
+        self.blocks.iter_mut().for_each(|row| {
+            row.iter_mut().for_each(|mut block| {
+                if resolve_collision(&mut self.ball.to_rect(), &mut self.ball.vel, block.rect) {
+                    block.lives -= 1;
+                }
+            });
+            row.retain(|block| block.lives > 0);
+        });
     }
 
     fn render(&self, state: &mut Engine) {

@@ -4,9 +4,8 @@ use wgpu::Device;
 
 pub struct Texture {
     pub texture: wgpu::Texture,
-    pub view: wgpu::TextureView,
-    pub sampler: wgpu::Sampler,
-    pub label: String,
+    view: wgpu::TextureView,
+    sampler: wgpu::Sampler,
     pub index: u32,
 }
 impl Texture {
@@ -78,7 +77,6 @@ impl Texture {
             texture,
             view,
             sampler,
-            label: label.to_string(),
             index,
         }
     }
