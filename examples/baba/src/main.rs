@@ -146,28 +146,22 @@ impl Manager for Game {
                             continue;
                         }
 
-                        let next_grid_pos = (
-                            (i as i32 + where_to_move.0) as usize,
-                            (j as i32 + where_to_move.1) as usize,
-                        );
+                        let next_grid_pos = make_usize_tup(where_to_move, (i, j));
 
                         if let Some(row) = self.grid.get(next_grid_pos.1) {
                             if let Some(object) = row.get(next_grid_pos.0) {
                                 if *object == Object::Empty {
                                     moves.push(((i, j), next_grid_pos));
                                 } else if !matches!(object, Object::Character(_)) {
-                                    let next_next_grid_pos = (
-                                        (next_grid_pos.0 as i32 + where_to_move.0) as usize,
-                                        (next_grid_pos.1 as i32 + where_to_move.1) as usize,
-                                    );
-                                    
+                                    let next_next_grid_pos =
+                                        make_usize_tup(where_to_move, next_grid_pos);
+
                                     if let Some(row) = self.grid.get(next_next_grid_pos.1) {
                                         if let Some(object) = row.get(next_next_grid_pos.0) {
                                             if *object == Object::Empty {
                                                 pushes.push((next_grid_pos, next_next_grid_pos));
                                                 moves.push(((i, j), next_grid_pos));
                                             }
-                                            
                                         }
                                     }
                                 }
@@ -177,17 +171,11 @@ impl Manager for Game {
                 }
             }
         }
-        for p in pushes {
-            let (i, j) = p.0;
-            let (next_i, next_j) = p.1;
-            self.grid[next_j][next_i] = self.grid[j][i];
-            self.grid[j][i] = Object::Empty;
+        for push in pushes {
+            self.move_object(push);
         }
-        for m in moves {
-            let (i, j) = m.0;
-            let (next_i, next_j) = m.1;
-            self.grid[next_j][next_i] = self.grid[j][i];
-            self.grid[j][i] = Object::Empty;
+        for mov in moves {
+            self.move_object(mov);
         }
 
         //if already_moved.len() > 0 {
@@ -217,7 +205,6 @@ impl Manager for Game {
                 }
             }
         }
-        //}
     }
 
     fn render(&self, engine: &mut Engine) {
@@ -227,20 +214,31 @@ impl Manager for Game {
         );
         for j in 0..self.grid.len() {
             for i in 0..self.grid.len() {
-                if self.grid[j][i] == Object::Empty { continue };
+                if self.grid[j][i] == Object::Empty {
+                    continue;
+                };
                 let pos = vec2(i as f64 * size.x, j as f64 * size.y);
                 let index;
 
                 if self.grid[j][i] == Object::Character(Character::Kirb) {
                     index = 0;
-                }
-                else {
+                } else {
                     index = 1;
                 }
                 engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
             }
         }
-
-        // engine.render_texture(&self.left_paddle.rect, &self.textures[0]);
     }
+}
+impl Game {
+    fn move_object(&mut self, object: ((usize, usize), (usize, usize))) {
+        let (i, j) = object.0;
+        let (next_i, next_j) = object.1;
+        self.grid[next_j][next_i] = self.grid[j][i];
+        self.grid[j][i] = Object::Empty;
+    }
+}
+
+fn make_usize_tup(i: (i32, i32), u: (usize, usize)) -> (usize, usize) {
+    ((i.0 + u.0 as i32) as usize, (i.1 + u.1 as i32) as usize)
 }
