@@ -10,7 +10,7 @@ use crate::camera::{self, Camera};
 use crate::engine::Engine;
 use crate::instances::InstanceRaw;
 use crate::instances::{Instance, Vertex};
-use crate::minor_types::{Features, TimeManager, Windowniform};
+use crate::minor_types::{Features, TimeManager, WindowUniform};
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
 
@@ -31,16 +31,12 @@ impl Engine {
         let texture_bind_group =
             texture::create_bind_group(&self.device, &texture_bind_group_layout, &tex);
 
-        self.tex_index_hash_bind
-            .insert(tex.index, texture_bind_group);
+        self.tex_bindgroup_vec.push(texture_bind_group);
 
         self.texture_amt_created += 1;
         Ok(tex)
     }
 
-    /*fn get_delta_time(&self) -> f64 {
-        self.delta_time.elapsed().as_secs_f64()
-    }*/
     pub fn get_average_tps(&self) -> u32 {
         self.time.get_average_tps()
     }
@@ -54,16 +50,21 @@ impl Engine {
     pub fn set_target_fps(&mut self, fps: Option<u32>) {
         self.target_fps = fps;
     }
-    pub fn set_target_tps(&mut self, tps: Option<u32>) {
+    pub fn set_target_tps(&mut self, mut tps: Option<u32>) {
+        if let Some(tps_) = tps {
+            let tps_ = (1.05 * tps_ as f32) as u32;
+            tps = Some(tps_)
+        }
+
         self.target_tps = tps;
         self.time.set_target_tps(tps)
     }
     pub fn set_background_color(&mut self, color: Color) {
         self.win_background_color = wgpu::Color {
-            r: color.r / 255.,
-            g: color.g / 255.,
-            b: color.b / 255.,
-            a: color.a / 255.,
+            r: color.r,
+            g: color.g,
+            b: color.b,
+            a: color.a,
         }
     }
 
@@ -102,7 +103,7 @@ impl Engine {
         let camera_bind_group =
             camera::create_bind_group(&device, &camera_buffer, &camera_bind_group_layout);
 
-        let window_size_uniform = Windowniform {
+        let window_size_uniform = WindowUniform {
             size: [1. / size.x as f32, 1. / size.y as f32],
         };
         let window_size_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -202,8 +203,9 @@ impl Engine {
 
             texture_amt_created: 0,
             layer_hash_inst_vec: HashMap::new(),
-            tex_index_hash_bind: HashMap::new(),
             inst_hash_tex_index: HashMap::new(),
+            tex_bindgroup_vec: vec![],
+
             platform,
             egui_rpass,
 

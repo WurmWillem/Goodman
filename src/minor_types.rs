@@ -15,6 +15,7 @@ pub type TexIndex = u32;
 
 pub trait Manager {
     fn new(engine: &mut Engine) -> Self;
+    fn start(&mut self) {}
     fn update(&mut self, frame_time: f64, input: &Input);
     fn render(&self, engine: &mut Engine);
 }
@@ -76,12 +77,6 @@ impl TimeManager {
         }
     }
 
-    pub fn create_new_loop_helper(&mut self, report_interval: f64, target_tps: u32) {
-        self.loop_helper = LoopHelper::builder()
-            .report_interval_s(report_interval)
-            .build_with_target_rate(target_tps);
-    }
-
     pub fn update(&mut self, platform: &mut Platform) {
         // Sleep until 1 / target_tps is reached
         if self.use_target_tps {
@@ -98,23 +93,35 @@ impl TimeManager {
         // Update average delta_t
         if let Some(avg_tps) = self.loop_helper.report_rate() {
             self.average_delta_t = 1. / avg_tps;
-            self.graph_vec.push(vec2(self.time_passed_since_creation, avg_tps));
+            self.graph_vec
+                .push(vec2(self.time_passed_since_creation, avg_tps));
             //println!("{}", avg_tps)
         }
     }
 
+    pub fn replace_loop_helper(&mut self, report_interval: f64, target_tps: u32) {
+        self.loop_helper = LoopHelper::builder()
+            .report_interval_s(report_interval)
+            .build_with_target_rate(target_tps);
+    }
+
     pub fn update_graph(&mut self) {
-        self.graph_vec.retain(|vec| vec.x >= self.time_passed_since_creation - 10.)
+        self.graph_vec
+            .retain(|vec| vec.x >= self.time_passed_since_creation - 10.)
     }
 
     pub fn set_target_tps(&mut self, tps: Option<u32>) {
         match tps {
             Some(tps) => {
-                self.loop_helper.set_target_rate((tps as f32 * 1.05) as u32);
+                self.loop_helper.set_target_rate(tps);
                 self.use_target_tps = true;
             }
             None => self.use_target_tps = false,
         }
+    }
+
+    pub fn set_use_target_tps(&mut self, use_target_tps: bool) {
+        self.use_target_tps = use_target_tps;
     }
 
     pub fn reset_time_since_last_render(&mut self) {
@@ -299,12 +306,16 @@ impl Input {
         }
     }
     pub fn reset_buttons(&mut self) {
-        if self.left_mouse_button_pressed {
-            self.left_mouse_button_pressed = false;
-        }
-        if self.right_mouse_button_pressed {
-            self.right_mouse_button_pressed = false;
-        }
+        self.left_mouse_button_pressed = false;
+        self.right_mouse_button_pressed = false;
+        self.d_pressed = false;
+        self.a_pressed = false;
+        self.w_pressed = false;
+        self.s_pressed = false;
+        self.right_arrow_pressed = false;
+        self.left_arrow_pressed = false;
+        self.up_arrow_pressed = false;
+        self.down_arrow_pressed = false;
     }
 
     pub fn get_cursor_pos(&self) -> Vec2 {
@@ -394,6 +405,6 @@ impl Color {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Windowniform {
+pub struct WindowUniform {
     pub size: [f32; 2],
 }
