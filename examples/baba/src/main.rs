@@ -105,10 +105,14 @@ struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        let kirb_bytes = include_bytes!("assets/kirb.png");
-        let kirb_tex = engine.create_texture(kirb_bytes, "kirb").unwrap();
-        let text_bytes = include_bytes!("assets/text.png");
-        let text_tex = engine.create_texture(text_bytes, "text").unwrap();
+        let bytes = include_bytes!("assets/baba c.png");
+        let baba_c_tex = engine.create_texture(bytes, "baba c").unwrap();
+        let bytes = include_bytes!("assets/check.png");
+        let baba_tex = engine.create_texture(bytes, "baba").unwrap();
+        let bytes = include_bytes!("assets/you.png");
+        let is_tex = engine.create_texture(bytes, "is").unwrap();
+        let bytes = include_bytes!("assets/check.png");
+        let you_tex = engine.create_texture(bytes, "you").unwrap();
 
         let mut grid = vec![];
         for _ in 0..GRID_SIZE.1 {
@@ -133,7 +137,7 @@ impl Manager for Game {
             grid,
             character_data: AllCharacterData::new(),
             noun_prop_combi: vec![],
-            textures: vec![kirb_tex, text_tex],
+            textures: vec![baba_c_tex, baba_tex, is_tex, you_tex],
         }
     }
 
@@ -202,14 +206,14 @@ impl Manager for Game {
                 }
             }
         }
-        for push in pushes {
-            self.move_object(push);
+        for push in &pushes {
+            self.move_object(*push);
         }
         for mov in &moves {
             self.move_object(*mov);
         }
 
-        if !moves.is_empty() {
+        if !pushes.is_empty() {
             self.update_character_data();
         }
     }
@@ -225,12 +229,18 @@ impl Manager for Game {
                     continue;
                 };
                 let pos = vec2(i as f64 * size.x, j as f64 * size.y);
+                
                 let index;
-
                 if self.grid[j][i] == Object::Character(Character::Kirb) {
                     index = 0;
-                } else {
+                } else if self.grid[j][i] == Object::Noun(Noun::Kirb) {
                     index = 1;
+                } else if self.grid[j][i] == Object::Is {
+                    index = 2
+                } else if self.grid[j][i] == Object::Property(Property::You) {
+                    index = 3
+                } else {
+                    index = 99;
                 }
                 engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
             }
@@ -326,8 +336,8 @@ impl Game {
                 if !self.noun_prop_combi.contains(&npc) {
                     self.character_data
                         .set_char_to_property(noun, property, true);
-                    
                     self.noun_prop_combi.push(npc);
+                    println!("created npc");
                 }
             }
         }
