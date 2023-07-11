@@ -60,27 +60,41 @@ impl AllCharacterData {
         }
     }
     fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
+        let i = if enable { 1 } else { -1 };
         match noun {
             Noun::Kirb => match property {
-                Property::You => self.kirb.is_you = enable,
+                Property::You => {
+                    self.kirb.is_you_counter = (self.kirb.is_you_counter as i32 + i) as usize;
+                    self.kirb.is_you = self.kirb.is_you_counter > 0
+                }
             },
         }
     }
-    fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
+    /*fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
         match noun {
             Noun::Kirb => match property {
                 Property::You => self.kirb.is_you,
             },
         }
-    }
+    }*/
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Direction {
+    Hor,
+    Ver,
 }
 
 struct CharacterData {
-    pub is_you: bool,
+    is_you: bool,
+    is_you_counter: usize,
 }
 impl CharacterData {
     fn new() -> Self {
-        Self { is_you: false }
+        Self {
+            is_you: false,
+            is_you_counter: 0,
+        }
     }
 }
 struct Game {
@@ -110,6 +124,10 @@ impl Manager for Game {
         grid[5][0] = Object::Noun(Noun::Kirb);
         grid[5][1] = Object::Is;
         grid[5][2] = Object::Property(Property::You);
+
+        grid[5][4] = Object::Noun(Noun::Kirb);
+        grid[6][4] = Object::Is;
+        grid[7][4] = Object::Property(Property::You);
 
         Self {
             grid,
@@ -217,6 +235,9 @@ impl Manager for Game {
                 engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
             }
         }
+        /*let pos = vec2(6. * size.x, 5. * size.y);
+        engine.render_texture(&rect_vec(pos, size), &self.textures[0]);
+        */
     }
 }
 impl Game {
@@ -226,6 +247,7 @@ impl Game {
                 if self.grid[j][i] != Object::Is {
                     continue;
                 }
+
                 let mut noun = None;
                 if let Some(object) = self.grid[j].get(i - 1) {
                     if let Object::Noun(n) = *object {
@@ -238,21 +260,21 @@ impl Game {
                         property = Some(p);
                     }
                 }
+                self.update_npcs(noun, property, (i, j), Direction::Hor);
 
-                if let Some(noun) = noun {
-                    if let Some(property) = property {
-                        if !self.character_data.get_if_enabled(noun, property) {
-                            self.character_data
-                                .set_char_to_property(noun, property, true);
-                            let npc = NounPropCombi {
-                                j,
-                                n: (i - 1, noun),
-                                p: (i + 1, property),
-                            };
-                            self.noun_prop_combi.push(npc);
-                        }
+                let mut noun = None;
+                if let Some(row) = self.grid.get(j - 1) {
+                    if let Object::Noun(n) = row[i] {
+                        noun = Some(n);
                     }
                 }
+                let mut property = None;
+                if let Some(row) = self.grid.get(j + 1) {
+                    if let Object::Property(p) = row[i] {
+                        property = Some(p);
+                    }
+                }
+                self.update_npcs(noun, property, (i, j), Direction::Ver);
             }
         }
         let mut i = 0;
@@ -263,10 +285,24 @@ impl Game {
             } else {
                 npc.p.0 + 1
             };
-            if self.grid[npc.j][npc.n.0] != Object::Noun(npc.n.1)
-                || self.grid[npc.j][npc.p.0] != Object::Property(npc.p.1)
-                || self.grid[npc.j][is_index] != Object::Is
+            let mut should_delete = false;
+
+            if npc.dir == Direction::Hor
+                && (self.grid[npc.row_or_col][npc.n.0] != Object::Noun(npc.n.1)
+                    || self.grid[npc.row_or_col][npc.p.0] != Object::Property(npc.p.1)
+                    || self.grid[npc.row_or_col][is_index] != Object::Is)
             {
+                should_delete = true;
+            } else if npc.dir == Direction::Ver
+                && (self.grid[npc.n.0][npc.row_or_col] != Object::Noun(npc.n.1)
+                    || self.grid[npc.p.0][npc.row_or_col] != Object::Property(npc.p.1)
+                    || self.grid[is_index][npc.row_or_col] != Object::Is)
+            {
+                should_delete = true
+            }
+
+            if should_delete {
+                println!("deleted {:?}", npc);
                 self.character_data
                     .set_char_to_property(npc.n.1, npc.p.1, false);
                 to_remove.push(i);
@@ -278,6 +314,25 @@ impl Game {
         }
     }
 
+    fn update_npcs(&mut self, noun: Option<Noun>, property: Option<Property>, (i, j): (usize, usize), dir: Direction) {
+        if let Some(noun) = noun {
+            if let Some(property) = property {
+                let npc;
+                if dir == Direction::Hor {
+                    npc = NounPropCombi::new(j, (i - 1, noun), (i + 1, property), dir);
+                } else {
+                    npc = NounPropCombi::new(i, (j -1, noun), (j + 1, property), dir)
+                }
+                if !self.noun_prop_combi.contains(&npc) {
+                    self.character_data
+                        .set_char_to_property(noun, property, true);
+                    
+                    self.noun_prop_combi.push(npc);
+                }
+            }
+        }
+    }
+
     fn move_object(&mut self, object: ((usize, usize), (usize, usize))) {
         let (i, j) = object.0;
         let (next_i, next_j) = object.1;
@@ -286,10 +341,17 @@ impl Game {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct NounPropCombi {
-    j: usize,
+    row_or_col: usize,
     n: (usize, Noun),
     p: (usize, Property),
+    dir: Direction,
+}
+impl NounPropCombi {
+    fn new(row_or_col: usize, n: (usize, Noun), p: (usize, Property), dir: Direction) -> Self {
+        Self { row_or_col, n, p, dir }
+    }
 }
 
 fn make_usize_tup(i: (i32, i32), u: (usize, usize)) -> (usize, usize) {
