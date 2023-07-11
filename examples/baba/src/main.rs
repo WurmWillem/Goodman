@@ -63,21 +63,17 @@ impl Manager for Game {
         grid[0][0] = Object::Character(Character::Flag);
         grid[3][5] = Object::Character(Character::Baba);
 
-        grid[5][0] = Object::Noun(Noun::Baba);
-        grid[5][1] = Object::Is;
-        grid[5][2] = Object::Property(Property::You);
+        grid[5][3] = Object::Noun(Noun::Baba);
+        grid[5][4] = Object::Is;
+        grid[5][5] = Object::Property(Property::Win);
 
-        grid[7][0] = Object::Noun(Noun::Flag);
-        grid[7][1] = Object::Is;
-        grid[7][2] = Object::Property(Property::You);
+        grid[7][3] = Object::Noun(Noun::Flag);
+        grid[7][4] = Object::Is;
+        grid[7][5] = Object::Property(Property::Win);
 
-        /*grid[2][0] = Object::Noun(Noun::Flag);
-        grid[2][1] = Object::Is;
-        grid[2][2] = Object::Property(Property::You);
-
-        grid[5][4] = Object::Noun(Noun::Kirb);
-        grid[6][4] = Object::Is;
-        grid[7][4] = Object::Property(Property::You);*/
+        grid[0][7] = Object::Noun(Noun::Baba);
+        grid[0][8] = Object::Is;
+        grid[0][9] = Object::Property(Property::You);
 
         Self {
             grid,
@@ -109,7 +105,6 @@ impl Manager for Game {
         }
 
         let mut moves: Vec<((usize, usize), (usize, usize))> = vec![];
-        let mut pushes = vec![];
         for j in 0..self.grid.len() {
             for i in 0..self.grid.len() {
                 if let Object::Character(char) = self.grid[j][i] {
@@ -129,24 +124,29 @@ impl Manager for Game {
                             continue;
                         }
 
+                        
                         let next_grid_pos = make_usize_tup(where_to_move, (i, j));
+                        let mut grid_pos = vec![((i, j), next_grid_pos)];
 
-                        if let Some(row) = self.grid.get(next_grid_pos.1) {
-                            if let Some(object) = row.get(next_grid_pos.0) {
-                                if *object == Object::Empty {
-                                    moves.push(((i, j), next_grid_pos));
-                                } else  {
-                                    let next_next_grid_pos =
-                                        make_usize_tup(where_to_move, next_grid_pos);
-
-                                    if let Some(row) = self.grid.get(next_next_grid_pos.1) {
-                                        if let Some(object) = row.get(next_next_grid_pos.0) {
-                                            if *object == Object::Empty {
-                                                pushes.push((next_grid_pos, next_next_grid_pos));
-                                                moves.push(((i, j), next_grid_pos));
-                                            }
+                        loop {
+                            if self.grid.get(grid_pos[grid_pos.len() - 1].1.1).is_none() {
+                                break
+                            }
+                            if let Some(row) = self.grid.get(grid_pos[grid_pos.len() - 1].1.1) {
+                                if let Some(object) = row.get(grid_pos[grid_pos.len() - 1].1.0) {
+                                    if *object == Object::Empty {
+                                        for m in grid_pos.iter().rev() {
+                                            moves.push(*m);
                                         }
+                                        break
+                                    } else {
+                                        let next_grid_pos =
+                                            make_usize_tup(where_to_move, grid_pos[grid_pos.len() - 1].1);
+                                        grid_pos.push((grid_pos[grid_pos.len() - 1].1, next_grid_pos));
                                     }
+                                }
+                                if row.get(grid_pos[grid_pos.len() - 1].1.0).is_none() {
+                                    break
                                 }
                             }
                         }
@@ -154,14 +154,11 @@ impl Manager for Game {
                 }
             }
         }
-        for push in &pushes {
-            self.move_object(*push);
-        }
         for mov in &moves {
             self.move_object(*mov);
         }
 
-        if !pushes.is_empty() {
+        if !moves.is_empty() {
             self.update_character_data();
         }
     }
