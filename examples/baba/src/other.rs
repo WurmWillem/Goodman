@@ -33,6 +33,9 @@ impl Character {
             Character::Flag => Noun::Flag,
         }
     }
+    pub fn iterator() -> impl Iterator<Item = Character> {
+        [Self::Baba, Self::Flag].iter().copied()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -64,6 +67,12 @@ impl AllCharacterData {
             Character::Flag => self.flag.is_you,
         }
     }
+    pub fn is_win(&self, char: Character) -> bool {
+        match char {
+            Character::Baba => self.baba.is_win,
+            Character::Flag => self.flag.is_win,
+        }
+    }
     pub fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
         let i = if enable { 1 } else { -1 };
         match noun {
@@ -72,7 +81,10 @@ impl AllCharacterData {
                     self.baba.is_you_counter = (self.baba.is_you_counter as i32 + i) as usize;
                     self.baba.is_you = self.baba.is_you_counter > 0
                 }
-                Property::Win => {}
+                Property::Win => {
+                    self.baba.is_win_counter = (self.baba.is_win_counter as i32 + i) as usize;
+                    self.baba.is_win = self.baba.is_win_counter > 0
+                }
             },
             Noun::Flag => match property {
                 Property::You => {
@@ -141,6 +153,36 @@ impl NounPropCombi {
     }
 }
 
-pub fn make_usize_tup(i: (i32, i32), u: (usize, usize)) -> (usize, usize) {
-    ((i.0 + u.0 as i32) as usize, (i.1 + u.1 as i32) as usize)
+#[derive(Debug, Clone, Copy)]
+pub struct Move {
+    pub from: VecPos,
+    pub to: VecPos,
 }
+impl Move {
+    pub fn new(from: VecPos, to: VecPos) -> Self {
+        Self { from, to }
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct VecPos {
+    pub i: usize,
+    pub j: usize,
+}
+impl VecPos {
+    pub fn new(vec_pos: (usize, usize)) -> Self {
+        Self {
+            i: vec_pos.0,
+            j: vec_pos.1,
+        }
+    }
+    pub fn add_i32_tuple(vec_pos: VecPos, t32_tuple: (i32, i32)) -> VecPos {
+        let mut copy = vec_pos;
+        copy.i = (copy.i as i32 + t32_tuple.0) as usize;
+        copy.j = (copy.j as i32 + t32_tuple.1) as usize;
+        copy
+    }
+}
+
+/*pub fn make_usize_tup(i: (i32, i32), u: (usize, usize)) -> (usize, usize) {
+    ((i.0 + u.0 as i32) as usize, (i.1 + u.1 as i32) as usize)
+}*/

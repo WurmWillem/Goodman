@@ -1,6 +1,6 @@
 use goodman::prelude::*;
 use other::{
-    make_usize_tup, AllCharacterData, Character, Direction, Noun, NounPropCombi, Object, Property,
+    AllCharacterData, Character, Direction, Move, Noun, NounPropCombi, Object, Property, VecPos,
 };
 
 mod other;
@@ -19,7 +19,6 @@ async fn run() {
     engine.set_target_fps(Some(144));
     // engine.set_target_tps(Some(1000000));
     // engine.enable_feature(Feature::EngineUi);
-    //engine.enable_feature(Feature::AverageTPS(0.1));
 
     let game = Game::new(&mut engine);
 
@@ -68,7 +67,7 @@ impl Manager for Game {
 
         grid[5][3] = Object::Noun(Noun::Baba);
         grid[5][4] = Object::Is;
-        grid[5][5] = Object::Property(Property::Win);
+        //grid[5][5] = Object::Property(Property::Win);
 
         grid[7][3] = Object::Noun(Noun::Flag);
         grid[7][4] = Object::Is;
@@ -107,7 +106,7 @@ impl Manager for Game {
             where_to_move.0 = -1;
         }
 
-        let mut moves: Vec<((usize, usize), (usize, usize))> = vec![];
+        let mut moves: Vec<Move> = vec![];
         for j in 0..self.grid.len() {
             for i in 0..self.grid[0].len() {
                 if let Object::Character(char) = self.grid[j][i] {
@@ -116,9 +115,11 @@ impl Manager for Game {
                             continue;
                         }
 
+                        let i_j: VecPos = VecPos::new((i, j));
+
                         let mut should_continue = false;
                         for m in &moves {
-                            if m.1 == (i, j) {
+                            if m.to == i_j {
                                 should_continue = true;
                                 break;
                             }
@@ -127,36 +128,34 @@ impl Manager for Game {
                             continue;
                         }
 
-                        let next_grid_pos = make_usize_tup(where_to_move, (i, j));
-                        let mut moves_to_make = vec![((i, j), next_grid_pos)];
+                        let next_grid_pos = VecPos::add_i32_tuple(i_j, where_to_move);
+                        let mov = Move::new(i_j, next_grid_pos);
+                        let mut moves_to_make = vec![mov];
 
                         loop {
-                            let next_pos = moves_to_make[moves_to_make.len() - 1].1;
-                            if self.grid.get(next_pos.1).is_none()
-                                || self.grid[next_pos.1].get(next_pos.0).is_none()
+                            let to = moves_to_make[moves_to_make.len() - 1].to;
+                            if self.grid.get(to.j).is_none() || self.grid[to.j].get(to.i).is_none()
                             {
                                 break;
                             }
 
-                            if self.grid[next_pos.1][next_pos.0] == Object::Empty {
+                            if self.grid[to.j][to.i] == Object::Empty {
                                 for m in moves_to_make.iter().rev() {
                                     moves.push(*m);
                                 }
                                 break;
                             } else {
-                                let current_pos = next_pos;
-                                let next_pos = make_usize_tup(where_to_move, current_pos);
-                                if let Object::Character(char) =
-                                    self.grid[current_pos.1][current_pos.0]
-                                {
+                                let from = to;
+                                let to = VecPos::add_i32_tuple(from, where_to_move);
+                                if let Object::Character(char) = self.grid[from.j][from.i] {
                                     if self.character_data.get_if_enabled(
                                         char.get_corresponding_noun(),
                                         Property::Win,
                                     ) {
-                                        println!("Win!");
+                                        self.win();
                                     }
                                 }
-                                moves_to_make.push((current_pos, next_pos));
+                                moves_to_make.push(Move::new(from, to));
                             }
                         }
                     }
@@ -164,7 +163,7 @@ impl Manager for Game {
             }
         }
         for mov in &moves {
-            if self.grid[mov.0 .1][mov.0 .0] != Object::Empty {
+            if self.grid[mov.from.j][mov.from.i] != Object::Empty {
                 self.move_object(*mov);
             }
         }
@@ -192,10 +191,11 @@ impl Manager for Game {
                 };
             }
         }
-        let pos = vec2(15. * size.x, 5. * size.y);
-        engine.render_texture(&rect_vec(pos, size), &self.textures[3]);
+        // let pos = vec2(15. * size.x, 5. * size.y);
+        // engine.render_texture(&rect_vec(pos, size), &self.textures[3]);
     }
 }
+
 impl Game {
     fn update_character_data(&mut self) {
         for j in 0..self.grid.len() {
@@ -269,6 +269,13 @@ impl Game {
         for r in to_remove {
             self.noun_prop_combi.remove(r);
         }
+
+        for char in Character::iterator() {
+            if self.character_data.is_win(char) && self.character_data.is_you(char) {
+                self.win();
+                break;
+            }
+        }
     }
 
     fn update_npcs(
@@ -289,6 +296,7 @@ impl Game {
                 if !self.noun_prop_combi.contains(&npc) {
                     self.character_data
                         .set_char_to_property(noun, property, true);
+
                     self.noun_prop_combi.push(npc);
                     println!("created {:?} is {:?}", npc.n.1, npc.p.1);
                 }
@@ -296,8 +304,12 @@ impl Game {
         }
     }
 
-    fn move_object(&mut self, ((i, j), (next_i, next_j)): ((usize, usize), (usize, usize))) {
-        self.grid[next_j][next_i] = self.grid[j][i];
-        self.grid[j][i] = Object::Empty;
+    fn move_object(&mut self, mov: Move) {
+        self.grid[mov.to.j][mov.to.i] = self.grid[mov.from.j][mov.from.i];
+        self.grid[mov.from.j][mov.from.i] = Object::Empty;
+    }
+
+    fn win(&self) {
+        println!("Win!");
     }
 }
