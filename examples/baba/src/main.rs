@@ -1,8 +1,7 @@
 use goodman::prelude::*;
-use other::{
-    AllCharacterData, Character, Direction, Move, Noun, NounPropCombi, Object, Property, VecPos,
-};
+use other::{AllCharacterData, Character, Move, Noun, NounPropCombi, Object, Property, VecPos};
 
+mod game;
 mod other;
 
 pub const WINDOW_SIZE: Vec2 = vec2(1200., 750.); //1500x1000
@@ -25,7 +24,7 @@ async fn run() {
     engine.enter_loop(game, event_loop);
 }
 
-struct Game {
+pub struct Game {
     grid: Vec<Vec<Object>>,
     character_data: AllCharacterData,
     noun_prop_combi: Vec<NounPropCombi>,
@@ -50,6 +49,11 @@ impl Manager for Game {
         let bytes = include_bytes!("assets/flag.png");
         let flag_tex = engine.create_texture(bytes, "flag").unwrap();
 
+        let bytes = include_bytes!("assets/wall c.png");
+        let wall_c_tex = engine.create_texture(bytes, "wall c").unwrap();
+        let bytes = include_bytes!("assets/wall.png");
+        let wall_tex = engine.create_texture(bytes, "wall").unwrap();
+
         let bytes = include_bytes!("assets/floor.png");
         let floor_tex = engine.create_texture(bytes, "floor").unwrap();
 
@@ -63,6 +67,11 @@ impl Manager for Game {
         }
 
         grid[2][2] = Object::Character(Character::Baba);
+
+        grid[13][7] = Object::Noun(Noun::Baba);
+        grid[13][8] = Object::Is;
+        grid[13][9] = Object::Property(Property::You);
+
         grid[3][3] = Object::Character(Character::Flag);
 
         grid[5][3] = Object::Noun(Noun::Baba);
@@ -82,7 +91,8 @@ impl Manager for Game {
             character_data: AllCharacterData::new(),
             noun_prop_combi: vec![],
             textures: vec![
-                is_tex, you_tex, win_tex, baba_tex, flag_tex, baba_c_tex, flag_c_tex, floor_tex,
+                floor_tex, is_tex, you_tex, win_tex, baba_tex, baba_c_tex, flag_tex, flag_c_tex,
+                wall_tex, wall_c_tex,
             ],
         }
     }
@@ -182,8 +192,7 @@ impl Manager for Game {
         for j in 0..self.grid.len() {
             for i in 0..self.grid[0].len() {
                 let pos = vec2(i as f64 * size.x, j as f64 * size.y);
-
-                engine.render_texture(&rect_vec(pos, size), &self.textures[7]);
+                engine.render_texture(&rect_vec(pos, size), &self.textures[0]);
 
                 if self.grid[j][i] != Object::Empty {
                     let index = self.grid[j][i].get_tex_index();
@@ -191,125 +200,5 @@ impl Manager for Game {
                 };
             }
         }
-        // let pos = vec2(15. * size.x, 5. * size.y);
-        // engine.render_texture(&rect_vec(pos, size), &self.textures[3]);
-    }
-}
-
-impl Game {
-    fn update_character_data(&mut self) {
-        for j in 0..self.grid.len() {
-            for i in 0..self.grid.len() {
-                if self.grid[j][i] != Object::Is {
-                    continue;
-                }
-
-                let mut noun = None;
-                if let Some(object) = self.grid[j].get(i - 1) {
-                    if let Object::Noun(n) = *object {
-                        noun = Some(n);
-                    }
-                }
-                let mut property = None;
-                if let Some(object) = self.grid[j].get(i + 1) {
-                    if let Object::Property(p) = *object {
-                        property = Some(p);
-                    }
-                }
-                self.update_npcs(noun, property, (i, j), Direction::Hor);
-
-                let mut noun = None;
-                if let Some(row) = self.grid.get(j - 1) {
-                    if let Object::Noun(n) = row[i] {
-                        noun = Some(n);
-                    }
-                }
-                let mut property = None;
-                if let Some(row) = self.grid.get(j + 1) {
-                    if let Object::Property(p) = row[i] {
-                        property = Some(p);
-                    }
-                }
-                self.update_npcs(noun, property, (i, j), Direction::Ver);
-            }
-        }
-
-        let mut i = 0;
-        let mut to_remove = vec![];
-        for npc in &self.noun_prop_combi {
-            let is_index = if npc.p.0 > npc.n.0 {
-                npc.p.0 - 1
-            } else {
-                npc.p.0 + 1
-            };
-
-            let mut should_delete = false;
-            if npc.dir == Direction::Hor
-                && (self.grid[npc.row_or_col][npc.n.0] != Object::Noun(npc.n.1)
-                    || self.grid[npc.row_or_col][npc.p.0] != Object::Property(npc.p.1)
-                    || self.grid[npc.row_or_col][is_index] != Object::Is)
-            {
-                should_delete = true;
-            } else if npc.dir == Direction::Ver
-                && (self.grid[npc.n.0][npc.row_or_col] != Object::Noun(npc.n.1)
-                    || self.grid[npc.p.0][npc.row_or_col] != Object::Property(npc.p.1)
-                    || self.grid[is_index][npc.row_or_col] != Object::Is)
-            {
-                should_delete = true
-            }
-
-            if should_delete {
-                println!("deleted {:?} is {:?}", npc.n.1, npc.p.1);
-                self.character_data
-                    .set_char_to_property(npc.n.1, npc.p.1, false);
-                to_remove.push(i);
-            }
-            i += 1;
-        }
-        for r in to_remove {
-            self.noun_prop_combi.remove(r);
-        }
-
-        for char in Character::iterator() {
-            if self.character_data.is_win(char) && self.character_data.is_you(char) {
-                self.win();
-                break;
-            }
-        }
-    }
-
-    fn update_npcs(
-        &mut self,
-        noun: Option<Noun>,
-        property: Option<Property>,
-        (i, j): (usize, usize),
-        dir: Direction,
-    ) {
-        if let Some(noun) = noun {
-            if let Some(property) = property {
-                let npc;
-                if dir == Direction::Hor {
-                    npc = NounPropCombi::new(j, (i - 1, noun), (i + 1, property), dir);
-                } else {
-                    npc = NounPropCombi::new(i, (j - 1, noun), (j + 1, property), dir)
-                }
-                if !self.noun_prop_combi.contains(&npc) {
-                    self.character_data
-                        .set_char_to_property(noun, property, true);
-
-                    self.noun_prop_combi.push(npc);
-                    println!("created {:?} is {:?}", npc.n.1, npc.p.1);
-                }
-            }
-        }
-    }
-
-    fn move_object(&mut self, mov: Move) {
-        self.grid[mov.to.j][mov.to.i] = self.grid[mov.from.j][mov.from.i];
-        self.grid[mov.from.j][mov.from.i] = Object::Empty;
-    }
-
-    fn win(&self) {
-        println!("Win!");
     }
 }

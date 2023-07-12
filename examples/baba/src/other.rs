@@ -9,14 +9,14 @@ pub enum Object {
 impl Object {
     pub fn get_tex_index(&self) -> usize {
         match self {
-            Object::Empty => 7,
-            Object::Is => 0,
-            Object::Property(Property::You) => 1,
-            Object::Property(Property::Win) => 2,
-            Object::Noun(Noun::Baba) => 3,
-            Object::Noun(Noun::Flag) => 4,
+            Object::Empty => 0,
+            Object::Is => 1,
+            Object::Property(Property::You) => 2,
+            Object::Property(Property::Win) => 3,
+            Object::Noun(Noun::Baba) => 4,
             Object::Character(Character::Baba) => 5,
-            Object::Character(Character::Flag) => 6,
+            Object::Noun(Noun::Flag) => 6,
+            Object::Character(Character::Flag) => 7,
         }
     }
 }
@@ -74,40 +74,31 @@ impl AllCharacterData {
         }
     }
     pub fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
+        let char_data = match noun {
+            Noun::Baba => &mut self.baba,
+            Noun::Flag => &mut self.flag,
+        };
+        
         let i = if enable { 1 } else { -1 };
-        match noun {
-            Noun::Baba => match property {
-                Property::You => {
-                    self.baba.is_you_counter = (self.baba.is_you_counter as i32 + i) as usize;
-                    self.baba.is_you = self.baba.is_you_counter > 0
-                }
-                Property::Win => {
-                    self.baba.is_win_counter = (self.baba.is_win_counter as i32 + i) as usize;
-                    self.baba.is_win = self.baba.is_win_counter > 0
-                }
+        match property {
+            Property::You => {
+                char_data.is_you_counter = (char_data.is_you_counter as i32 + i) as usize;
+                char_data.is_you = char_data.is_you_counter > 0
             },
-            Noun::Flag => match property {
-                Property::You => {
-                    self.flag.is_you_counter = (self.flag.is_you_counter as i32 + i) as usize;
-                    self.flag.is_you = self.flag.is_you_counter > 0
-                }
-                Property::Win => {
-                    self.flag.is_win_counter = (self.flag.is_win_counter as i32 + i) as usize;
-                    self.flag.is_win = self.flag.is_win_counter > 0
-                }
+            Property::Win => {
+                char_data.is_win_counter = (char_data.is_win_counter as i32 + i) as usize;
+                char_data.is_win = char_data.is_win_counter > 0
             },
-        }
+        };
     }
     pub fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
-        match noun {
-            Noun::Baba => match property {
-                Property::You => self.baba.is_you,
-                Property::Win => self.baba.is_win,
-            },
-            Noun::Flag => match property {
-                Property::You => self.flag.is_you,
-                Property::Win => self.flag.is_win,
-            },
+        let char_data = match noun {
+            Noun::Baba => &self.baba,
+            Noun::Flag => &self.flag,
+        };
+        match property {
+            Property::You => char_data.is_you,
+            Property::Win => char_data.is_win,
         }
     }
 }
@@ -118,6 +109,7 @@ pub enum Direction {
     Ver,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct CharacterData {
     is_you: bool,
     is_you_counter: usize,
