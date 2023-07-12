@@ -5,8 +5,8 @@ use other::{
 
 mod other;
 
-pub const WINDOW_SIZE: Vec2 = vec2(800., 800.);
-const GRID_SIZE: (usize, usize) = (10, 10);
+pub const WINDOW_SIZE: Vec2 = vec2(1200., 750.); //1500x1000
+const GRID_SIZE: (usize, usize) = (20, 14);
 
 fn main() {
     block_on(run());
@@ -51,6 +51,9 @@ impl Manager for Game {
         let bytes = include_bytes!("assets/flag.png");
         let flag_tex = engine.create_texture(bytes, "flag").unwrap();
 
+        let bytes = include_bytes!("assets/floor.png");
+        let floor_tex = engine.create_texture(bytes, "floor").unwrap();
+
         let mut grid = vec![];
         for _ in 0..GRID_SIZE.1 {
             let mut row = vec![];
@@ -60,8 +63,8 @@ impl Manager for Game {
             grid.push(row);
         }
 
-        grid[2][2] = Object::Character(Character::Flag);
-        grid[3][5] = Object::Character(Character::Baba);
+        grid[2][2] = Object::Character(Character::Baba);
+        grid[3][3] = Object::Character(Character::Flag);
 
         grid[5][3] = Object::Noun(Noun::Baba);
         grid[5][4] = Object::Is;
@@ -69,7 +72,7 @@ impl Manager for Game {
 
         grid[7][3] = Object::Noun(Noun::Flag);
         grid[7][4] = Object::Is;
-        grid[7][5] = Object::Property(Property::Win);
+        grid[7][5] = Object::Property(Property::You);
 
         grid[0][7] = Object::Noun(Noun::Baba);
         grid[0][8] = Object::Is;
@@ -80,7 +83,7 @@ impl Manager for Game {
             character_data: AllCharacterData::new(),
             noun_prop_combi: vec![],
             textures: vec![
-                is_tex, you_tex, win_tex, baba_tex, flag_tex, baba_c_tex, flag_c_tex,
+                is_tex, you_tex, win_tex, baba_tex, flag_tex, baba_c_tex, flag_c_tex, floor_tex,
             ],
         }
     }
@@ -106,7 +109,7 @@ impl Manager for Game {
 
         let mut moves: Vec<((usize, usize), (usize, usize))> = vec![];
         for j in 0..self.grid.len() {
-            for i in 0..self.grid.len() {
+            for i in 0..self.grid[0].len() {
                 if let Object::Character(char) = self.grid[j][i] {
                     if self.character_data.is_you(char) {
                         if where_to_move == (0, 0) {
@@ -129,37 +132,31 @@ impl Manager for Game {
 
                         loop {
                             let next_pos = moves_to_make[moves_to_make.len() - 1].1;
-                            if self.grid.get(next_pos.1).is_none() {
+                            if self.grid.get(next_pos.1).is_none()
+                                || self.grid[next_pos.1].get(next_pos.0).is_none()
+                            {
                                 break;
                             }
-                            if let Some(row) = self.grid.get(next_pos.1) {
-                                if let Some(object) = row.get(next_pos.0) {
-                                    if *object == Object::Empty {
-                                        for m in moves_to_make.iter().rev() {
-                                            moves.push(*m);
-                                        }
-                                        break;
-                                    } else {
-                                        let current_pos = next_pos;
-                                        let next_pos = make_usize_tup(where_to_move, current_pos);
 
-                                        if let Object::Character(char) =
-                                            self.grid[current_pos.1][current_pos.0]
-                                        {
-                                            if self.character_data.get_if_enabled(
-                                                char.get_corresponding_noun(),
-                                                Property::Win,
-                                            ) {
-                                                println!("Win!");
-                                            }
-                                        }
-
-                                        moves_to_make.push((current_pos, next_pos));
+                            if self.grid[next_pos.1][next_pos.0] == Object::Empty {
+                                for m in moves_to_make.iter().rev() {
+                                    moves.push(*m);
+                                }
+                                break;
+                            } else {
+                                let current_pos = next_pos;
+                                let next_pos = make_usize_tup(where_to_move, current_pos);
+                                if let Object::Character(char) =
+                                    self.grid[current_pos.1][current_pos.0]
+                                {
+                                    if self.character_data.get_if_enabled(
+                                        char.get_corresponding_noun(),
+                                        Property::Win,
+                                    ) {
+                                        println!("Win!");
                                     }
                                 }
-                                if row.get(next_pos.0).is_none() {
-                                    break;
-                                }
+                                moves_to_make.push((current_pos, next_pos));
                             }
                         }
                     }
@@ -167,7 +164,9 @@ impl Manager for Game {
             }
         }
         for mov in &moves {
-            self.move_object(*mov);
+            if self.grid[mov.0 .1][mov.0 .0] != Object::Empty {
+                self.move_object(*mov);
+            }
         }
 
         if !moves.is_empty() {
@@ -177,22 +176,24 @@ impl Manager for Game {
 
     fn render(&self, engine: &mut Engine) {
         let size = vec2(
-            WINDOW_SIZE.y / self.grid.len() as f64,
             WINDOW_SIZE.x / self.grid[0].len() as f64,
+            WINDOW_SIZE.y / self.grid.len() as f64,
         );
+
         for j in 0..self.grid.len() {
-            for i in 0..self.grid.len() {
-                if self.grid[j][i] == Object::Empty {
-                    continue;
-                };
+            for i in 0..self.grid[0].len() {
                 let pos = vec2(i as f64 * size.x, j as f64 * size.y);
 
-                let index = self.grid[j][i].get_tex_index();
-                engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
+                engine.render_texture(&rect_vec(pos, size), &self.textures[7]);
+
+                if self.grid[j][i] != Object::Empty {
+                    let index = self.grid[j][i].get_tex_index();
+                    engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
+                };
             }
         }
-        /*let pos = vec2(6. * size.x, 5. * size.y);
-        engine.render_texture(&rect_vec(pos, size), &self.textures[0]);*/
+        let pos = vec2(15. * size.x, 5. * size.y);
+        engine.render_texture(&rect_vec(pos, size), &self.textures[3]);
     }
 }
 impl Game {
@@ -241,8 +242,8 @@ impl Game {
             } else {
                 npc.p.0 + 1
             };
-            let mut should_delete = false;
 
+            let mut should_delete = false;
             if npc.dir == Direction::Hor
                 && (self.grid[npc.row_or_col][npc.n.0] != Object::Noun(npc.n.1)
                     || self.grid[npc.row_or_col][npc.p.0] != Object::Property(npc.p.1)
@@ -258,7 +259,7 @@ impl Game {
             }
 
             if should_delete {
-                println!("deleted {:?}", npc);
+                println!("deleted {:?} is {:?}", npc.n.1, npc.p.1);
                 self.character_data
                     .set_char_to_property(npc.n.1, npc.p.1, false);
                 to_remove.push(i);
@@ -289,7 +290,7 @@ impl Game {
                     self.character_data
                         .set_char_to_property(noun, property, true);
                     self.noun_prop_combi.push(npc);
-                    println!("created npc");
+                    println!("created {:?} is {:?}", npc.n.1, npc.p.1);
                 }
             }
         }

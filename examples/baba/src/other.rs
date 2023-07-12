@@ -9,7 +9,7 @@ pub enum Object {
 impl Object {
     pub fn get_tex_index(&self) -> usize {
         match self {
-            Object::Empty => panic!("this should not be possible"),
+            Object::Empty => 7,
             Object::Is => 0,
             Object::Property(Property::You) => 1,
             Object::Property(Property::Win) => 2,

@@ -5,4 +5,7 @@
 /target/release/examples
 /target/release/incremental
 /target/release/.cargo-lock
+/target/release/baba.d
+/target/release/p.d
+/target/release/goodman.d
 /Cargo.lock
