@@ -11,12 +11,15 @@ impl Object {
         match self {
             Object::Empty => 0,
             Object::Is => 1,
-            Object::Property(Property::You) => 2,
-            Object::Property(Property::Win) => 3,
-            Object::Noun(Noun::Baba) => 4,
-            Object::Character(Character::Baba) => 5,
-            Object::Noun(Noun::Flag) => 6,
-            Object::Character(Character::Flag) => 7,
+            Object::Noun(Noun::Baba) => 2,
+            Object::Character(Character::Baba) => 3,
+            Object::Property(Property::You) => 4,
+            Object::Noun(Noun::Flag) => 5,
+            Object::Character(Character::Flag) => 6,
+            Object::Property(Property::Win) => 7,
+            Object::Noun(Noun::Wall) => 8,
+            Object::Character(Character::Wall) => 9,
+            Object::Property(Property::Stop) => 10,
         }
     }
 }
@@ -25,16 +28,18 @@ impl Object {
 pub enum Character {
     Baba,
     Flag,
+    Wall,
 }
 impl Character {
     pub fn get_corresponding_noun(&self) -> Noun {
         match self {
             Character::Baba => Noun::Baba,
             Character::Flag => Noun::Flag,
+            Character::Wall => Noun::Wall,
         }
     }
     pub fn iterator() -> impl Iterator<Item = Character> {
-        [Self::Baba, Self::Flag].iter().copied()
+        [Self::Baba, Self::Flag, Self::Wall].iter().copied()
     }
 }
 
@@ -42,63 +47,76 @@ impl Character {
 pub enum Noun {
     Baba,
     Flag,
+    Wall,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Property {
     You,
     Win,
+    Stop,
 }
 
 pub struct AllCharacterData {
     baba: CharacterData,
     flag: CharacterData,
+    wall: CharacterData,
 }
 impl AllCharacterData {
     pub fn new() -> Self {
         Self {
             baba: CharacterData::new(),
             flag: CharacterData::new(),
+            wall: CharacterData::new(),
         }
     }
     pub fn is_you(&self, char: Character) -> bool {
         match char {
             Character::Baba => self.baba.is_you,
             Character::Flag => self.flag.is_you,
+            Character::Wall => self.wall.is_you,
         }
     }
     pub fn is_win(&self, char: Character) -> bool {
         match char {
             Character::Baba => self.baba.is_win,
             Character::Flag => self.flag.is_win,
+            Character::Wall => self.wall.is_you,
         }
     }
     pub fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
         let char_data = match noun {
             Noun::Baba => &mut self.baba,
             Noun::Flag => &mut self.flag,
+            Noun::Wall => &mut self.wall,
         };
-        
+
         let i = if enable { 1 } else { -1 };
         match property {
             Property::You => {
                 char_data.is_you_counter = (char_data.is_you_counter as i32 + i) as usize;
                 char_data.is_you = char_data.is_you_counter > 0
-            },
+            }
             Property::Win => {
                 char_data.is_win_counter = (char_data.is_win_counter as i32 + i) as usize;
                 char_data.is_win = char_data.is_win_counter > 0
-            },
+            }
+            Property::Stop => {
+                char_data.is_stop_counter = (char_data.is_stop_counter as i32 + i) as usize;
+                char_data.is_stop = char_data.is_stop_counter > 0
+            }
         };
     }
     pub fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
         let char_data = match noun {
             Noun::Baba => &self.baba,
             Noun::Flag => &self.flag,
+            Noun::Wall => &self.wall,
         };
         match property {
             Property::You => char_data.is_you,
             Property::Win => char_data.is_win,
+            Property::Stop => char_data.is_stop,
         }
     }
 }
@@ -115,6 +133,8 @@ pub struct CharacterData {
     is_you_counter: usize,
     is_win: bool,
     is_win_counter: usize,
+    is_stop: bool,
+    is_stop_counter: usize,
 }
 impl CharacterData {
     pub fn new() -> Self {
@@ -123,6 +143,8 @@ impl CharacterData {
             is_you_counter: 0,
             is_win: false,
             is_win_counter: 0,
+            is_stop: false,
+            is_stop_counter: 0,
         }
     }
 }
@@ -174,7 +196,3 @@ impl VecPos {
         copy
     }
 }
-
-/*pub fn make_usize_tup(i: (i32, i32), u: (usize, usize)) -> (usize, usize) {
-    ((i.0 + u.0 as i32) as usize, (i.1 + u.1 as i32) as usize)
-}*/

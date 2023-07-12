@@ -1,5 +1,6 @@
+use game::Level;
 use goodman::prelude::*;
-use other::{AllCharacterData, Character, Move, Noun, NounPropCombi, Object, Property, VecPos};
+use other::{AllCharacterData, Move, NounPropCombi, Object, Property, VecPos};
 
 mod game;
 mod other;
@@ -16,7 +17,6 @@ async fn run() {
 
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
     engine.set_target_fps(Some(144));
-    // engine.set_target_tps(Some(1000000));
     // engine.enable_feature(Feature::EngineUi);
 
     let game = Game::new(&mut engine);
@@ -28,6 +28,7 @@ pub struct Game {
     grid: Vec<Vec<Object>>,
     character_data: AllCharacterData,
     noun_prop_combi: Vec<NounPropCombi>,
+    current_level: Level,
     textures: Vec<Texture>,
 }
 impl Manager for Game {
@@ -35,64 +36,42 @@ impl Manager for Game {
         let bytes = include_bytes!("assets/is.png");
         let is_tex = engine.create_texture(bytes, "is").unwrap();
 
-        let bytes = include_bytes!("assets/you.png");
-        let you_tex = engine.create_texture(bytes, "you").unwrap();
-        let bytes = include_bytes!("assets/win.png");
-        let win_tex = engine.create_texture(bytes, "win").unwrap();
+        let bytes = include_bytes!("assets/floor.png");
+        let floor_tex = engine.create_texture(bytes, "floor").unwrap();
 
         let bytes = include_bytes!("assets/baba c.png");
         let baba_c_tex = engine.create_texture(bytes, "baba c").unwrap();
         let bytes = include_bytes!("assets/baba.png");
         let baba_tex = engine.create_texture(bytes, "baba").unwrap();
+        let bytes = include_bytes!("assets/you.png");
+        let you_tex = engine.create_texture(bytes, "you").unwrap();
+
         let bytes = include_bytes!("assets/flag c.png");
         let flag_c_tex = engine.create_texture(bytes, "flag c").unwrap();
         let bytes = include_bytes!("assets/flag.png");
         let flag_tex = engine.create_texture(bytes, "flag").unwrap();
+        let bytes = include_bytes!("assets/win.png");
+        let win_tex = engine.create_texture(bytes, "win").unwrap();
 
         let bytes = include_bytes!("assets/wall c.png");
         let wall_c_tex = engine.create_texture(bytes, "wall c").unwrap();
         let bytes = include_bytes!("assets/wall.png");
         let wall_tex = engine.create_texture(bytes, "wall").unwrap();
+        let bytes = include_bytes!("assets/stop.png");
+        let stop_tex = engine.create_texture(bytes, "stop").unwrap();
 
-        let bytes = include_bytes!("assets/floor.png");
-        let floor_tex = engine.create_texture(bytes, "floor").unwrap();
-
-        let mut grid = vec![];
-        for _ in 0..GRID_SIZE.1 {
-            let mut row = vec![];
-            for _ in 0..GRID_SIZE.0 {
-                row.push(Object::Empty);
-            }
-            grid.push(row);
-        }
-
-        grid[2][2] = Object::Character(Character::Baba);
-
-        grid[13][7] = Object::Noun(Noun::Baba);
-        grid[13][8] = Object::Is;
-        grid[13][9] = Object::Property(Property::You);
-
-        grid[3][3] = Object::Character(Character::Flag);
-
-        grid[5][3] = Object::Noun(Noun::Baba);
-        grid[5][4] = Object::Is;
-        //grid[5][5] = Object::Property(Property::Win);
-
-        grid[7][3] = Object::Noun(Noun::Flag);
-        grid[7][4] = Object::Is;
-        grid[7][5] = Object::Property(Property::You);
-
-        grid[0][7] = Object::Noun(Noun::Baba);
-        grid[0][8] = Object::Is;
-        grid[0][9] = Object::Property(Property::You);
+        let mut grid = vec![vec![]];
+        let current_level = Level::Level1;
+        current_level.load_level(&mut grid);
 
         Self {
             grid,
             character_data: AllCharacterData::new(),
             noun_prop_combi: vec![],
+            current_level,
             textures: vec![
-                floor_tex, is_tex, you_tex, win_tex, baba_tex, baba_c_tex, flag_tex, flag_c_tex,
-                wall_tex, wall_c_tex,
+                floor_tex, is_tex, baba_tex, baba_c_tex, you_tex, flag_tex, flag_c_tex, win_tex,
+                wall_tex, wall_c_tex, stop_tex,
             ],
         }
     }
@@ -114,6 +93,10 @@ impl Manager for Game {
         }
         if input.is_a_pressed() {
             where_to_move.0 = -1;
+        }
+        if input.is_one_pressed() {
+            self.current_level = Level::Level1;
+            self.current_level.load_level(&mut self.grid);
         }
 
         let mut moves: Vec<Move> = vec![];
@@ -163,6 +146,14 @@ impl Manager for Game {
                                         Property::Win,
                                     ) {
                                         self.win();
+                                    }
+                                }
+                                if let Object::Character(char) = self.grid[from.j][from.i] {
+                                    if self.character_data.get_if_enabled(
+                                        char.get_corresponding_noun(),
+                                        Property::Stop,
+                                    ) {
+                                        break;
                                     }
                                 }
                                 moves_to_make.push(Move::new(from, to));

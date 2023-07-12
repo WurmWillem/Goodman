@@ -1,10 +1,10 @@
 use crate::other::{Character, Direction, Move, Noun, NounPropCombi, Object, Property};
-use crate::Game;
+use crate::{Game, GRID_SIZE};
 
 impl Game {
     pub fn update_character_data(&mut self) {
         for j in 0..self.grid.len() {
-            for i in 0..self.grid.len() {
+            for i in 0..self.grid[0].len() {
                 if self.grid[j][i] != Object::Is {
                     continue;
                 }
@@ -114,7 +114,86 @@ impl Game {
         self.grid[mov.from.j][mov.from.i] = Object::Empty;
     }
 
-    pub fn win(&self) {
+    pub fn win(&mut self) {
         println!("Win!");
+        self.current_level.load_next_level(&mut self.grid);
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Level {
+    Level1,
+    Level2,
+}
+impl Level {
+    pub fn load_next_level(&mut self, grid: &mut Vec<Vec<Object>>) {
+        match self {
+            Level::Level1 => {
+                *self = Level::Level2;
+            }
+            Level::Level2 => {
+                *self = Level::Level1;
+            }
+        }
+        self.load_level(grid);
+    }
+    pub fn load_level(&self, grid: &mut Vec<Vec<Object>>) {
+        match self {
+            Level::Level1 => Self::load_level_1(grid),
+            Level::Level2 => Self::load_level_2(grid),
+        }
+    }
+
+    fn load_level_1(grid: &mut Vec<Vec<Object>>) {
+        *grid = vec![vec![Object::Empty; GRID_SIZE.0]; GRID_SIZE.1];
+
+        grid[2][2] = Object::Character(Character::Baba);
+        grid[11][15] = Object::Character(Character::Flag);
+
+        grid[13][7] = Object::Noun(Noun::Baba);
+        grid[13][8] = Object::Is;
+        grid[13][9] = Object::Property(Property::You);
+
+        grid[8][19] = Object::Noun(Noun::Flag);
+        grid[9][19] = Object::Is;
+        grid[10][19] = Object::Property(Property::Win);
+
+        grid[4][7] = Object::Noun(Noun::Wall);
+        grid[4][8] = Object::Is;
+        grid[4][9] = Object::Property(Property::Stop);
+
+        for i in 0..grid[6].len() {
+            grid[6][i] = Object::Character(Character::Wall);
+        }
+    }
+
+    fn load_level_2(grid: &mut Vec<Vec<Object>>) {
+        *grid = vec![vec![Object::Empty; GRID_SIZE.0]; GRID_SIZE.1];
+
+        grid[6][13] = Object::Character(Character::Baba);
+        grid[6][8] = Object::Character(Character::Flag);
+
+        for j in 3..11 {
+            grid[j][15] = Object::Character(Character::Wall);
+        }
+        for j in 3..11 {
+            grid[j][3] = Object::Character(Character::Wall);
+        }
+        for i in 3..16 {
+            grid[2][i] = Object::Character(Character::Wall);
+        }
+        for i in 3..16 {
+            grid[10][i] = Object::Character(Character::Wall);
+        }
+
+        grid[6][15] = Object::Character(Character::Wall);
+
+        grid[13][7] = Object::Noun(Noun::Baba);
+        grid[13][8] = Object::Is;
+        grid[13][9] = Object::Property(Property::You);
+
+        grid[5][5] = Object::Noun(Noun::Flag);
+        grid[12][16] = Object::Is;
+        grid[8][18] = Object::Property(Property::Win);
     }
 }
