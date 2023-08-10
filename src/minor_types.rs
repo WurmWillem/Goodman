@@ -219,6 +219,16 @@ pub struct Input {
     left_arrow_pressed: bool,
     up_arrow_pressed: bool,
     down_arrow_pressed: bool,
+    zero_pressed: bool,
+    one_pressed: bool,
+    two_pressed: bool,
+    three_pressed: bool,
+    four_pressed: bool,
+    five_pressed: bool,
+    six_pressed: bool,
+    seven_pressed: bool,
+    eight_pressed: bool,
+    nine_pressed: bool,
 }
 impl Input {
     pub fn new() -> Self {
@@ -234,6 +244,16 @@ impl Input {
             left_arrow_pressed: false,
             up_arrow_pressed: false,
             down_arrow_pressed: false,
+            zero_pressed: false,
+            one_pressed: false,
+            two_pressed: false,
+            three_pressed: false,
+            four_pressed: false,
+            five_pressed: false,
+            six_pressed: false,
+            seven_pressed: false,
+            eight_pressed: false,
+            nine_pressed: false,
         }
     }
     pub fn process_events(&mut self, event: &WindowEvent) -> bool {
@@ -279,6 +299,46 @@ impl Input {
                     }
                     VirtualKeyCode::Down => {
                         self.down_arrow_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key0 => {
+                        self.zero_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key1 => {
+                        self.one_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key2 => {
+                        self.two_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key3 => {
+                        self.three_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key4 => {
+                        self.four_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key5 => {
+                        self.five_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key6 => {
+                        self.six_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key7 => {
+                        self.seven_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key8 => {
+                        self.eight_pressed = is_pressed;
+                        true
+                    }
+                    VirtualKeyCode::Key9 => {
+                        self.nine_pressed = is_pressed;
                         true
                     }
                     _ => false,
@@ -327,6 +387,7 @@ impl Input {
     pub fn is_right_mouse_button_pressed(&self) -> bool {
         self.right_mouse_button_pressed
     }
+
     pub fn is_d_pressed(&self) -> bool {
         self.d_pressed
     }
@@ -339,6 +400,7 @@ impl Input {
     pub fn is_s_pressed(&self) -> bool {
         self.s_pressed
     }
+
     pub fn is_right_arrow_pressed(&self) -> bool {
         self.right_arrow_pressed
     }
@@ -350,6 +412,37 @@ impl Input {
     }
     pub fn is_down_arrow_pressed(&self) -> bool {
         self.down_arrow_pressed
+    }
+
+    pub fn is_zero_pressed(&self) -> bool {
+        self.zero_pressed
+    }
+    pub fn is_one_pressed(&self) -> bool {
+        self.one_pressed
+    }
+    pub fn is_two_pressed(&self) -> bool {
+        self.two_pressed
+    }
+    pub fn is_three_pressed(&self) -> bool {
+        self.three_pressed
+    }
+    pub fn is_four_pressed(&self) -> bool {
+        self.four_pressed
+    }
+    pub fn is_five_pressed(&self) -> bool {
+        self.five_pressed
+    }
+    pub fn is_six_pressed(&self) -> bool {
+        self.six_pressed
+    }
+    pub fn is_seven_pressed(&self) -> bool {
+        self.seven_pressed
+    }
+    pub fn is_eight_pressed(&self) -> bool {
+        self.eight_pressed
+    }
+    pub fn is_nine_pressed(&self) -> bool {
+        self.nine_pressed
     }
 }
 
