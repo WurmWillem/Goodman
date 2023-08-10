@@ -98,6 +98,10 @@ impl Manager for Game {
             self.current_level = Level::Level1;
             self.current_level.load_level(&mut self.grid);
         }
+        if input.is_two_pressed() {
+            self.current_level = Level::Level2;
+            self.current_level.load_level(&mut self.grid);
+        }
 
         let mut moves: Vec<Move> = vec![];
         for j in 0..self.grid.len() {

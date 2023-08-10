@@ -8,4 +8,5 @@
 /target/release/baba.d
 /target/release/p.d
 /target/release/goodman.d
+/target/.rustc_info.json
 /Cargo.lock

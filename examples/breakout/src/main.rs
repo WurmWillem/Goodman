@@ -61,7 +61,7 @@ impl Manager for Breakout {
         self.ball.resolve_paddle_collision(&self.paddle);
 
         self.blocks.iter_mut().for_each(|row| {
-            row.iter_mut().for_each(|mut block| {
+            row.iter_mut().for_each(|block| {
                 if resolve_collision(&mut self.ball.to_rect(), &mut self.ball.vel, block.rect) {
                     block.lives -= 1;
                 }
