@@ -28,11 +28,12 @@ struct Breakout {
 impl Manager for Breakout {
     fn new(engine: &mut Engine) -> Self {
         let paddle_bytes = include_bytes!("assets/paddle.png");
-        let paddle_tex = engine.create_texture(paddle_bytes, "paddle").unwrap();
+        let paddle_tex = engine.create_texture_from_bytes(paddle_bytes).unwrap();
         let ball_bytes = include_bytes!("assets/ball.png");
-        let ball_tex = engine.create_texture(ball_bytes, "ball").unwrap();
+        let ball_tex = engine.create_texture_from_bytes(ball_bytes).unwrap();
         let block_bytes = include_bytes!("assets/block.png");
-        let block_tex = engine.create_texture(block_bytes, "block").unwrap();
+        let block_tex = engine.create_texture_from_bytes(block_bytes).unwrap();
+
         let paddle = Paddle::new(vec2(WINDOW_SIZE.x * 0.5, WINDOW_SIZE.y * 0.9));
         let ball = Ball::new(vec2(0., WINDOW_SIZE.y));
 
@@ -63,7 +64,7 @@ impl Manager for Breakout {
         self.blocks.iter_mut().for_each(|row| {
             row.iter_mut().for_each(|block| {
                 if resolve_collision(&mut self.ball.to_rect(), &mut self.ball.vel, block.rect) {
-                    block.lives -= 1;
+                    //block.lives -= 1;
                 }
             });
             row.retain(|block| block.lives > 0);

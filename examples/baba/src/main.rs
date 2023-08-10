@@ -33,32 +33,25 @@ pub struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        let bytes = include_bytes!("assets/is.png");
-        let is_tex = engine.create_texture(bytes, "is").unwrap();
+        let path_to_assets_folder =
+            "/home/wurmwillem/Programming/Goodman/examples/baba/src/assets/";
+        let rest_of_path_vec = vec![
+            "floor.png",
+            "is.png",
+            "baba.png",
+            "baba c.png",
+            "you.png",
+            "flag.png",
+            "flag c.png",
+            "win.png",
+            "wall.png",
+            "wall c.png",
+            "stop.png",
+        ];
 
-        let bytes = include_bytes!("assets/floor.png");
-        let floor_tex = engine.create_texture(bytes, "floor").unwrap();
-
-        let bytes = include_bytes!("assets/baba c.png");
-        let baba_c_tex = engine.create_texture(bytes, "baba c").unwrap();
-        let bytes = include_bytes!("assets/baba.png");
-        let baba_tex = engine.create_texture(bytes, "baba").unwrap();
-        let bytes = include_bytes!("assets/you.png");
-        let you_tex = engine.create_texture(bytes, "you").unwrap();
-
-        let bytes = include_bytes!("assets/flag c.png");
-        let flag_c_tex = engine.create_texture(bytes, "flag c").unwrap();
-        let bytes = include_bytes!("assets/flag.png");
-        let flag_tex = engine.create_texture(bytes, "flag").unwrap();
-        let bytes = include_bytes!("assets/win.png");
-        let win_tex = engine.create_texture(bytes, "win").unwrap();
-
-        let bytes = include_bytes!("assets/wall c.png");
-        let wall_c_tex = engine.create_texture(bytes, "wall c").unwrap();
-        let bytes = include_bytes!("assets/wall.png");
-        let wall_tex = engine.create_texture(bytes, "wall").unwrap();
-        let bytes = include_bytes!("assets/stop.png");
-        let stop_tex = engine.create_texture(bytes, "stop").unwrap();
+        let textures = engine
+            .create_texture_vec(path_to_assets_folder, &rest_of_path_vec)
+            .unwrap();
 
         let mut grid = vec![vec![]];
         let current_level = Level::Level1;
@@ -69,10 +62,7 @@ impl Manager for Game {
             character_data: AllCharacterData::new(),
             noun_prop_combi: vec![],
             current_level,
-            textures: vec![
-                floor_tex, is_tex, baba_tex, baba_c_tex, you_tex, flag_tex, flag_c_tex, win_tex,
-                wall_tex, wall_c_tex, stop_tex,
-            ],
+            textures,
         }
     }
 

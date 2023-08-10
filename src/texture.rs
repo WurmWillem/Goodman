@@ -12,20 +12,29 @@ impl Texture {
     pub fn from_bytes(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        bytes: &[u8],
-        label: &str,
         index: u32,
+        bytes: &[u8],
     ) -> Result<Self> {
         let img = image::load_from_memory(bytes)?;
-        Ok(Self::from_image(device, queue, &img, label, index))
+        Ok(Self::from_image(device, queue, &img, index, None))
+    }
+
+    pub fn from_path(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        index: u32,
+        label: &str,
+    ) -> Result<Self> {
+        let img = image::open(label)?;
+        Ok(Self::from_image(device, queue, &img, index, Some(label)))
     }
 
     pub fn from_image(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         img: &image::DynamicImage,
-        label: &str,
         index: u32,
+        label: Option<&str>,
     ) -> Self {
         let rgba = img.to_rgba8();
         let dimensions = img.dimensions();
@@ -36,7 +45,7 @@ impl Texture {
             depth_or_array_layers: 1,
         };
         let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some(label),
+            label,
             size,
             mip_level_count: 1,
             sample_count: 1,
