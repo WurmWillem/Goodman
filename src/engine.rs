@@ -14,7 +14,8 @@ use crate::{
     math::rect,
     math::Rect,
     minor_types::{DrawParams, TimeManager},
-    minor_types::{Feature, Features, GoodManUI, Input, InstIndex, Layer, Manager, TexIndex},
+    minor_types::{Feature, Features, GoodManUI, InstIndex, Layer, Manager, TexIndex},
+    input::Input,
     texture::{self, Texture},
 };
 
@@ -368,12 +369,10 @@ impl Engine {
     }
 
     fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.win_size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
-            self.surface.configure(&self.device, &self.config);
-        }
+        self.win_size = new_size;
+        self.config.width = new_size.width;
+        self.config.height = new_size.height;
+        self.surface.configure(&self.device, &self.config);
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {

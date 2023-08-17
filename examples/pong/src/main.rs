@@ -36,7 +36,7 @@ impl Manager for Pong {
         let path_to_assets_folder =
             "/home/wurmwillem/Programming/Goodman/examples/pong/src/assets/";
         let rest_of_path_vec = vec!["Computer.png", "Player.png", "Ball.png"];
-        
+
         let textures = engine
             .create_texture_vec(path_to_assets_folder, &rest_of_path_vec)
             .unwrap();

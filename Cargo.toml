@@ -18,6 +18,7 @@ pollster = "0.2"
 bytemuck = { version = "1.12", features = [ "derive" ] }
 anyhow = "1.0"
 spin_sleep = "1.1.1"
+rodio = "0.17"
 
 
 [dependencies.image]
@@ -34,3 +35,6 @@ path = "examples/breakout/src/main.rs"
 [[bin]] 
 name = "baba"
 path = "examples/baba/src/main.rs"
+[[bin]] 
+name = "t"
+path = "examples/testo/src/main.rs"

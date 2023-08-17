@@ -5,6 +5,10 @@ use other::{AllCharacterData, Move, NounPropCombi, Object, Property, VecPos};
 mod game;
 mod other;
 
+use rodio::{Decoder, Source};
+use std::io::BufReader;
+use std::fs::File;
+
 pub const WINDOW_SIZE: Vec2 = vec2(1200., 750.); //1500x1000
 const GRID_SIZE: (usize, usize) = (20, 14);
 
@@ -17,6 +21,7 @@ async fn run() {
 
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
     engine.set_target_fps(Some(144));
+    engine.set_target_tps(Some(144));
     // engine.enable_feature(Feature::EngineUi);
 
     let game = Game::new(&mut engine);
@@ -30,6 +35,9 @@ pub struct Game {
     noun_prop_combi: Vec<NounPropCombi>,
     current_level: Level,
     textures: Vec<Texture>,
+    source: rodio::source::Buffered<Decoder<BufReader<File>>>,
+    stream: rodio::OutputStream,
+    stream_handle: rodio::OutputStreamHandle,
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
@@ -57,12 +65,20 @@ impl Manager for Game {
         let current_level = Level::Level1;
         current_level.load_level(&mut grid);
 
+        let file = BufReader::new(File::open("a.mp3").unwrap());
+        let source = Decoder::new(file).unwrap().buffered();
+
+        let (stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+
         Self {
             grid,
             character_data: AllCharacterData::new(),
             noun_prop_combi: vec![],
             current_level,
             textures,
+            source,
+            stream,
+            stream_handle,
         }
     }
 
@@ -160,6 +176,7 @@ impl Manager for Game {
         for mov in &moves {
             if self.grid[mov.from.j][mov.from.i] != Object::Empty {
                 self.move_object(*mov);
+                self.stream_handle.play_raw(self.source.clone().convert_samples()).unwrap();
             }
         }
 
