@@ -9,13 +9,13 @@ use winit::{
 
 use crate::{
     camera::Camera,
+    input::Input,
     instances::INDICES,
     instances::{self, Instance, InstanceRaw},
     math::rect,
     math::Rect,
     minor_types::{DrawParams, TimeManager},
     minor_types::{Feature, Features, GoodManUI, InstIndex, Layer, Manager, TexIndex},
-    input::Input,
     texture::{self, Texture},
 };
 

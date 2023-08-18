@@ -6,8 +6,8 @@ mod game;
 mod other;
 
 use rodio::{Decoder, Source};
-use std::io::BufReader;
 use std::fs::File;
+use std::io::BufReader;
 
 pub const WINDOW_SIZE: Vec2 = vec2(1200., 750.); //1500x1000
 const GRID_SIZE: (usize, usize) = (20, 14);
@@ -100,14 +100,14 @@ impl Manager for Game {
         if input.is_a_pressed() {
             where_to_move.0 = -1;
         }
-        if input.is_one_pressed() {
+        /*if input.is_one_pressed() {
             self.current_level = Level::Level1;
             self.current_level.load_level(&mut self.grid);
         }
         if input.is_two_pressed() {
             self.current_level = Level::Level2;
             self.current_level.load_level(&mut self.grid);
-        }
+        }*/
 
         let mut moves: Vec<Move> = vec![];
         for j in 0..self.grid.len() {
@@ -176,7 +176,9 @@ impl Manager for Game {
         for mov in &moves {
             if self.grid[mov.from.j][mov.from.i] != Object::Empty {
                 self.move_object(*mov);
-                self.stream_handle.play_raw(self.source.clone().convert_samples()).unwrap();
+                self.stream_handle
+                    .play_raw(self.source.clone().convert_samples())
+                    .unwrap();
             }
         }
 

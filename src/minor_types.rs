@@ -1,5 +1,5 @@
 use self::Layer::*;
-use crate::{prelude::Engine, input::Input};
+use crate::{input::Input, prelude::Engine};
 
 use cgmath::vec2;
 use egui_winit_platform::Platform;
@@ -205,8 +205,6 @@ impl Layer {
         LAYERS.iter()
     }
 }
-
-
 
 pub struct Color {
     pub r: f64,
