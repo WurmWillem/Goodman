@@ -169,10 +169,10 @@ impl Paddle {
     fn update(&mut self, input: &Input, delta_t: f64) {
         let speed = Self::SPEED * delta_t;
 
-        if input.is_d_pressed() && self.rect.x + self.rect.w < WINDOW_SIZE.x {
+        if input.is_button_held(Button::D) && self.rect.x + self.rect.w < WINDOW_SIZE.x {
             self.rect.x += speed;
         }
-        if input.is_a_pressed() && self.rect.x > 0. {
+        if input.is_button_held(Button::A) && self.rect.x > 0. {
             self.rect.x -= speed;
         }
     }

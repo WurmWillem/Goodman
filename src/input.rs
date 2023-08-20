@@ -19,13 +19,13 @@ impl Button {
     }
 }
 
-macro_rules! CreateInput {
+macro_rules! CreateInputStruct {
     ($($field_name: ident)*) => {
         pub struct Input {
             cursor_pos: Vec2,
             $($field_name: Button,)*
         }
-        
+
         impl Input {
             pub fn new() -> Self {
                 Self {
@@ -33,66 +33,26 @@ macro_rules! CreateInput {
                     $($field_name: Button::new(),)*
                 }
             }
-
-            
         }
     };
 }
-CreateInput!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow zero one two three four five six seven eight nine);
+CreateInputStruct!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow 
+    zero one two three four five six seven eight nine);
 
-
-// CreateCharEnum!(hello, d.held);
-
-/*pub struct Input {
-    cursor_pos: Vec2,
-
-    left_mouse: Button,
-    right_mouse: Button,
-    d: Button,
-    a: Button,
-    w: Button,
-    s: Button,
-    right_arrow: Button,
-    left_arrow: Button,
-    up_arrow: Button,
-    down_arrow: Button,
-    zero: Button,
-    one: Button,
-    two: Button,
-    three: Button,
-    four: Button,
-    five: Button,
-    six: Button,
-    seven: Button,
-    eight: Button,
-    nine: Button,
-}*/
-impl Input {
-    /*pub fn new() -> Self {
-        Self {
-            cursor_pos: vec2(0., 0.),
-            left_mouse: Button::new(),
-            right_mouse: Button::new(),
-            d: Button::new(),
-            a: Button::new(),
-            w: Button::new(),
-            s: Button::new(),
-            right_arrow: Button::new(),
-            left_arrow: Button::new(),
-            up_arrow: Button::new(),
-            down_arrow: Button::new(),
-            zero: Button::new(),
-            one: Button::new(),
-            two: Button::new(),
-            three: Button::new(),
-            four: Button::new(),
-            five: Button::new(),
-            six: Button::new(),
-            seven: Button::new(),
-            eight: Button::new(),
-            nine: Button::new(),
+macro_rules! set_button_to_is_pressed {
+    ($self: ident, $is_pressed: expr, $keycode: expr, $($key_code_name: ident, $field_name: ident)*) => {
+        match $keycode {
+            $(VirtualKeyCode::$key_code_name => {
+                $self.$field_name.set_both($is_pressed);
+                true
+            })*
+            _ => false
         }
-    }*/
+
+    };
+}
+
+impl Input {
     pub fn process_events(&mut self, event: &WindowEvent) -> bool {
         match event {
             WindowEvent::KeyboardInput {
@@ -105,65 +65,8 @@ impl Input {
                 ..
             } => {
                 let is_pressed = *state == ElementState::Pressed;
-                let mut return_bool = true;
-                match keycode {
-                    VirtualKeyCode::W => {
-                        self.w.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::A => {
-                        self.a.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::S => {
-                        self.s.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::D => {
-                        self.d.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Right => {
-                        self.right_arrow.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Left => {
-                        self.left_arrow.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Up => {
-                        self.up_arrow.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Down => {
-                        self.down_arrow.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key0 => {
-                        self.zero.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key1 => {
-                        self.one.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key2 => {
-                        self.two.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key3 => {
-                        self.three.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key4 => {
-                        self.four.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key5 => {
-                        self.five.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key6 => {
-                        self.six.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key7 => {
-                        self.seven.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key8 => {
-                        self.eight.set_both(is_pressed);
-                    }
-                    VirtualKeyCode::Key9 => {
-                        self.nine.set_both(is_pressed);
-                    }
-                    _ => return_bool = false,
-                };
-                return_bool
+                set_button_to_is_pressed!(self, is_pressed, keycode, W,w A,a S,s D,d Right,right_arrow Left,left_arrow Down,down_arrow 
+                    Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine)
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 let is_pressed = *state == ElementState::Pressed;
@@ -198,75 +101,43 @@ impl Input {
         self.up_arrow.pressed = false;
         self.down_arrow.pressed = false;
     }
-
-    pub fn get_cursor_pos(&self) -> Vec2 {
-        self.cursor_pos
-    }
-    pub fn is_left_mouse_button_pressed(&self) -> bool {
-        self.left_mouse.pressed
-    }
-    pub fn is_right_mouse_button_pressed(&self) -> bool {
-        self.right_mouse.pressed
-    }
-
-    pub fn is_d_pressed(&self) -> bool {
-        self.d.pressed
-    }
-    pub fn is_a_pressed(&self) -> bool {
-        self.a.pressed
-    }
-    pub fn is_w_pressed(&self) -> bool {
-        self.w.pressed
-    }
-    pub fn is_s_pressed(&self) -> bool {
-        self.s.pressed
-    }
-
-    /*pub fn is_right_arrow_pressed(&self) -> bool {
-        self.right_arrow_pressed
-    }
-    pub fn is_left_arrow_pressed(&self) -> bool {
-        self.left_arrow_pressed
-    }
-    pub fn is_up_arrow_pressed(&self) -> bool {
-        self.up_arrow_pressed
-    }
-    pub fn is_down_arrow_pressed(&self) -> bool {
-        self.down_arrow_pressed
-    }
-
-    pub fn is_zero_pressed(&self) -> bool {
-        self.zero_pressed
-    }
-    pub fn is_one_pressed(&self) -> bool {
-        self.one_pressed
-    }
-    pub fn is_two_pressed(&self) -> bool {
-        self.two_pressed
-    }
-    pub fn is_three_pressed(&self) -> bool {
-        self.three_pressed
-    }
-    pub fn is_four_pressed(&self) -> bool {
-        self.four_pressed
-    }
-    pub fn is_five_pressed(&self) -> bool {
-        self.five_pressed
-    }
-    pub fn is_six_pressed(&self) -> bool {
-        self.six_pressed
-    }
-    pub fn is_seven_pressed(&self) -> bool {
-        self.seven_pressed
-    }
-    pub fn is_eight_pressed(&self) -> bool {
-        self.eight_pressed
-    }
-    pub fn is_nine_pressed(&self) -> bool {
-        self.nine_pressed
-    }*/
 }
-enum Char {
+
+macro_rules! is_button_pressed_or_held {
+    ($function_name: ident, $field_name: ident) => {
+        impl Input {
+            pub fn $function_name(&self, c: ButtonEnum) -> bool {
+                match c {
+                    ButtonEnum::LeftMouse => self.left_mouse.$field_name,
+                    ButtonEnum::RightMouse => self.right_mouse.$field_name,
+                    ButtonEnum::W => self.w.$field_name,
+                    ButtonEnum::A => self.a.$field_name,
+                    ButtonEnum::S => self.s.$field_name,
+                    ButtonEnum::D => self.d.$field_name,
+                    ButtonEnum::RightArrow => self.right_arrow.$field_name,
+                    ButtonEnum::LeftArrow => self.left_arrow.$field_name,
+                    ButtonEnum::UpArrow => self.up_arrow.$field_name,
+                    ButtonEnum::DownArrow => self.down_arrow.$field_name,
+                    ButtonEnum::Zero => self.zero.$field_name,
+                    ButtonEnum::One => self.one.$field_name,
+                    ButtonEnum::Two => self.two.$field_name,
+                    ButtonEnum::Three => self.three.$field_name,
+                    ButtonEnum::Four => self.four.$field_name,
+                    ButtonEnum::Five => self.five.$field_name,
+                    ButtonEnum::Six => self.six.$field_name,
+                    ButtonEnum::Seven => self.seven.$field_name,
+                    ButtonEnum::Eight => self.eight.$field_name,
+                    ButtonEnum::Nine => self.nine.$field_name,
+                }
+            }
+        }
+    };
+}
+is_button_pressed_or_held!(is_button_pressed, pressed);
+is_button_pressed_or_held!(is_button_held, held);
+pub enum ButtonEnum {
+    LeftMouse,
+    RightMouse,
     W,
     A,
     S,
@@ -274,5 +145,15 @@ enum Char {
     RightArrow,
     LeftArrow,
     UpArrow,
-    DonwArrow,
+    DownArrow,
+    Zero,
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
 }

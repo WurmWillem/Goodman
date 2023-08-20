@@ -110,7 +110,10 @@ impl Engine {
                     self.update();
                     manager.update(self.time.get_relevant_delta_t(), &self.input);
 
-                    if self.input.is_right_mouse_button_pressed() {
+                    if self
+                        .input
+                        .is_button_pressed(crate::prelude::Button::RightMouse)
+                    {
                         println!("{}", self.time.get_average_tps());
                     }
                     self.input.reset_buttons();

@@ -88,16 +88,16 @@ impl Manager for Game {
 
     fn update(&mut self, _delta_t: f64, input: &Input) {
         let mut where_to_move = (0, 0);
-        if input.is_w_pressed() {
+        if input.is_button_pressed(Button::W) {
             where_to_move.1 = -1;
         }
-        if input.is_d_pressed() {
+        if input.is_button_pressed(Button::D) {
             where_to_move.0 = 1;
         }
-        if input.is_s_pressed() {
+        if input.is_button_pressed(Button::S) {
             where_to_move.1 = 1;
         }
-        if input.is_a_pressed() {
+        if input.is_button_pressed(Button::A) {
             where_to_move.0 = -1;
         }
         /*if input.is_one_pressed() {

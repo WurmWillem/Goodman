@@ -54,11 +54,14 @@ impl Manager for Pong {
     }
 
     fn update(&mut self, delta_t: f64, input: &Input) {
-        self.left_paddle
-            .update(input.is_w_pressed(), input.is_s_pressed(), delta_t);
+        self.left_paddle.update(
+            input.is_button_held(Button::W),
+            input.is_button_held(Button::S),
+            delta_t,
+        );
         self.right_paddle.update(
-            input.is_up_arrow_pressed(),
-            input.is_down_arrow_pressed(),
+            input.is_button_held(Button::UpArrow),
+            input.is_button_held(Button::DownArrow),
             delta_t,
         );
 
