@@ -1,12 +1,2 @@
-/target/debug
-/target/release/.fingerprint
-/target/release/build
-/target/release/deps
-/target/release/examples
-/target/release/incremental
-/target/release/.cargo-lock
-/target/release/baba.d
-/target/release/p.d
-/target/release/goodman.d
-/target/.rustc_info.json
+/target
 /Cargo.lock

@@ -9,12 +9,13 @@ use winit::{
 
 use crate::{
     camera::Camera,
+    input::Input,
     instances::INDICES,
     instances::{self, Instance, InstanceRaw},
     math::rect,
     math::Rect,
     minor_types::{DrawParams, TimeManager},
-    minor_types::{Feature, Features, GoodManUI, Input, InstIndex, Layer, Manager, TexIndex},
+    minor_types::{Feature, Features, GoodManUI, InstIndex, Layer, Manager, Sound, TexIndex},
     texture::{self, Texture},
 };
 
@@ -61,8 +62,17 @@ pub struct Engine {
     features: Features,
 
     game_ui: Option<GoodManUI>,
+
+    sound: Sound,
 }
 impl Engine {
+    pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
+    where
+        S: rodio::Source<Item = f32> + Send + 'static,
+    {
+        self.sound.play_sound(source)
+    }
+
     pub fn enter_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
         T: Manager + 'static,
@@ -107,9 +117,12 @@ impl Engine {
                     self.time.update(&mut self.platform);
 
                     self.update();
-                    manager.update(self.time.get_relevant_delta_t(), &self.input);
+                    manager.update(self.time.get_relevant_delta_t(), &self.input, &self.sound);
 
-                    if self.input.is_right_mouse_button_pressed() {
+                    if self
+                        .input
+                        .is_button_pressed(crate::prelude::Button::RightMouse)
+                    {
                         println!("{}", self.time.get_average_tps());
                     }
                     self.input.reset_buttons();
@@ -368,12 +381,10 @@ impl Engine {
     }
 
     fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.win_size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
-            self.surface.configure(&self.device, &self.config);
-        }
+        self.win_size = new_size;
+        self.config.width = new_size.width;
+        self.config.height = new_size.height;
+        self.surface.configure(&self.device, &self.config);
     }
 
     fn input(&mut self, event: &WindowEvent) -> bool {

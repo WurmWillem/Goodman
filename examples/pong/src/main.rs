@@ -15,8 +15,8 @@ async fn run() {
     let event_loop = EventLoop::new();
 
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
-    engine.set_target_fps(Some(144));
-    engine.set_target_tps(Some(100 * 1000));
+    // engine.set_target_fps(Some(144));
+    // engine.set_target_tps(Some(100 * 1000));
     engine.enable_feature(Feature::EngineUi);
     //engine.enable_feature(Feature::AverageTPS(0.1));
 
@@ -36,7 +36,7 @@ impl Manager for Pong {
         let path_to_assets_folder =
             "/home/wurmwillem/Programming/Goodman/examples/pong/src/assets/";
         let rest_of_path_vec = vec!["Computer.png", "Player.png", "Ball.png"];
-        
+
         let textures = engine
             .create_texture_vec(path_to_assets_folder, &rest_of_path_vec)
             .unwrap();
@@ -53,12 +53,15 @@ impl Manager for Pong {
         }
     }
 
-    fn update(&mut self, delta_t: f64, input: &Input) {
-        self.left_paddle
-            .update(input.is_w_pressed(), input.is_s_pressed(), delta_t);
+    fn update(&mut self, delta_t: f64, input: &Input, _sound: &Sound) {
+        self.left_paddle.update(
+            input.is_button_held(Button::W),
+            input.is_button_held(Button::S),
+            delta_t,
+        );
         self.right_paddle.update(
-            input.is_up_arrow_pressed(),
-            input.is_down_arrow_pressed(),
+            input.is_button_held(Button::UpArrow),
+            input.is_button_held(Button::DownArrow),
             delta_t,
         );
 

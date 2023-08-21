@@ -1,3 +1,6 @@
+use goodman::prelude::Sound;
+use rodio::Source;
+
 use crate::other::{Character, Direction, Move, Noun, NounPropCombi, Object, Property};
 use crate::{Game, GRID_SIZE};
 
@@ -109,9 +112,15 @@ impl Game {
         }
     }
 
-    pub fn move_object(&mut self, mov: Move) {
+    pub fn move_object(&mut self, mov: Move, sound: &Sound) {
         self.grid[mov.to.j][mov.to.i] = self.grid[mov.from.j][mov.from.i];
         self.grid[mov.from.j][mov.from.i] = Object::Empty;
+
+        if self.grid[mov.to.j][mov.to.i] == Object::Character(crate::other::Character::Baba) {
+            sound
+                .play_sound(self.source.clone().convert_samples().repeat_infinite())
+                .unwrap();
+        };
     }
 
     pub fn win(&mut self) {

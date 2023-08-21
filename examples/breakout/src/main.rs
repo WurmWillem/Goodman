@@ -54,7 +54,7 @@ impl Manager for Breakout {
             textures: vec![paddle_tex, ball_tex, block_tex],
         }
     }
-    fn update(&mut self, delta_t: f64, input: &Input) {
+    fn update(&mut self, delta_t: f64, input: &Input, _sound: &Sound) {
         //400k - 700k, 10k textures
         self.paddle.update(input, delta_t);
         self.ball.update(delta_t);
@@ -169,10 +169,10 @@ impl Paddle {
     fn update(&mut self, input: &Input, delta_t: f64) {
         let speed = Self::SPEED * delta_t;
 
-        if input.is_d_pressed() && self.rect.x + self.rect.w < WINDOW_SIZE.x {
+        if input.is_button_held(Button::D) && self.rect.x + self.rect.w < WINDOW_SIZE.x {
             self.rect.x += speed;
         }
-        if input.is_a_pressed() && self.rect.x > 0. {
+        if input.is_button_held(Button::A) && self.rect.x > 0. {
             self.rect.x -= speed;
         }
     }
