@@ -46,16 +46,15 @@ impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
         let file = BufReader::new(File::open("src/assets/music.mp3").unwrap());
         let music_source = Decoder::new(file).unwrap().buffered();
-        engine
-            .play_sound(music_source.convert_samples().repeat_infinite()) 
-            .unwrap();
+        //engine
+        //.play_sound(music_source.convert_samples().repeat_infinite())
+        //.unwrap();
 
         let pop_file = BufReader::new(File::open("src/assets/pop.mp3").unwrap());
         let source = Decoder::new(pop_file).unwrap().buffered();
 
         let mut textures = vec![];
-        create_textures!(engine, textures, 
-            "assets/floor.png" "assets/is.png" "assets/baba.png" "assets/baba c.png" "assets/you.png"
+        create_textures!(engine, textures, "assets/floor.png" "assets/is.png" "assets/baba.png" "assets/baba c.png" "assets/you.png"
             "assets/flag.png" "assets/flag c.png" "assets/win.png" "assets/wall.png" "assets/wall c.png" "assets/stop.png");
 
         let mut grid = vec![vec![]];
