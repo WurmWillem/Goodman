@@ -118,7 +118,7 @@ impl Game {
 
         if self.grid[mov.to.j][mov.to.i] == Object::Character(crate::other::Character::Baba) {
             sound
-                .play_sound(self.source.clone().convert_samples().repeat_infinite())
+                .play_sound(self.source.clone().convert_samples())
                 .unwrap();
         };
     }

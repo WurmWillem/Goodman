@@ -66,13 +66,6 @@ pub struct Engine {
     sound: Sound,
 }
 impl Engine {
-    pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
-    where
-        S: rodio::Source<Item = f32> + Send + 'static,
-    {
-        self.sound.play_sound(source)
-    }
-
     pub fn enter_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
         T: Manager + 'static,
@@ -149,7 +142,6 @@ impl Engine {
             }
         });
     }
-
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output

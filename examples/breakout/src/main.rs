@@ -24,15 +24,10 @@ struct Breakout {
     blocks: Vec<Vec<Block>>,
     textures: Vec<Texture>,
 }
-
 impl Manager for Breakout {
     fn new(engine: &mut Engine) -> Self {
-        let paddle_bytes = include_bytes!("assets/paddle.png");
-        let paddle_tex = engine.create_texture_from_bytes(paddle_bytes).unwrap();
-        let ball_bytes = include_bytes!("assets/ball.png");
-        let ball_tex = engine.create_texture_from_bytes(ball_bytes).unwrap();
-        let block_bytes = include_bytes!("assets/block.png");
-        let block_tex = engine.create_texture_from_bytes(block_bytes).unwrap();
+        let mut textures = vec![];
+        create_textures!(engine, textures, "assets/paddle.png" "assets/ball.png" "assets/block.png");
 
         let paddle = Paddle::new(vec2(WINDOW_SIZE.x * 0.5, WINDOW_SIZE.y * 0.9));
         let ball = Ball::new(vec2(0., WINDOW_SIZE.y));
@@ -51,7 +46,7 @@ impl Manager for Breakout {
             ball,
             paddle,
             blocks,
-            textures: vec![paddle_tex, ball_tex, block_tex],
+            textures,
         }
     }
     fn update(&mut self, delta_t: f64, input: &Input, _sound: &Sound) {

@@ -41,7 +41,6 @@ pub struct Sound {
 }
 impl Sound {
     pub fn new() -> Self {
-        //Do unwrap away
         let (stream, stream_handle) =
             rodio::OutputStream::try_default().expect("can't find output device");
         Self {
@@ -53,7 +52,6 @@ impl Sound {
     where
         S: Source<Item = f32> + Send + 'static,
     {
-        // let s: S = source.clone();
         self.stream_handle.play_raw(source)?;
         Ok(())
     }
@@ -167,6 +165,16 @@ impl TimeManager {
     pub fn get_time_since_last_render(&self) -> f64 {
         self.time_since_last_render
     }
+}
+
+#[macro_export]
+macro_rules! create_textures {
+    ($engine: expr, $textures: expr, $($name: expr)*) => {
+        $(
+            let tex_bytes = include_bytes!($name);
+            $textures.push($engine.create_texture_from_bytes(tex_bytes).unwrap());
+        )*
+    };
 }
 
 pub struct GoodManUI {

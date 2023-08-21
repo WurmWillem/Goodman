@@ -15,6 +15,13 @@ use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
 
 impl Engine {
+    pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
+    where
+        S: rodio::Source<Item = f32> + Send + 'static,
+    {
+        self.sound.play_sound(source)
+    }
+
     pub fn create_texture_from_path(&mut self, label: &str) -> Result<Texture, &'static str> {
         let tex =
             match Texture::from_path(&self.device, &self.queue, self.texture_amt_created, label) {
