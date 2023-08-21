@@ -65,8 +65,9 @@ impl Input {
                 ..
             } => {
                 let is_pressed = *state == ElementState::Pressed;
-                set_button_to_is_pressed!(self, is_pressed, keycode, W,w A,a S,s D,d Right,right_arrow Left,left_arrow Down,down_arrow 
+                set_button_to_is_pressed!(self, is_pressed, keycode, W,w A,a S,s D,d Right,right_arrow Left,left_arrow Down,down_arrow Up,up_arrow
                     Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine)
+                
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 let is_pressed = *state == ElementState::Pressed;
@@ -103,38 +104,27 @@ impl Input {
     }
 }
 
+
 macro_rules! is_button_pressed_or_held {
-    ($function_name: ident, $field_name: ident) => {
+    ($function_name: ident, $field_name: ident, $($button_enum: ident, $button: ident)*) => {
         impl Input {
             pub fn $function_name(&self, c: ButtonEnum) -> bool {
                 match c {
-                    ButtonEnum::LeftMouse => self.left_mouse.$field_name,
-                    ButtonEnum::RightMouse => self.right_mouse.$field_name,
-                    ButtonEnum::W => self.w.$field_name,
-                    ButtonEnum::A => self.a.$field_name,
-                    ButtonEnum::S => self.s.$field_name,
-                    ButtonEnum::D => self.d.$field_name,
-                    ButtonEnum::RightArrow => self.right_arrow.$field_name,
-                    ButtonEnum::LeftArrow => self.left_arrow.$field_name,
-                    ButtonEnum::UpArrow => self.up_arrow.$field_name,
-                    ButtonEnum::DownArrow => self.down_arrow.$field_name,
-                    ButtonEnum::Zero => self.zero.$field_name,
-                    ButtonEnum::One => self.one.$field_name,
-                    ButtonEnum::Two => self.two.$field_name,
-                    ButtonEnum::Three => self.three.$field_name,
-                    ButtonEnum::Four => self.four.$field_name,
-                    ButtonEnum::Five => self.five.$field_name,
-                    ButtonEnum::Six => self.six.$field_name,
-                    ButtonEnum::Seven => self.seven.$field_name,
-                    ButtonEnum::Eight => self.eight.$field_name,
-                    ButtonEnum::Nine => self.nine.$field_name,
+                    $(ButtonEnum::$button_enum => self.$button.$field_name,)*
                 }
             }
         }
     };
 }
-is_button_pressed_or_held!(is_button_pressed, pressed);
-is_button_pressed_or_held!(is_button_held, held);
+is_button_pressed_or_held!(is_button_pressed, pressed, 
+    LeftMouse,left_mouse RightMouse,right_mouse W,w A,a S,s D,d RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
+    Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine);
+
+is_button_pressed_or_held!(is_button_held, held,
+    LeftMouse,left_mouse RightMouse,right_mouse W,w A,a S,s D,d RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
+    Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine);
+
+
 pub enum ButtonEnum {
     LeftMouse,
     RightMouse,

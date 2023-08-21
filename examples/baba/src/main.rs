@@ -21,7 +21,7 @@ async fn run() {
 
     let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
     engine.set_target_fps(Some(144));
-    engine.set_target_tps(Some(144));
+    // engine.set_target_tps(Some(300 * 1000));
     // engine.enable_feature(Feature::EngineUi);
 
     let game = Game::new(&mut engine);
@@ -36,11 +36,17 @@ pub struct Game {
     current_level: Level,
     textures: Vec<Texture>,
     source: rodio::source::Buffered<Decoder<BufReader<File>>>,
+    #[allow(dead_code)]
     stream: rodio::OutputStream,
     stream_handle: rodio::OutputStreamHandle,
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
+        // The following two lines change the working directory, but you won't need to do this
+        let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
+        std::env::set_current_dir(&root).unwrap();
+
+        // Change this to the location of the assets folder on your pc
         let path_to_assets_folder =
             "/home/wurmwillem/Programming/Goodman/examples/baba/src/assets/";
         let rest_of_path_vec = vec![
@@ -65,7 +71,7 @@ impl Manager for Game {
         let current_level = Level::Level1;
         current_level.load_level(&mut grid);
 
-        let file = BufReader::new(File::open("a.mp3").unwrap());
+        let file = BufReader::new(File::open("src/assets/pop.flac").unwrap());
         let source = Decoder::new(file).unwrap().buffered();
 
         let (stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
@@ -100,14 +106,14 @@ impl Manager for Game {
         if input.is_button_pressed(Button::A) {
             where_to_move.0 = -1;
         }
-        /*if input.is_one_pressed() {
+        if input.is_button_pressed(Button::One) {
             self.current_level = Level::Level1;
             self.current_level.load_level(&mut self.grid);
         }
-        if input.is_two_pressed() {
+        if input.is_button_pressed(Button::Two) {
             self.current_level = Level::Level2;
             self.current_level.load_level(&mut self.grid);
-        }*/
+        }
 
         let mut moves: Vec<Move> = vec![];
         for j in 0..self.grid.len() {
@@ -176,9 +182,6 @@ impl Manager for Game {
         for mov in &moves {
             if self.grid[mov.from.j][mov.from.i] != Object::Empty {
                 self.move_object(*mov);
-                self.stream_handle
-                    .play_raw(self.source.clone().convert_samples())
-                    .unwrap();
             }
         }
 
