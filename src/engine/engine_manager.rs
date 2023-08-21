@@ -10,7 +10,7 @@ use crate::camera::{self, Camera};
 use crate::engine::Engine;
 use crate::instances::InstanceRaw;
 use crate::instances::{Instance, Vertex};
-use crate::minor_types::{Features, TimeManager, WindowUniform};
+use crate::minor_types::{Features, Sound, TimeManager, WindowUniform};
 use crate::prelude::{Color, Input, Vec2};
 use crate::texture::{self, Texture};
 
@@ -227,6 +227,8 @@ impl Engine {
 
             target_fps: None,
             target_tps: None,
+
+            sound: Sound::new(),
         }
     }
 

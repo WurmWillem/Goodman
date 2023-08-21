@@ -15,7 +15,7 @@ use crate::{
     math::rect,
     math::Rect,
     minor_types::{DrawParams, TimeManager},
-    minor_types::{Feature, Features, GoodManUI, InstIndex, Layer, Manager, TexIndex},
+    minor_types::{Feature, Features, GoodManUI, InstIndex, Layer, Manager, Sound, TexIndex},
     texture::{self, Texture},
 };
 
@@ -62,8 +62,17 @@ pub struct Engine {
     features: Features,
 
     game_ui: Option<GoodManUI>,
+
+    sound: Sound,
 }
 impl Engine {
+    pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
+    where
+        S: rodio::Source<Item = f32> + Send + 'static,
+    {
+        self.sound.play_sound(source)
+    }
+
     pub fn enter_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
         T: Manager + 'static,
@@ -108,7 +117,7 @@ impl Engine {
                     self.time.update(&mut self.platform);
 
                     self.update();
-                    manager.update(self.time.get_relevant_delta_t(), &self.input);
+                    manager.update(self.time.get_relevant_delta_t(), &self.input, &self.sound);
 
                     if self
                         .input

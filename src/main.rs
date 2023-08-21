@@ -18,6 +18,6 @@ impl Manager for StateManager {
     fn new(_engine: &mut Engine) -> Self {
         Self {}
     }
-    fn update(&mut self, _frame_time: f64, _input: &Input) {}
+    fn update(&mut self, _frame_time: f64, _input: &Input, _sound: &Sound) {}
     fn render(&self, _state: &mut Engine) {}
 }

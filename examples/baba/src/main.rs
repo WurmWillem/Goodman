@@ -5,6 +5,7 @@ use other::{AllCharacterData, Move, NounPropCombi, Object, Property, VecPos};
 mod game;
 mod other;
 
+use rodio::source::Buffered;
 use rodio::{Decoder, Source};
 use std::fs::File;
 use std::io::BufReader;
@@ -35,10 +36,7 @@ pub struct Game {
     noun_prop_combi: Vec<NounPropCombi>,
     current_level: Level,
     textures: Vec<Texture>,
-    source: rodio::source::Buffered<Decoder<BufReader<File>>>,
-    #[allow(dead_code)]
-    stream: rodio::OutputStream,
-    stream_handle: rodio::OutputStreamHandle,
+    source: Buffered<Decoder<BufReader<File>>>,
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
@@ -71,10 +69,14 @@ impl Manager for Game {
         let current_level = Level::Level1;
         current_level.load_level(&mut grid);
 
-        let file = BufReader::new(File::open("src/assets/pop.flac").unwrap());
-        let source = Decoder::new(file).unwrap().buffered();
+        let file = BufReader::new(File::open("src/assets/music.mp3").unwrap());
+        let music_source = Decoder::new(file).unwrap().buffered();
+        engine
+            .play_sound(music_source.convert_samples().repeat_infinite())
+            .unwrap();
 
-        let (stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+        let pop_file = BufReader::new(File::open("src/assets/pop.mp3").unwrap());
+        let source = Decoder::new(pop_file).unwrap().buffered();
 
         Self {
             grid,
@@ -83,8 +85,6 @@ impl Manager for Game {
             current_level,
             textures,
             source,
-            stream,
-            stream_handle,
         }
     }
 
@@ -92,7 +92,7 @@ impl Manager for Game {
         self.update_character_data();
     }
 
-    fn update(&mut self, _delta_t: f64, input: &Input) {
+    fn update(&mut self, _delta_t: f64, input: &Input, sound: &Sound) {
         let mut where_to_move = (0, 0);
         if input.is_button_pressed(Button::W) {
             where_to_move.1 = -1;
@@ -181,7 +181,7 @@ impl Manager for Game {
         }
         for mov in &moves {
             if self.grid[mov.from.j][mov.from.i] != Object::Empty {
-                self.move_object(*mov);
+                self.move_object(*mov, sound);
             }
         }
 

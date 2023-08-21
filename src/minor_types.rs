@@ -3,6 +3,7 @@ use crate::{input::Input, prelude::Engine};
 
 use cgmath::vec2;
 use egui_winit_platform::Platform;
+use rodio::{OutputStreamHandle, Source};
 use spin_sleep::LoopHelper;
 use std::slice::Iter;
 
@@ -15,7 +16,7 @@ pub type TexIndex = u32;
 pub trait Manager {
     fn new(engine: &mut Engine) -> Self;
     fn start(&mut self) {}
-    fn update(&mut self, frame_time: f64, input: &Input);
+    fn update(&mut self, frame_time: f64, input: &Input, sound: &Sound);
     fn render(&self, engine: &mut Engine);
 }
 
@@ -30,6 +31,31 @@ impl Default for DrawParams {
             layer: Layer1,
             rotation: 0.,
         }
+    }
+}
+
+pub struct Sound {
+    #[allow(dead_code)] // stream is unused but it has to stay in memory
+    stream: rodio::OutputStream,
+    stream_handle: OutputStreamHandle,
+}
+impl Sound {
+    pub fn new() -> Self {
+        //Do unwrap away
+        let (stream, stream_handle) =
+            rodio::OutputStream::try_default().expect("can't find output device");
+        Self {
+            stream,
+            stream_handle,
+        }
+    }
+    pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
+    where
+        S: Source<Item = f32> + Send + 'static,
+    {
+        // let s: S = source.clone();
+        self.stream_handle.play_raw(source)?;
+        Ok(())
     }
 }
 

@@ -53,7 +53,7 @@ impl Manager for Pong {
         }
     }
 
-    fn update(&mut self, delta_t: f64, input: &Input) {
+    fn update(&mut self, delta_t: f64, input: &Input, _sound: &Sound) {
         self.left_paddle.update(
             input.is_button_held(Button::W),
             input.is_button_held(Button::S),

@@ -54,7 +54,7 @@ impl Manager for Breakout {
             textures: vec![paddle_tex, ball_tex, block_tex],
         }
     }
-    fn update(&mut self, delta_t: f64, input: &Input) {
+    fn update(&mut self, delta_t: f64, input: &Input, _sound: &Sound) {
         //400k - 700k, 10k textures
         self.paddle.update(input, delta_t);
         self.ball.update(delta_t);
