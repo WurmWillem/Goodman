@@ -126,6 +126,7 @@ impl Game {
     pub fn win(&mut self) {
         println!("Win!");
         self.current_level.load_next_level(&mut self.grid);
+        self.reset();
     }
 }
 

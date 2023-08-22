@@ -44,11 +44,11 @@ pub struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        let file = BufReader::new(File::open("src/assets/music.mp3").unwrap());
-        let music_source = Decoder::new(file).unwrap().buffered();
-        //engine
-        //.play_sound(music_source.convert_samples().repeat_infinite())
-        //.unwrap();
+        // let file = BufReader::new(File::open("src/assets/music.mp3").unwrap());
+        // let music_source = Decoder::new(file).unwrap().buffered();
+        // engine
+            // .play_sound(music_source.convert_samples().repeat_infinite())
+            // .unwrap();
 
         let pop_file = BufReader::new(File::open("src/assets/pop.mp3").unwrap());
         let source = Decoder::new(pop_file).unwrap().buffered();
@@ -92,10 +92,12 @@ impl Manager for Game {
         if input.is_button_pressed(Button::One) {
             self.current_level = Level::Level1;
             self.current_level.load_level(&mut self.grid);
+            self.reset();
         }
         if input.is_button_pressed(Button::Two) {
             self.current_level = Level::Level2;
             self.current_level.load_level(&mut self.grid);
+            self.reset();
         }
 
         let mut moves: Vec<Move> = vec![];
@@ -190,5 +192,11 @@ impl Manager for Game {
                 };
             }
         }
+    }
+}
+impl Game {
+    fn reset(&mut self) {
+        self.noun_prop_combi = vec![];
+        self.update_character_data();
     }
 }
