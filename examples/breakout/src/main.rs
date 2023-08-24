@@ -11,6 +11,7 @@ async fn run() {
     let mut engine: Engine = Engine::new(WINDOW_SIZE, &event_loop, false).await;
 
     engine.set_target_fps(Some(144));
+    engine.set_target_tps(Some(1000 * 1000));
     engine.enable_feature(Feature::EngineUi);
 
     let breakout = Breakout::new(&mut engine);
@@ -19,8 +20,8 @@ async fn run() {
 }
 
 struct Breakout {
-    ball: Ball,
-    paddle: Paddle,
+    // ball: Ball,
+    // paddle: Paddle,
     blocks: Vec<Vec<Block>>,
     textures: Vec<Texture>,
 }
@@ -29,8 +30,8 @@ impl Manager for Breakout {
         let mut textures = vec![];
         create_textures!(engine, textures, "assets/paddle.png" "assets/ball.png" "assets/block.png");
 
-        let paddle = Paddle::new(vec2(WINDOW_SIZE.x * 0.5, WINDOW_SIZE.y * 0.9));
-        let ball = Ball::new(vec2(0., WINDOW_SIZE.y));
+        // let paddle = Paddle::new(vec2(WINDOW_SIZE.x * 0.5, WINDOW_SIZE.y * 0.9));
+        // let ball = Ball::new(vec2(0., WINDOW_SIZE.y));
 
         let mut blocks = Vec::new();
         for j in 0..100 {
@@ -43,15 +44,15 @@ impl Manager for Breakout {
         }
 
         Self {
-            ball,
-            paddle,
+            // ball,
+            // paddle,
             blocks,
             textures,
         }
     }
-    fn update(&mut self, delta_t: f64, input: &Input, _sound: &Sound) {
+    fn update(&mut self, _delta_t: f64, _input: &Input, _sound: &Sound) {
         //400k - 700k, 10k textures
-        self.paddle.update(input, delta_t);
+        /*self.paddle.update(input, delta_t);
         self.ball.update(delta_t);
 
         self.ball.resolve_paddle_collision(&self.paddle);
@@ -63,7 +64,7 @@ impl Manager for Breakout {
                 }
             });
             row.retain(|block| block.lives > 0);
-        });
+        });*/
     }
 
     fn render(&self, state: &mut Engine) {
@@ -74,8 +75,8 @@ impl Manager for Breakout {
             }
         });*/
 
-        state.render_texture(&self.paddle.rect, &self.textures[0]);
-        state.render_texture(&self.ball.to_rect(), &self.textures[1]);
+        // state.render_texture(&self.paddle.rect, &self.textures[0]);
+        // state.render_texture(&self.ball.to_rect(), &self.textures[1]);
 
         self.blocks.iter().for_each(|row| {
             row.iter().for_each(|block| {
@@ -87,48 +88,48 @@ impl Manager for Breakout {
 
 struct Block {
     rect: Rect,
-    lives: usize,
+    // lives: usize,
 }
 impl Block {
     const SIZE: Vec2 = vec2(12., 9.);
     pub fn new(x: f64, y: f64) -> Self {
         Self {
             rect: rect_vec(vec2(x, y), Self::SIZE),
-            lives: 1,
+            // lives: 1,
         }
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/*#[derive(Debug, Clone, Copy)]
 struct Ball {
     pos: Vec2,
-    vel: Vec2,
+    // vel: Vec2,
 }
 impl Ball {
     const DIAMETER: f64 = 64.;
     fn new(pos: Vec2) -> Self {
         Self {
             pos,
-            vel: vec2(40000., -40000.),
+            // vel: vec2(40000., -40000.),
         }
     }
     fn update(&mut self, delta_t: f64) {
-        self.pos += self.vel * delta_t;
+        // self.pos += self.vel * delta_t;
         let diameter = Self::DIAMETER;
 
         if self.pos.x + diameter > WINDOW_SIZE.x {
             self.pos.x = WINDOW_SIZE.x - diameter;
-            self.vel.x *= -1.;
+            // self.vel.x *= -1.;
         } else if self.pos.x < 0. {
             self.pos.x = 0.;
-            self.vel.x *= -1.;
+            // self.vel.x *= -1.;
         }
         if self.pos.y + diameter > WINDOW_SIZE.y {
-            self.vel.y *= -1.;
+            // self.vel.y *= -1.;
             self.pos.y = WINDOW_SIZE.y - diameter;
         } else if self.pos.y < 0. {
             self.pos.y = 0.;
-            self.vel.y *= -1.;
+            // self.vel.y *= -1.;
         }
     }
 
@@ -138,7 +139,7 @@ impl Ball {
             && self.pos.y + Self::DIAMETER > paddle.rect.y
         {
             self.pos.y = paddle.rect.y - Self::DIAMETER;
-            self.vel.y *= -1.;
+            // self.vel.y *= -1.;
         }
     }
 
@@ -192,4 +193,4 @@ fn resolve_collision(a: &mut Rect, vel: &mut Vec2, b: Rect) -> bool {
         vel.x = -to_signum.x * vel.x.abs();
     }
     true
-}
+}*/

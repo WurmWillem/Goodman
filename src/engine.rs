@@ -16,8 +16,11 @@ use crate::{
     math::Rect,
     minor_types::{DrawParams, TimeManager},
     minor_types::{Feature, Features, GoodManUI, InstIndex, Layer, Manager, Sound, TexIndex},
-    texture::{self, Texture},
+    texture::{self, Texture}, prelude::Vec2,
 };
+
+#[allow(unused_imports)]
+use std::time::Instant;
 
 mod engine_manager;
 
@@ -26,6 +29,7 @@ pub struct Engine {
 
     window: Window,
     win_size: winit::dpi::PhysicalSize<u32>,
+    inv_win_size: Vec2,
     win_background_color: wgpu::Color,
     window_bind_group: wgpu::BindGroup,
 
@@ -312,8 +316,11 @@ impl Engine {
         self.render_tex(rect, texture, draw_params.rotation, draw_params.layer);
     }
     fn render_tex(&mut self, rect_: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
-        let width = rect_.w / self.win_size.width as f64;
-        let height = rect_.h / self.win_size.height as f64;
+        // let x = std::time::Instant::now();
+        let width = rect_.w * self.inv_win_size.x;
+        let height = rect_.h * self.inv_win_size.y;
+        // let x = x.elapsed().as_nanos();
+        // println!("{x}");
         let rect = rect(rect_.x, rect_.y, width, height);
         let inst_raw = Instance::new(rect, rotation).to_raw();
 
@@ -331,6 +338,8 @@ impl Engine {
         }
 
         self.instances_rendered += 1;
+        
+        //80-800 nano
     }
 
     fn update_instance_buffer(&mut self) {
@@ -354,7 +363,7 @@ impl Engine {
         match self.render() {
             Ok(_) => {}
             // Reconfigure the surface if lost
-            Err(wgpu::SurfaceError::Lost) => self.resize(self.get_size()),
+            Err(wgpu::SurfaceError::Lost) => self.resize(self.win_size),
             // The system is out of memory, we should probably quit
             Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
             // All other errors (Outdated, Timeout) should be resolved by the next frame

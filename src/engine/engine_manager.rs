@@ -59,9 +59,6 @@ impl Engine {
     pub fn get_average_tps(&self) -> u32 {
         self.time.get_average_tps()
     }
-    pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.win_size
-    }
     pub fn get_time_since_last_render(&self) -> f64 {
         self.time.get_time_since_last_render()
     }
@@ -194,17 +191,21 @@ impl Engine {
 
         let time = TimeManager::new();
 
+        let inv_win_size = Vec2::new(1. / win_size.width as f64, 1. / win_size.height as f64);
+
         Self {
             input: Input::new(),
             window,
             window_bind_group,
+            win_size,
+            inv_win_size,
 
             win_background_color: background_color,
             surface,
             device,
             queue,
             config,
-            win_size,
+
 
             render_pipeline,
             vertex_buffer,
