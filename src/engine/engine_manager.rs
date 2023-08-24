@@ -22,24 +22,7 @@ impl Engine {
         self.sound.play_sound(source)
     }
 
-    pub fn create_texture_from_path(&mut self, label: &str) -> Result<Texture, &'static str> {
-        let tex =
-            match Texture::from_path(&self.device, &self.queue, self.texture_amt_created, label) {
-                Ok(tex) => tex,
-                Err(_) => return Err("failed to create texture"),
-            };
-
-        let texture_bind_group_layout = super::texture::create_bind_group_layout(&self.device);
-        let texture_bind_group =
-            texture::create_bind_group(&self.device, &texture_bind_group_layout, &tex);
-
-        self.tex_bindgroup_vec.push(texture_bind_group);
-
-        self.texture_amt_created += 1;
-        Ok(tex)
-    }
-
-    pub fn create_texture_from_bytes(&mut self, bytes: &[u8]) -> Result<Texture, &'static str> {
+    pub fn create_texture(&mut self, bytes: &[u8]) -> Result<Texture, &'static str> {
         let tex =
             match Texture::from_bytes(&self.device, &self.queue, self.texture_amt_created, bytes) {
                 Ok(tex) => tex,
@@ -238,20 +221,6 @@ impl Engine {
 
             sound: Sound::new(),
         }
-    }
-
-    pub fn create_texture_vec(
-        &mut self,
-        path_to_assets_folder: &str,
-        rest_of_path_vec: &Vec<&str>,
-    ) -> Result<Vec<Texture>, &'static str> {
-        let mut textures = vec![];
-        for path in rest_of_path_vec {
-            let tex =
-                self.create_texture_from_path(&format!("{}{}", path_to_assets_folder, path))?;
-            textures.push(tex);
-        }
-        Ok(textures)
     }
 }
 

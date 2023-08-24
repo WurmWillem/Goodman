@@ -324,6 +324,8 @@ impl Engine {
         let rect = rect(rect_.x, rect_.y, width, height);
         let inst_raw = Instance::new(rect, rotation).to_raw();
 
+        
+
         self.instances_raw.push(inst_raw);
 
         self.inst_hash_tex_index

@@ -172,7 +172,7 @@ macro_rules! create_textures {
     ($engine: expr, $textures: expr, $($name: expr)*) => {
         $(
             let tex_bytes = include_bytes!($name);
-            $textures.push($engine.create_texture_from_bytes(tex_bytes).unwrap());
+            $textures.push($engine.create_texture(tex_bytes).unwrap());
         )*
     };
 }
