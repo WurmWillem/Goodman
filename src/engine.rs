@@ -11,8 +11,7 @@ use crate::{
     camera::Camera,
     input::Input,
     instances::INDICES,
-    instances::{self, Instance, InstanceRaw},
-    math::rect,
+    instances::{self, Instance},
     math::Rect,
     minor_types::{DrawParams, TimeManager},
     minor_types::{Feature, Features, GoodManUI, InstIndex, Layer, Manager, Sound, TexIndex},
@@ -44,7 +43,7 @@ pub struct Engine {
     instance_buffer: wgpu::Buffer,
     camera_buffer: wgpu::Buffer,
 
-    instances_raw: Vec<InstanceRaw>,
+    instances: Vec<Instance>,
     instances_rendered: usize,
 
     tex_bindgroup_vec: Vec<wgpu::BindGroup>,
@@ -247,7 +246,7 @@ impl Engine {
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
 
-        self.instances_raw = Vec::with_capacity(self.instances_rendered);
+        self.instances = Vec::with_capacity(self.instances_rendered);
         self.instances_rendered = 0;
         self.time.reset_time_since_last_render();
         Ok(())
@@ -315,18 +314,18 @@ impl Engine {
     pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
         self.render_tex(rect, texture, draw_params.rotation, draw_params.layer);
     }
-    fn render_tex(&mut self, rect_: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
+    fn render_tex(&mut self, rect: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
         // let x = std::time::Instant::now();
-        let width = rect_.w * self.inv_win_size.x;
-        let height = rect_.h * self.inv_win_size.y;
+        let width = rect.w * self.inv_win_size.x;
+        let height = rect.h * self.inv_win_size.y;
         // let x = x.elapsed().as_nanos();
         // println!("{x}");
-        let rect = rect(rect_.x, rect_.y, width, height);
-        let inst_raw = Instance::new(rect, rotation).to_raw();
+        // let rect = rect(rect_.x, rect_.y, width, height);
+        let inst_raw = Instance::new(rect.x, rect.y, width, height, rotation);
 
         
 
-        self.instances_raw.push(inst_raw);
+        self.instances.push(inst_raw);
 
         self.inst_hash_tex_index
             .insert(self.instances_rendered as u32, texture.index);
@@ -345,14 +344,14 @@ impl Engine {
     }
 
     fn update_instance_buffer(&mut self) {
-        if self.instance_buffer.size() == self.instances_raw.len() as u64 * 24 {
+        if self.instance_buffer.size() == self.instances.len() as u64 * 24 {
             self.queue.write_buffer(
                 &self.instance_buffer,
                 0,
-                bytemuck::cast_slice(&self.instances_raw),
+                bytemuck::cast_slice(&self.instances),
             );
         } else {
-            self.instance_buffer = instances::create_buffer(&self.device, &self.instances_raw);
+            self.instance_buffer = instances::create_buffer(&self.device, &self.instances);
         }
     }
 

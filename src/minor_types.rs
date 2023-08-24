@@ -8,7 +8,6 @@ use spin_sleep::LoopHelper;
 use std::slice::Iter;
 
 pub type Vec2 = cgmath::Vector2<f64>;
-pub type Vec3 = cgmath::Vector3<f64>;
 
 pub type InstIndex = u32;
 pub type TexIndex = u32;

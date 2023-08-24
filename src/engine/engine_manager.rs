@@ -8,7 +8,6 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::instances::InstanceRaw;
 use crate::instances::{Instance, Vertex};
 use crate::minor_types::{Features, Sound, TimeManager, WindowUniform};
 use crate::prelude::{Color, Input, Vec2};
@@ -133,8 +132,7 @@ impl Engine {
             label: Some("camera_bind_group"),
         });
 
-        let instances = vec![];
-        let instances_raw = instances.iter().map(Instance::to_raw).collect::<Vec<_>>();
+        let instances_raw = vec![];
         let instance_buffer = super::instances::create_buffer(&device, &instances_raw);
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
@@ -199,7 +197,7 @@ impl Engine {
             camera_buffer,
 
             instance_buffer,
-            instances_raw,
+            instances: instances_raw,
             instances_rendered: 0,
 
             time,
@@ -303,7 +301,7 @@ pub fn create_render_pipeline(
         vertex: wgpu::VertexState {
             module: shader,
             entry_point: "vs_main",
-            buffers: &[Vertex::desc(), InstanceRaw::desc()],
+            buffers: &[Vertex::desc(), Instance::desc()],
         },
         fragment: Some(wgpu::FragmentState {
             module: shader,
