@@ -1,5 +1,6 @@
 mod camera;
 mod engine;
+mod engine_builder;
 mod input;
 mod math;
 mod minor_types;

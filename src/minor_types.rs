@@ -1,11 +1,9 @@
-use self::Layer::*;
-use crate::{input::Input, prelude::Engine};
+use crate::{engine::Engine, input::Input};
 
 use cgmath::vec2;
 use egui_winit_platform::Platform;
 use rodio::{OutputStreamHandle, Source};
 use spin_sleep::LoopHelper;
-use std::slice::Iter;
 
 pub type Vec2 = cgmath::Vector2<f64>;
 pub trait Manager {
@@ -203,21 +201,6 @@ impl Features {
             Feature::GameUi => self.game_ui_enabled = true,
             Feature::AverageTPS(report_rate) => self.average_tps = Some(report_rate),
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Layer {
-    Layer1,
-    Layer2,
-    Layer3,
-    Layer4,
-    Layer5,
-}
-impl Layer {
-    pub fn iterator() -> Iter<'static, Layer> {
-        static LAYERS: [Layer; 5] = [Layer1, Layer2, Layer3, Layer4, Layer5];
-        LAYERS.iter()
     }
 }
 

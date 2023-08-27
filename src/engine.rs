@@ -1,19 +1,15 @@
 use egui_wgpu_backend::ScreenDescriptor;
 use egui_winit_platform::Platform;
-use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::Window,
-};
+use winit::{event::Event, event_loop::EventLoop, window::Window};
 
 use crate::{
     camera::Camera,
     input::Input,
     math::Rect,
     minor_types::{DrawParams, TimeManager},
-    minor_types::{Feature, Features, GoodManUI, Manager, Sound},
+    minor_types::{Features, GoodManUI, Manager, Sound},
     prelude::Vec2,
-    texture::{self, Texture},
+    texture::Texture,
     vert_buffers::INDICES,
     vert_buffers::{self, Instance},
 };
@@ -138,6 +134,7 @@ impl Engine {
             }
         });
     }
+    
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
@@ -256,122 +253,6 @@ impl Engine {
             );
         } else {
             self.instance_buffer = vert_buffers::create_buffer(&self.device, &self.instances);
-        }
-    }
-
-    pub fn enable_feature(&mut self, feature: Feature) {
-        self.features.enable_feature(feature);
-    }
-
-    fn render_ui(&self) {
-        if !self.features.engine_ui_enabled {
-            return;
-        }
-
-        egui::Window::new("Engine").show(&self.platform.context(), |ui| {
-            let tps_points: egui::plot::PlotPoints = self
-                .time
-                .graph_vec
-                .iter()
-                .map(|vec| [vec.x, vec.y])
-                .collect();
-            let line = egui::plot::Line::new(tps_points);
-
-            egui::plot::Plot::new("sd")
-                .view_aspect(2.)
-                .include_y(0.)
-                .show(ui, |plot_ui| plot_ui.line(line));
-
-            ui.label(format!(
-                "window size: {:?}x{:?}",
-                self.win_size.width, self.win_size.height
-            ));
-            let fps = match self.target_fps {
-                Some(fps) => fps,
-                None => self.get_average_tps(),
-            };
-            ui.label(format!("FPS: {:?}", fps));
-            ui.label(format!("TPS: {:?}", self.get_average_tps()));
-            ui.label(format!(
-                "textures rendered this frame: {:?}",
-                self.instances_rendered
-            ));
-        });
-    }
-
-    pub fn set_game_ui(&mut self, user_ui: GoodManUI) {
-        if !self.features.game_ui_enabled {
-            println!("game ui is disabled");
-            return;
-        }
-        self.game_ui = Some(user_ui);
-    }
-
-    fn render_game_ui(&self, game_ui: &GoodManUI) {
-        egui::Window::new(game_ui.title.clone()).show(&self.platform.context(), |ui| {
-            for label in &game_ui.labels {
-                ui.label(label);
-            }
-        });
-    }
-
-    fn handle_rendering<T>(&mut self, manager: &mut T, control_flow: &mut ControlFlow)
-    where
-        T: Manager + 'static,
-    {
-        manager.render(self);
-        self.update_instance_buffer();
-        match self.render() {
-            Ok(_) => {}
-            // Reconfigure the surface if lost
-            Err(wgpu::SurfaceError::Lost) => self.resize(self.win_size),
-            // The system is out of memory, we should probably quit
-            Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-            // All other errors (Outdated, Timeout) should be resolved by the next frame
-            Err(e) => eprintln!("{e:?}"),
-        }
-    }
-
-    fn update(&mut self) {
-        if self.camera.movement_enabled && self.camera.update(&self.input) {
-            self.queue.write_buffer(
-                &self.camera_buffer,
-                0,
-                bytemuck::cast_slice(&[self.camera.uniform]),
-            );
-        }
-    }
-
-    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        self.win_size = new_size;
-        self.config.width = new_size.width;
-        self.config.height = new_size.height;
-        self.surface.configure(&self.device, &self.config);
-    }
-
-    fn input(&mut self, event: &WindowEvent) -> bool {
-        self.input.process_events(event)
-    }
-
-    fn handle_window_event(&mut self, event: &WindowEvent, control_flow: &mut ControlFlow) {
-        match event {
-            WindowEvent::CloseRequested
-            | WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state: ElementState::Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Escape),
-                        ..
-                    },
-                ..
-            } => *control_flow = ControlFlow::Exit,
-            WindowEvent::Resized(physical_size) => {
-                self.resize(*physical_size);
-            }
-            WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                self.resize(**new_inner_size);
-            }
-            _ => {}
         }
     }
 }
