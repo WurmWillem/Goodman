@@ -62,7 +62,7 @@ impl Input {
                             })*
                             _ => false
                         }
-                
+
                     };
                 }
 
@@ -93,10 +93,10 @@ impl Input {
     pub fn reset_buttons(&mut self) {
         macro_rules! reset_buttons {
             ($($field_name: ident)*) => {
-                $(self.$field_name.pressed = false;)*   
+                $(self.$field_name.pressed = false;)*
             };
         }
-        reset_buttons!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow 
+        reset_buttons!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow
             zero one two three four five six seven eight nine);
     }
 }

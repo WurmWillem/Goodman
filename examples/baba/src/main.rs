@@ -20,7 +20,7 @@ fn main() {
 async fn run() {
     // The following two lines change the working directory, you should remove them
     let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
-    std::env::set_current_dir(&root).unwrap();
+    std::env::set_current_dir(root).unwrap();
 
     let event_loop = EventLoop::new();
 
@@ -47,8 +47,8 @@ impl Manager for Game {
         // let file = BufReader::new(File::open("src/assets/music.mp3").unwrap());
         // let music_source = Decoder::new(file).unwrap().buffered();
         // engine
-            // .play_sound(music_source.convert_samples().repeat_infinite())
-            // .unwrap();
+        // .play_sound(music_source.convert_samples().repeat_infinite())
+        // .unwrap();
 
         let pop_file = BufReader::new(File::open("src/assets/pop.mp3").unwrap());
         let source = Decoder::new(pop_file).unwrap().buffered();

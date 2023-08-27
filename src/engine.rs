@@ -1,6 +1,5 @@
 use egui_wgpu_backend::ScreenDescriptor;
 use egui_winit_platform::Platform;
-use std::collections::HashMap;
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -10,12 +9,13 @@ use winit::{
 use crate::{
     camera::Camera,
     input::Input,
-    instances::INDICES,
-    instances::{self, Instance},
     math::Rect,
     minor_types::{DrawParams, TimeManager},
-    minor_types::{Feature, Features, GoodManUI, InstIndex, Layer, Manager, Sound, TexIndex},
-    texture::{self, Texture}, prelude::Vec2,
+    minor_types::{Feature, Features, GoodManUI, Manager, Sound},
+    prelude::Vec2,
+    texture::{self, Texture},
+    vert_buffers::INDICES,
+    vert_buffers::{self, Instance},
 };
 
 #[allow(unused_imports)]
@@ -30,7 +30,7 @@ pub struct Engine {
     win_size: winit::dpi::PhysicalSize<u32>,
     inv_win_size: Vec2,
     win_background_color: wgpu::Color,
-    window_bind_group: wgpu::BindGroup,
+    win_bind_group: wgpu::BindGroup,
 
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -46,9 +46,7 @@ pub struct Engine {
     instances: Vec<Instance>,
     instances_rendered: usize,
 
-    tex_bindgroup_vec: Vec<wgpu::BindGroup>,
-    layer_hash_inst_vec: HashMap<Layer, Vec<InstIndex>>,
-    inst_hash_tex_index: HashMap<InstIndex, TexIndex>,
+    tex_bind: Option<wgpu::BindGroup>,
     texture_amt_created: u32,
 
     camera: Camera,
@@ -61,10 +59,9 @@ pub struct Engine {
 
     platform: Platform,
     egui_rpass: egui_wgpu_backend::RenderPass,
+    game_ui: Option<GoodManUI>,
 
     features: Features,
-
-    game_ui: Option<GoodManUI>,
 
     sound: Sound,
 }
@@ -75,11 +72,7 @@ impl Engine {
     {
         env_logger::init();
 
-        let report_interval = match self.features.average_tps {
-            Some(report_interval) => report_interval,
-            None => 0.1,
-        };
-
+        let report_interval = self.features.average_tps.unwrap_or(0.1);
         // If target_fps in some and target_tps is None than the loop helper will run at fps
         let fps = match self.target_fps {
             Some(fps) => {
@@ -172,34 +165,21 @@ impl Engine {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
-        render_pass.set_bind_group(2, &self.window_bind_group, &[]);
+        render_pass.set_bind_group(2, &self.win_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-        // let x = std::time::Instant::now();
-        for layer in Layer::iterator().rev() {
-            if let Some(inst_vec) = self.layer_hash_inst_vec.get_mut(layer) {
-                for i in inst_vec.drain(..) {
-                    if let Some(tex_bind_index) = self.inst_hash_tex_index.get(&i) {
-                        let tex_bind_index = *tex_bind_index as usize;
-                        render_pass.set_bind_group(0, &self.tex_bindgroup_vec[tex_bind_index], &[]);
-                        render_pass.draw_indexed(0..INDICES.len() as u32, 0, i..(i + 1));
-                    }
-                }
-            }
+        // println!("{}", )
+        if let Some(tex_bind) = &self.tex_bind {
+            render_pass.set_bind_group(0, tex_bind, &[]);
         }
-        // let x = x.elapsed().as_micros(); //~230 micro, 10k tex
-        // println!("{x}");
-        /*
-        foreach layer
-            if an instance is in layer
-                foreach instance in layer
-                    if tex in instance
-                        bind(tex)
-                        draw(instance)
-        */
+        render_pass.draw_indexed(
+            0..INDICES.len() as u32,
+            0,
+            0..self.instances_rendered as u32,
+        );
 
         if self.features.engine_ui_enabled || self.features.game_ui_enabled {
             self.time.update_graph();
@@ -250,6 +230,33 @@ impl Engine {
         self.instances_rendered = 0;
         self.time.reset_time_since_last_render();
         Ok(())
+    }
+
+    pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
+        self.render_tex(rect, texture, 0.);
+    }
+    pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
+        self.render_tex(rect, texture, draw_params.rotation);
+    }
+    fn render_tex(&mut self, rect: &Rect, texture: &Texture, rotation: f64) {
+        let width = rect.w * self.inv_win_size.x;
+        let height = rect.h * self.inv_win_size.y;
+        let inst = Instance::new(rect.x, rect.y, width, height, rotation, texture.index);
+
+        self.instances.push(inst);
+        self.instances_rendered += 1;
+    }
+
+    fn update_instance_buffer(&mut self) {
+        if self.instance_buffer.size() == self.instances.len() as u64 * 24 {
+            self.queue.write_buffer(
+                &self.instance_buffer,
+                0,
+                bytemuck::cast_slice(&self.instances),
+            );
+        } else {
+            self.instance_buffer = vert_buffers::create_buffer(&self.device, &self.instances);
+        }
     }
 
     pub fn enable_feature(&mut self, feature: Feature) {
@@ -306,53 +313,6 @@ impl Engine {
                 ui.label(label);
             }
         });
-    }
-
-    pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
-        self.render_tex(rect, texture, 0., Layer::Layer1);
-    }
-    pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
-        self.render_tex(rect, texture, draw_params.rotation, draw_params.layer);
-    }
-    fn render_tex(&mut self, rect: &Rect, texture: &Texture, rotation: f64, layer: Layer) {
-        // let x = std::time::Instant::now();
-        let width = rect.w * self.inv_win_size.x;
-        let height = rect.h * self.inv_win_size.y;
-        // let x = x.elapsed().as_nanos();
-        // println!("{x}");
-        // let rect = rect(rect_.x, rect_.y, width, height);
-        let inst_raw = Instance::new(rect.x, rect.y, width, height, rotation);
-
-        
-
-        self.instances.push(inst_raw);
-
-        self.inst_hash_tex_index
-            .insert(self.instances_rendered as u32, texture.index);
-
-        match self.layer_hash_inst_vec.get_mut(&layer) {
-            Some(instance_vec) => instance_vec.push(self.instances_rendered as u32),
-            None => {
-                self.layer_hash_inst_vec
-                    .insert(layer, vec![self.instances_rendered as u32]);
-            }
-        }
-
-        self.instances_rendered += 1;
-        
-        //80-800 nano
-    }
-
-    fn update_instance_buffer(&mut self) {
-        if self.instance_buffer.size() == self.instances.len() as u64 * 24 {
-            self.queue.write_buffer(
-                &self.instance_buffer,
-                0,
-                bytemuck::cast_slice(&self.instances),
-            );
-        } else {
-            self.instance_buffer = instances::create_buffer(&self.device, &self.instances);
-        }
     }
 
     fn handle_rendering<T>(&mut self, manager: &mut T, control_flow: &mut ControlFlow)

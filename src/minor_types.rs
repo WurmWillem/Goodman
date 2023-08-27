@@ -8,10 +8,6 @@ use spin_sleep::LoopHelper;
 use std::slice::Iter;
 
 pub type Vec2 = cgmath::Vector2<f64>;
-
-pub type InstIndex = u32;
-pub type TexIndex = u32;
-
 pub trait Manager {
     fn new(engine: &mut Engine) -> Self;
     fn start(&mut self) {}
@@ -21,15 +17,11 @@ pub trait Manager {
 
 #[derive(Debug, Clone, Copy)]
 pub struct DrawParams {
-    pub layer: Layer,
     pub rotation: f64,
 }
 impl Default for DrawParams {
     fn default() -> Self {
-        Self {
-            layer: Layer1,
-            rotation: 0.,
-        }
+        Self { rotation: 0. }
     }
 }
 
@@ -55,19 +47,6 @@ impl Sound {
         Ok(())
     }
 }
-
-/*pub struct TextureRenderer;
-impl TextureRenderer {
-    pub fn new() -> TextureRenderer {
-        Self {}
-    }
-    pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
-        self.render_tex(rect, texture, 0., Layer::Layer1);
-    }
-    pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
-        self.render_tex(rect, texture, draw_params.rotation, draw_params.layer);
-    }
-}*/
 
 pub struct TimeManager {
     pub graph_vec: Vec<Vec2>,
@@ -154,7 +133,7 @@ impl TimeManager {
         if self.use_average_tps {
             return self.average_delta_t;
         }
-        return self.last_delta_t;
+        self.last_delta_t
     }
 
     pub fn get_average_tps(&self) -> u32 {
@@ -169,10 +148,13 @@ impl TimeManager {
 #[macro_export]
 macro_rules! create_textures {
     ($engine: expr, $textures: expr, $($name: expr)*) => {
+        let mut i = 0;
         $(
             let tex_bytes = include_bytes!($name);
             $textures.push($engine.create_texture(tex_bytes).unwrap());
+            i += 1;
         )*
+       $engine.use_textures(&$textures, i);
     };
 }
 

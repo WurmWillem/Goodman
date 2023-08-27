@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
@@ -8,10 +6,10 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::instances::{Instance, Vertex};
 use crate::minor_types::{Features, Sound, TimeManager, WindowUniform};
 use crate::prelude::{Color, Input, Vec2};
-use crate::texture::{self, Texture};
+use crate::texture::Texture;
+use crate::vert_buffers::{Instance, Vertex};
 
 impl Engine {
     pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
@@ -21,18 +19,21 @@ impl Engine {
         self.sound.play_sound(source)
     }
 
+    pub fn use_textures(&mut self, textures: &Vec<Texture>, tex_amt: u32) {
+        let tex_bind_group_layout = super::texture::create_bind_group_layout(&self.device, tex_amt);
+        self.tex_bind = Some(super::texture::create_bind_group(
+            &self.device,
+            &tex_bind_group_layout,
+            textures,
+        ));
+    }
+
     pub fn create_texture(&mut self, bytes: &[u8]) -> Result<Texture, &'static str> {
         let tex =
             match Texture::from_bytes(&self.device, &self.queue, self.texture_amt_created, bytes) {
                 Ok(tex) => tex,
                 Err(_) => return Err("failed to create texture"),
             };
-
-        let texture_bind_group_layout = super::texture::create_bind_group_layout(&self.device);
-        let texture_bind_group =
-            texture::create_bind_group(&self.device, &texture_bind_group_layout, &tex);
-
-        self.tex_bindgroup_vec.push(texture_bind_group);
 
         self.texture_amt_created += 1;
         Ok(tex)
@@ -93,8 +94,7 @@ impl Engine {
         let config = super::engine_manager::create_config(&surface_format, win_size, &surface_caps);
         surface.configure(&device, &config);
 
-        let texture_bind_group_layout = super::texture::create_bind_group_layout(&device);
-
+        let tex_bind_layout = super::texture::create_bind_group_layout(&device, 11);
         let camera = Camera::new(false);
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
         let camera_bind_group_layout = camera::create_bind_group_layout(&device);
@@ -133,12 +133,12 @@ impl Engine {
         });
 
         let instances_raw = vec![];
-        let instance_buffer = super::instances::create_buffer(&device, &instances_raw);
+        let instance_buffer = super::vert_buffers::create_buffer(&device, &instances_raw);
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
         let render_pipeline_layout = super::engine_manager::create_render_pipeline_layout(
             &device,
-            &texture_bind_group_layout,
+            &tex_bind_layout,
             &camera_bind_group_layout,
             &window_bind_group_layout,
         );
@@ -149,7 +149,7 @@ impl Engine {
             &config,
         );
 
-        let (vertex_buffer, index_buffer) = super::instances::create_buffers(&device);
+        let (vertex_buffer, index_buffer) = super::vert_buffers::create_buffers(&device);
 
         let background_color = wgpu::Color {
             r: 0.,
@@ -177,7 +177,7 @@ impl Engine {
         Self {
             input: Input::new(),
             window,
-            window_bind_group,
+            win_bind_group: window_bind_group,
             win_size,
             inv_win_size,
 
@@ -186,7 +186,6 @@ impl Engine {
             device,
             queue,
             config,
-
 
             render_pipeline,
             vertex_buffer,
@@ -202,10 +201,9 @@ impl Engine {
 
             time,
 
+            tex_bind: None,
+
             texture_amt_created: 0,
-            layer_hash_inst_vec: HashMap::new(),
-            inst_hash_tex_index: HashMap::new(),
-            tex_bindgroup_vec: vec![],
 
             platform,
             egui_rpass,
@@ -234,11 +232,19 @@ pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) 
 }
 
 pub async fn create_device_and_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
+    let limits = wgpu::Limits {
+        max_sampled_textures_per_shader_stage: 512,
+        ..Default::default()
+    };
+
+    let mut features = wgpu::Features::TEXTURE_BINDING_ARRAY;
+    features.extend(wgpu::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING);
+
     adapter
         .request_device(
             &wgpu::DeviceDescriptor {
-                features: wgpu::Features::empty(),
-                limits: wgpu::Limits::default(),
+                features,
+                limits,
                 label: None,
             },
             None,

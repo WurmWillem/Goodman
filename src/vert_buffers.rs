@@ -4,10 +4,11 @@ use wgpu::{util::DeviceExt, Device};
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Instance {
-    pub model: [[f32; 2]; 3],
+    model: [[f32; 2]; 3],
+    index: u32,
 }
 impl Instance {
-    pub fn new(x: f64, y: f64, width: f64, height: f64, rotation: f64) -> Self {
+    pub fn new(x: f64, y: f64, width: f64, height: f64, rotation: f64, index: u32) -> Self {
         let mat4 = Matrix4::from_translation(vec3(x, y, 0.))
             * Matrix4::from_angle_z(Deg(rotation))
             * Matrix4::from_nonuniform_scale(width, height, 1.);
@@ -16,7 +17,10 @@ impl Instance {
         let y = [mat4.y.x as f32, mat4.y.y as f32];
         let w = [mat4.w.x as f32, mat4.w.y as f32];
 
-        Self { model: [x, y, w] }
+        Self {
+            model: [x, y, w],
+            index,
+        }
     }
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         use std::mem;
@@ -39,38 +43,15 @@ impl Instance {
                     shader_location: 7,
                     format: wgpu::VertexFormat::Float32x2,
                 },
+                wgpu::VertexAttribute {
+                    offset: mem::size_of::<[f32; 6]>() as wgpu::BufferAddress,
+                    shader_location: 8,
+                    format: wgpu::VertexFormat::Uint32,
+                },
             ],
         }
     }
 }
-
-/*#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Instance {
-    pos: Vec3,
-    size: Vec2,
-    rotation: f64,
-}
-impl Instance {
-    pub fn new(rect: Rect, rotation: f64) -> Self {
-        Self {
-            pos: vec3(rect.x, rect.y, 0.),
-            size: vec2(rect.w, rect.h),
-            rotation,
-        }
-    }
-
-    pub fn to_raw(&self) -> InstanceRaw {
-        let mat4 = Matrix4::from_translation(self.pos)
-            * Matrix4::from_angle_z(Deg(self.rotation))
-            * Matrix4::from_nonuniform_scale(self.size.x, self.size.y, 1.);
-
-        let x = [mat4.x.x as f32, mat4.x.y as f32];
-        let y = [mat4.y.x as f32, mat4.y.y as f32];
-        let w = [mat4.w.x as f32, mat4.w.y as f32];
-
-        InstanceRaw { model: [x, y, w] }
-    }
-}*/
 
 const VERTEX_SCALE: f32 = 1.;
 #[rustfmt::skip]
@@ -85,8 +66,6 @@ pub const VERTICES: &[Vertex] = &[
 pub const INDICES: &[u16] = &[
     0, 1, 2, 2, 3, 0, 
 ];
-
-
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]

@@ -16,6 +16,7 @@ struct InstanceInput {
     @location(5) vec2_0: vec2<f32>,
     @location(6) vec2_1: vec2<f32>,
     @location(7) vec2_2: vec2<f32>,
+    @location(8) index: u32,
 };
 
 struct VertexInput {
@@ -26,6 +27,7 @@ struct VertexInput {
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) tex_coords: vec2<f32>,
+    @location(1) index: u32
 };
 
 @vertex
@@ -36,6 +38,7 @@ fn vs_main(
 
     var out: VertexOutput;
     out.tex_coords = vertex.tex_coords;
+    out.index = instance.index;
 
     var instance_mat = mat4x4<f32>(
         vec4<f32>(instance.vec2_0.x, instance.vec2_0.y, 0., 0.),
@@ -55,12 +58,12 @@ fn vs_main(
     return out;
 }
 
-@group(0) @binding(0)
-var t_diffuse: texture_2d<f32>;
-@group(0)@binding(1)
-var s_diffuse: sampler;
+@group(0)@binding(0)
+var sam: sampler;
+@group(0) @binding(1)
+var tex_array: binding_array<texture_2d<f32>>;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(t_diffuse, s_diffuse, in.tex_coords);
+    return textureSample(tex_array[in.index], sam, in.tex_coords);
 }

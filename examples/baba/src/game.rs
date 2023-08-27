@@ -95,12 +95,11 @@ impl Game {
     ) {
         if let Some(noun) = noun {
             if let Some(property) = property {
-                let npc;
-                if dir == Direction::Hor {
-                    npc = NounPropCombi::new(j, (i - 1, noun), (i + 1, property), dir);
+                let npc = if dir == Direction::Hor {
+                    NounPropCombi::new(j, (i - 1, noun), (i + 1, property), dir)
                 } else {
-                    npc = NounPropCombi::new(i, (j - 1, noun), (j + 1, property), dir)
-                }
+                    NounPropCombi::new(i, (j - 1, noun), (j + 1, property), dir)
+                };
                 if !self.noun_prop_combi.contains(&npc) {
                     self.character_data
                         .set_char_to_property(noun, property, true);
