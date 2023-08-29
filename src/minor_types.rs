@@ -59,10 +59,11 @@ pub struct TimeManager {
     use_average_tps: bool,
 }
 impl TimeManager {
-    pub fn new() -> Self {
+    pub fn new(average_tps: Option<f64>, target_tps: u32, use_target_tps: bool) -> Self {
+        let report_interval = average_tps.unwrap_or(0.1);
         let loop_helper = LoopHelper::builder()
-            .report_interval_s(0.1)
-            .build_with_target_rate(144);
+            .report_interval_s(report_interval)
+            .build_with_target_rate(target_tps);
 
         Self {
             graph_vec: vec![],
@@ -71,8 +72,8 @@ impl TimeManager {
             time_passed_since_creation: 0.,
             last_delta_t: 1.,
             average_delta_t: 1. / 100000.,
-            use_target_tps: false,
-            use_average_tps: false,
+            use_target_tps,
+            use_average_tps: average_tps.is_some(),
         }
     }
 
@@ -94,33 +95,12 @@ impl TimeManager {
             self.average_delta_t = 1. / avg_tps;
             self.graph_vec
                 .push(vec2(self.time_passed_since_creation, avg_tps));
-            //println!("{}", avg_tps)
         }
-    }
-
-    pub fn replace_loop_helper(&mut self, report_interval: f64, target_tps: u32) {
-        self.loop_helper = LoopHelper::builder()
-            .report_interval_s(report_interval)
-            .build_with_target_rate(target_tps);
     }
 
     pub fn update_graph(&mut self) {
         self.graph_vec
             .retain(|vec| vec.x >= self.time_passed_since_creation - 10.)
-    }
-
-    pub fn set_target_tps(&mut self, tps: Option<u32>) {
-        match tps {
-            Some(tps) => {
-                self.loop_helper.set_target_rate(tps);
-                self.use_target_tps = true;
-            }
-            None => self.use_target_tps = false,
-        }
-    }
-
-    pub fn set_use_target_tps(&mut self, use_target_tps: bool) {
-        self.use_target_tps = use_target_tps;
     }
 
     pub fn reset_time_since_last_render(&mut self) {
@@ -174,36 +154,6 @@ impl GoodManUI {
         self.labels.push(label);
     }
 }
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Feature {
-    EngineUi,
-    GameUi,
-    AverageTPS(f64),
-}
-
-pub struct Features {
-    pub engine_ui_enabled: bool,
-    pub game_ui_enabled: bool,
-    pub average_tps: Option<f64>,
-}
-impl Features {
-    pub fn new() -> Self {
-        Self {
-            engine_ui_enabled: false,
-            game_ui_enabled: false,
-            average_tps: None,
-        }
-    }
-    pub fn enable_feature(&mut self, feature: Feature) {
-        match feature {
-            Feature::EngineUi => self.engine_ui_enabled = true,
-            Feature::GameUi => self.game_ui_enabled = true,
-            Feature::AverageTPS(report_rate) => self.average_tps = Some(report_rate),
-        }
-    }
-}
-
 pub struct Color {
     pub r: f64,
     pub g: f64,

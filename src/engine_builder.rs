@@ -6,28 +6,57 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::minor_types::{Features, Sound, TimeManager, WindowUniform};
+use crate::minor_types::{Sound, TimeManager, WindowUniform};
 use crate::prelude::Vec2;
 use crate::texture::{self};
 use crate::vert_buffers::{Instance, Vertex};
 
 pub struct EngineBuilder {
+    texture_amount: u32,
+
     win_size: Vec2,
     win_resizable: bool,
-    // target_fps: Option<u32>,
-    // target_tps: Option<u32>,
+
+    engine_ui_enabled: bool,
+
+    reset_rate: Option<f64>,
+    target_fps: Option<u32>,
+    target_tps: Option<u32>,
 }
 impl EngineBuilder {
-    pub fn new(win_size: Vec2) -> Self {
+    pub fn new(win_size: Vec2, amount_of_textures_you_will_use: u32) -> Self {
         Self {
+            texture_amount: amount_of_textures_you_will_use,
+
             win_size,
             win_resizable: false,
-            // target_fps: None,
-            // target_tps: None
+
+            engine_ui_enabled: false,
+
+            reset_rate: None,
+            target_fps: None,
+            target_tps: None,
         }
     }
-    pub fn set_if_window_resizable(&mut self, win_resizable: bool) {
-        self.win_resizable = win_resizable;
+    pub fn set_window_to_be_resizable(mut self) -> Self {
+        self.win_resizable = true;
+        self
+    }
+    pub fn enable_engine_ui(mut self) -> Self {
+        self.engine_ui_enabled = true;
+        self
+    }
+    pub fn enable_average_tps_and_set_reset_rate(mut self, reset_rate: Option<f64>) -> Self {
+        self.reset_rate = reset_rate;
+        self
+    }
+    pub fn set_target_fps(mut self, target_fps: u32) -> Self {
+        self.target_fps = Some(target_fps);
+        self
+    }
+    pub fn set_target_tps(mut self, target_tps: u32) -> Self {
+        self.target_tps = Some(target_tps);
+        self
     }
 
     pub async fn build(&self, event_loop: &EventLoop<()>) -> Engine {
@@ -58,7 +87,13 @@ impl EngineBuilder {
         let config = create_config(&surface_format, win_size, &surface_caps);
         surface.configure(&device, &config);
 
-        let tex_bind_layout = texture::create_bind_group_layout(&device, 11);
+        // If target_fps is Some and target_tps is None then target_tps is fps
+        let fps = self.target_fps.unwrap_or(144); // Doesn't matter because if target_fps is None and target_tps is None than use_target_tps is false
+        let target_tps = self.target_tps.unwrap_or(fps);
+
+        let time = TimeManager::new(self.reset_rate, target_tps, self.target_tps.is_some());
+
+        let tex_bind_layout = texture::create_bind_group_layout(&device, self.texture_amount);
         let camera = Camera::new(false);
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
         let camera_bind_group_layout = camera::create_bind_group_layout(&device);
@@ -130,8 +165,6 @@ impl EngineBuilder {
         // We use the egui_wgpu_backend crate as the render backend.
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
-        let time = TimeManager::new();
-
         let inv_win_size = Vec2::new(1. / win_size.width as f64, 1. / win_size.height as f64);
 
         let all_fields = AllFields {
@@ -167,13 +200,12 @@ impl EngineBuilder {
 
             platform,
             egui_rpass,
-
-            features: Features::new(),
+            engine_ui_enabled: self.engine_ui_enabled,
 
             game_ui: None,
 
-            target_fps: None,
-            target_tps: None,
+            target_fps: self.target_fps,
+            target_tps: self.target_tps,
 
             sound: Sound::new(),
         };
@@ -339,7 +371,7 @@ pub struct AllFields {
     pub egui_rpass: egui_wgpu_backend::RenderPass,
     pub game_ui: Option<crate::prelude::GoodManUI>,
 
-    pub features: Features,
+    pub engine_ui_enabled: bool,
 
     pub sound: Sound,
 }

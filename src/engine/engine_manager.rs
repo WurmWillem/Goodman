@@ -1,7 +1,7 @@
 use crate::create_Engine_from_AllFields;
 use crate::engine::Engine;
 use crate::engine_builder::AllFields;
-use crate::prelude::{Color, Feature, GoodManUI, Manager};
+use crate::prelude::{Color, GoodManUI, Manager};
 use crate::texture::{self, Texture};
 use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -10,7 +10,7 @@ use winit::{
 
 impl Engine {
     pub(crate) fn render_ui(&self) {
-        if !self.features.engine_ui_enabled {
+        if !self.engine_ui_enabled {
             return;
         }
 
@@ -117,23 +117,11 @@ impl Engine {
         }
     }
 
-    pub fn enable_feature(&mut self, feature: Feature) {
-        self.features.enable_feature(feature);
-    }
-
-    pub fn set_game_ui(&mut self, user_ui: GoodManUI) {
-        if !self.features.game_ui_enabled {
-            println!("game ui is disabled");
-            return;
-        }
-        self.game_ui = Some(user_ui);
-    }
-
     pub(crate) fn new(all_fields: AllFields) -> Engine {
-    create_Engine_from_AllFields!(all_fields, input window win_bind_group win_size inv_win_size win_background_color
+        create_Engine_from_AllFields!(all_fields, input window win_bind_group win_size inv_win_size win_background_color
         surface device queue config render_pipeline vertex_buffer index_buffer camera camera_bind_group
         camera_buffer instance_buffer instances instances_rendered time tex_bind
-        texture_amt_created platform egui_rpass features game_ui target_fps target_tps sound)
+        texture_amt_created platform egui_rpass game_ui target_fps target_tps sound engine_ui_enabled)
     }
     pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
     where
@@ -169,18 +157,6 @@ impl Engine {
         self.time.get_time_since_last_render()
     }
 
-    pub fn set_target_fps(&mut self, fps: Option<u32>) {
-        self.target_fps = fps;
-    }
-    pub fn set_target_tps(&mut self, mut tps: Option<u32>) {
-        if let Some(tps_) = tps {
-            let tps_ = (1.05 * tps_ as f32) as u32;
-            tps = Some(tps_)
-        }
-
-        self.target_tps = tps;
-        self.time.set_target_tps(tps)
-    }
     pub fn set_background_color(&mut self, color: Color) {
         self.win_background_color = wgpu::Color {
             r: color.r,

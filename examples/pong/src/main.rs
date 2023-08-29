@@ -14,10 +14,15 @@ fn main() {
 async fn run() {
     let event_loop = EventLoop::new();
 
-    let mut engine = EngineBuilder::new(WINDOW_SIZE).build(&event_loop).await;
+    let mut engine = EngineBuilder::new(WINDOW_SIZE, 3)
+        .enable_engine_ui()
+        .set_target_fps(144)
+        // .set_target_tps(1000 * 1000)
+        .build(&event_loop)
+        .await;
     // engine.set_target_fps(Some(144));
     // engine.set_target_tps(Some(1000 * 1000));
-    engine.enable_feature(Feature::EngineUi);
+    // engine.enable_feature(Feature::EngineUi);
     //engine.enable_feature(Feature::AverageTPS(0.1));
 
     let pong = Pong::new(&mut engine);

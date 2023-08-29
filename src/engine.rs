@@ -7,7 +7,7 @@ use crate::{
     input::Input,
     math::Rect,
     minor_types::{DrawParams, TimeManager},
-    minor_types::{Features, GoodManUI, Manager, Sound},
+    minor_types::{GoodManUI, Manager, Sound},
     prelude::Vec2,
     texture::Texture,
     vert_buffers::INDICES,
@@ -56,8 +56,7 @@ pub struct Engine {
     platform: Platform,
     egui_rpass: egui_wgpu_backend::RenderPass,
     game_ui: Option<GoodManUI>,
-
-    features: Features,
+    engine_ui_enabled: bool,
 
     sound: Sound,
 }
@@ -67,23 +66,6 @@ impl Engine {
         T: Manager + 'static,
     {
         env_logger::init();
-
-        let report_interval = self.features.average_tps.unwrap_or(0.1);
-        // If target_fps in some and target_tps is None than the loop helper will run at fps
-        let fps = match self.target_fps {
-            Some(fps) => {
-                self.time.set_use_target_tps(true);
-                fps
-            }
-            None => 1000, // Doesn't matter because if target_fps is None and target_tps is None than use_target_tps is false
-        };
-
-        let target_tps = match self.target_tps {
-            Some(tps) => tps,
-            None => fps,
-        };
-
-        self.time.replace_loop_helper(report_interval, target_tps);
         manager.start();
 
         event_loop.run(move |event, _, control_flow| {
@@ -114,11 +96,7 @@ impl Engine {
 
                     match self.target_fps {
                         Some(fps) => {
-                            if self.target_tps.is_some() {
-                                if self.time.get_time_since_last_render() >= 0.995 / fps as f64 {
-                                    self.window.request_redraw();
-                                }
-                            } else {
+                            if self.time.get_time_since_last_render() >= 0.995 / fps as f64 {
                                 self.window.request_redraw();
                             }
                         }
@@ -134,7 +112,7 @@ impl Engine {
             }
         });
     }
-    
+
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
@@ -168,7 +146,6 @@ impl Engine {
         render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
-        // println!("{}", )
         if let Some(tex_bind) = &self.tex_bind {
             render_pass.set_bind_group(0, tex_bind, &[]);
         }
@@ -178,7 +155,7 @@ impl Engine {
             0..self.instances_rendered as u32,
         );
 
-        if self.features.engine_ui_enabled || self.features.game_ui_enabled {
+        if self.engine_ui_enabled || self.game_ui.is_some() {
             self.time.update_graph();
 
             // Begin to draw the UI frame.
