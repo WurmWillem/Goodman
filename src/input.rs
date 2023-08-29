@@ -39,19 +39,6 @@ macro_rules! CreateInputStruct {
 CreateInputStruct!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow 
     zero one two three four five six seven eight nine);
 
-macro_rules! set_button_to_is_pressed {
-    ($self: ident, $is_pressed: expr, $keycode: expr, $($key_code_name: ident, $field_name: ident)*) => {
-        match $keycode {
-            $(VirtualKeyCode::$key_code_name => {
-                $self.$field_name.set_both($is_pressed);
-                true
-            })*
-            _ => false
-        }
-
-    };
-}
-
 impl Input {
     pub fn process_events(&mut self, event: &WindowEvent) -> bool {
         match event {
@@ -65,6 +52,20 @@ impl Input {
                 ..
             } => {
                 let is_pressed = *state == ElementState::Pressed;
+
+                macro_rules! set_button_to_is_pressed {
+                    ($self: ident, $is_pressed: expr, $keycode: expr, $($key_code_name: ident, $field_name: ident)*) => {
+                        match $keycode {
+                            $(VirtualKeyCode::$key_code_name => {
+                                $self.$field_name.set_both($is_pressed);
+                                true
+                            })*
+                            _ => false
+                        }
+
+                    };
+                }
+
                 set_button_to_is_pressed!(self, is_pressed, keycode, W,w A,a S,s D,d Right,right_arrow Left,left_arrow Down,down_arrow Up,up_arrow
                     Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine)
             }
@@ -90,16 +91,13 @@ impl Input {
         }
     }
     pub fn reset_buttons(&mut self) {
-        self.left_mouse.pressed = false;
-        self.right_mouse.pressed = false;
-        self.d.pressed = false;
-        self.a.pressed = false;
-        self.w.pressed = false;
-        self.s.pressed = false;
-        self.right_arrow.pressed = false;
-        self.left_arrow.pressed = false;
-        self.up_arrow.pressed = false;
-        self.down_arrow.pressed = false;
+        macro_rules! reset_buttons {
+            ($($field_name: ident)*) => {
+                $(self.$field_name.pressed = false;)*
+            };
+        }
+        reset_buttons!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow
+            zero one two three four five six seven eight nine);
     }
 }
 

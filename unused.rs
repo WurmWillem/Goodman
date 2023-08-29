@@ -1,3 +1,24 @@
+/*// Change this to the location of the assets folder on your pc
+        let path_to_assets_folder =
+            "/home/wurmwillem/Programming/Goodman/examples/baba/src/assets/";
+        let rest_of_path_vec = vec![
+            "floor.png",
+            "is.png",
+            "baba.png",
+            "baba c.png",
+            "you.png",
+            "flag.png",
+            "flag c.png",
+            "win.png",
+            "wall.png",
+            "wall c.png",
+            "stop.png",
+        ];
+
+        let textures = engine
+            .create_texture_vec(path_to_assets_folder, &rest_of_path_vec)
+            .unwrap();*/
+
 fn rotate() {
     for instance in &mut self.instances {
         instance.rotation += 0.1;

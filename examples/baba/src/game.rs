@@ -95,12 +95,11 @@ impl Game {
     ) {
         if let Some(noun) = noun {
             if let Some(property) = property {
-                let npc;
-                if dir == Direction::Hor {
-                    npc = NounPropCombi::new(j, (i - 1, noun), (i + 1, property), dir);
+                let npc = if dir == Direction::Hor {
+                    NounPropCombi::new(j, (i - 1, noun), (i + 1, property), dir)
                 } else {
-                    npc = NounPropCombi::new(i, (j - 1, noun), (j + 1, property), dir)
-                }
+                    NounPropCombi::new(i, (j - 1, noun), (j + 1, property), dir)
+                };
                 if !self.noun_prop_combi.contains(&npc) {
                     self.character_data
                         .set_char_to_property(noun, property, true);
@@ -118,7 +117,7 @@ impl Game {
 
         if self.grid[mov.to.j][mov.to.i] == Object::Character(crate::other::Character::Baba) {
             sound
-                .play_sound(self.source.clone().convert_samples().repeat_infinite())
+                .play_sound(self.source.clone().convert_samples())
                 .unwrap();
         };
     }
@@ -126,6 +125,7 @@ impl Game {
     pub fn win(&mut self) {
         println!("Win!");
         self.current_level.load_next_level(&mut self.grid);
+        self.reset();
     }
 }
 

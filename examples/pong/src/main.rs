@@ -14,10 +14,15 @@ fn main() {
 async fn run() {
     let event_loop = EventLoop::new();
 
-    let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
+    let mut engine = EngineBuilder::new(WINDOW_SIZE, 3)
+        .enable_engine_ui()
+        .set_target_fps(144)
+        // .set_target_tps(1000 * 1000)
+        .build(&event_loop)
+        .await;
     // engine.set_target_fps(Some(144));
-    // engine.set_target_tps(Some(100 * 1000));
-    engine.enable_feature(Feature::EngineUi);
+    // engine.set_target_tps(Some(1000 * 1000));
+    // engine.enable_feature(Feature::EngineUi);
     //engine.enable_feature(Feature::AverageTPS(0.1));
 
     let pong = Pong::new(&mut engine);
@@ -33,13 +38,9 @@ struct Pong {
 }
 impl Manager for Pong {
     fn new(engine: &mut Engine) -> Self {
-        let path_to_assets_folder =
-            "/home/wurmwillem/Programming/Goodman/examples/pong/src/assets/";
-        let rest_of_path_vec = vec!["Computer.png", "Player.png", "Ball.png"];
-
-        let textures = engine
-            .create_texture_vec(path_to_assets_folder, &rest_of_path_vec)
-            .unwrap();
+        let mut textures = vec![];
+        create_textures!(engine, textures, "assets/Computer.png" "assets/Player.png" "assets/Ball.png");
+        // engine.use_textures(&textures);
 
         let left_paddle = Paddle::new(80., WINDOW_SIZE.y * 0.5);
         let right_paddle = Paddle::new(WINDOW_SIZE.x - 80., WINDOW_SIZE.y * 0.5);

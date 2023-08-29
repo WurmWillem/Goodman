@@ -18,10 +18,14 @@ fn main() {
 }
 
 async fn run() {
+    // The following two lines change the working directory, you should remove them
+    let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
+    std::env::set_current_dir(root).unwrap();
+
     let event_loop = EventLoop::new();
 
-    let mut engine = Engine::new(WINDOW_SIZE, &event_loop, true).await;
-    engine.set_target_fps(Some(144));
+    let mut engine = EngineBuilder::new(WINDOW_SIZE, 11).build(&event_loop).await;
+    // engine.set_target_fps(Some(144));
     // engine.set_target_tps(Some(300 * 1000));
     // engine.enable_feature(Feature::EngineUi);
 
@@ -40,43 +44,22 @@ pub struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        // The following two lines change the working directory, but you won't need to do this
-        let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
-        std::env::set_current_dir(&root).unwrap();
+        // let file = BufReader::new(File::open("src/assets/music.mp3").unwrap());
+        // let music_source = Decoder::new(file).unwrap().buffered();
+        // engine
+        // .play_sound(music_source.convert_samples().repeat_infinite())
+        // .unwrap();
 
-        // Change this to the location of the assets folder on your pc
-        let path_to_assets_folder =
-            "/home/wurmwillem/Programming/Goodman/examples/baba/src/assets/";
-        let rest_of_path_vec = vec![
-            "floor.png",
-            "is.png",
-            "baba.png",
-            "baba c.png",
-            "you.png",
-            "flag.png",
-            "flag c.png",
-            "win.png",
-            "wall.png",
-            "wall c.png",
-            "stop.png",
-        ];
+        let pop_file = BufReader::new(File::open("src/assets/pop.mp3").unwrap());
+        let source = Decoder::new(pop_file).unwrap().buffered();
 
-        let textures = engine
-            .create_texture_vec(path_to_assets_folder, &rest_of_path_vec)
-            .unwrap();
+        let mut textures = vec![];
+        create_textures!(engine, textures, "assets/floor.png" "assets/is.png" "assets/baba.png" "assets/baba c.png" "assets/you.png"
+            "assets/flag.png" "assets/flag c.png" "assets/win.png" "assets/wall.png" "assets/wall c.png" "assets/stop.png");
 
         let mut grid = vec![vec![]];
         let current_level = Level::Level1;
         current_level.load_level(&mut grid);
-
-        let file = BufReader::new(File::open("src/assets/music.mp3").unwrap());
-        let music_source = Decoder::new(file).unwrap().buffered();
-        engine
-            .play_sound(music_source.convert_samples().repeat_infinite())
-            .unwrap();
-
-        let pop_file = BufReader::new(File::open("src/assets/pop.mp3").unwrap());
-        let source = Decoder::new(pop_file).unwrap().buffered();
 
         Self {
             grid,
@@ -109,10 +92,12 @@ impl Manager for Game {
         if input.is_button_pressed(Button::One) {
             self.current_level = Level::Level1;
             self.current_level.load_level(&mut self.grid);
+            self.reset();
         }
         if input.is_button_pressed(Button::Two) {
             self.current_level = Level::Level2;
             self.current_level.load_level(&mut self.grid);
+            self.reset();
         }
 
         let mut moves: Vec<Move> = vec![];
@@ -207,5 +192,11 @@ impl Manager for Game {
                 };
             }
         }
+    }
+}
+impl Game {
+    fn reset(&mut self) {
+        self.noun_prop_combi = vec![];
+        self.update_character_data();
     }
 }
