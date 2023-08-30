@@ -51,7 +51,6 @@ pub struct Engine {
     time: TimeManager,
 
     target_fps: Option<u32>,
-    target_tps: Option<u32>,
 
     platform: Platform,
     egui_rpass: egui_wgpu_backend::RenderPass,
@@ -61,7 +60,7 @@ pub struct Engine {
     sound: Sound,
 }
 impl Engine {
-    pub fn enter_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
+    pub fn start_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
         T: Manager + 'static,
     {
@@ -96,7 +95,7 @@ impl Engine {
 
                     match self.target_fps {
                         Some(fps) => {
-                            if self.time.get_time_since_last_render() >= 0.995 / fps as f64 {
+                            if self.time.get_time_since_last_render() >= 0.95 / fps as f64 {
                                 self.window.request_redraw();
                             }
                         }
@@ -106,7 +105,7 @@ impl Engine {
                     }
                 }
                 Event::RedrawRequested(window_id) if window_id == self.window.id() => {
-                    self.handle_rendering(&mut manager, control_flow);
+                    self.handle_rendering(&manager, control_flow);
                 }
                 _ => {}
             }
@@ -148,12 +147,12 @@ impl Engine {
 
         if let Some(tex_bind) = &self.tex_bind {
             render_pass.set_bind_group(0, tex_bind, &[]);
+            render_pass.draw_indexed(
+                0..INDICES.len() as u32,
+                0,
+                0..self.instances_rendered as u32,
+            );
         }
-        render_pass.draw_indexed(
-            0..INDICES.len() as u32,
-            0,
-            0..self.instances_rendered as u32,
-        );
 
         if self.engine_ui_enabled || self.game_ui.is_some() {
             self.time.update_graph();
@@ -202,7 +201,7 @@ impl Engine {
 
         self.instances = Vec::with_capacity(self.instances_rendered);
         self.instances_rendered = 0;
-        self.time.reset_time_since_last_render();
+        self.time.enable_prev_iter_was_render();
         Ok(())
     }
 

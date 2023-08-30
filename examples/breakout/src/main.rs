@@ -16,7 +16,7 @@ async fn run() {
 
     let breakout = Breakout::new(&mut engine);
 
-    engine.enter_loop(breakout, event_loop);
+    engine.start_loop(breakout, event_loop);
 }
 
 struct Breakout {

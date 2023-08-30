@@ -62,7 +62,6 @@ impl Input {
                             })*
                             _ => false
                         }
-
                     };
                 }
 

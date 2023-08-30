@@ -16,18 +16,15 @@ async fn run() {
 
     let mut engine = EngineBuilder::new(WINDOW_SIZE, 3)
         .enable_engine_ui()
-        .set_target_fps(144)
-        // .set_target_tps(1000 * 1000)
+        // .set_target_fps(144)
+        // .set_target_tps(100 * 1000)
+        .enable_average_tps_and_set_reset_rate(Some(1.))
         .build(&event_loop)
         .await;
-    // engine.set_target_fps(Some(144));
-    // engine.set_target_tps(Some(1000 * 1000));
-    // engine.enable_feature(Feature::EngineUi);
-    //engine.enable_feature(Feature::AverageTPS(0.1));
 
     let pong = Pong::new(&mut engine);
 
-    engine.enter_loop(pong, event_loop);
+    engine.start_loop(pong, event_loop);
 }
 
 struct Pong {

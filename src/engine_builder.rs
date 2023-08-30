@@ -59,7 +59,7 @@ impl EngineBuilder {
         self
     }
 
-    pub async fn build(&self, event_loop: &EventLoop<()>) -> Engine {
+    pub async fn build(&mut self, event_loop: &EventLoop<()>) -> Engine {
         // Engine::new(event_loop, self.win_size, self.win_resizable).await
         let window = WindowBuilder::new()
             .with_resizable(self.win_resizable)
@@ -86,6 +86,13 @@ impl EngineBuilder {
 
         let config = create_config(&surface_format, win_size, &surface_caps);
         surface.configure(&device, &config);
+
+        // Swap target_fps and target_tps because this way we use loop_helper which is more consistent
+        if self.target_fps.is_some() && self.target_tps.is_none() {
+            let temp = self.target_fps;
+            self.target_fps = self.target_tps;
+            self.target_tps = temp;
+        }
 
         // If target_fps is Some and target_tps is None then target_tps is fps
         let fps = self.target_fps.unwrap_or(144); // Doesn't matter because if target_fps is None and target_tps is None than use_target_tps is false

@@ -31,7 +31,7 @@ async fn run() {
 
     let game = Game::new(&mut engine);
 
-    engine.enter_loop(game, event_loop);
+    engine.start_loop(game, event_loop);
 }
 
 pub struct Game {

@@ -33,11 +33,11 @@ impl Engine {
                 self.win_size.width, self.win_size.height
             ));
             let fps = match self.target_fps {
-                Some(fps) => fps,
-                None => self.get_average_tps(),
+                Some(_) => self.time.get_avg_fps(),
+                None => self.get_avg_tps(),
             };
             ui.label(format!("FPS: {:?}", fps));
-            ui.label(format!("TPS: {:?}", self.get_average_tps()));
+            ui.label(format!("TPS: {:?}", self.get_avg_tps()));
             ui.label(format!(
                 "textures rendered this frame: {:?}",
                 self.instances_rendered
@@ -53,7 +53,7 @@ impl Engine {
         });
     }
 
-    pub(crate) fn handle_rendering<T>(&mut self, manager: &mut T, control_flow: &mut ControlFlow)
+    pub(crate) fn handle_rendering<T>(&mut self, manager: &T, control_flow: &mut ControlFlow)
     where
         T: Manager + 'static,
     {
@@ -121,7 +121,7 @@ impl Engine {
         create_Engine_from_AllFields!(all_fields, input window win_bind_group win_size inv_win_size win_background_color
         surface device queue config render_pipeline vertex_buffer index_buffer camera camera_bind_group
         camera_buffer instance_buffer instances instances_rendered time tex_bind
-        texture_amt_created platform egui_rpass game_ui target_fps target_tps sound engine_ui_enabled)
+        texture_amt_created platform egui_rpass game_ui target_fps sound engine_ui_enabled)
     }
     pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
     where
@@ -150,7 +150,7 @@ impl Engine {
         Ok(tex)
     }
 
-    pub fn get_average_tps(&self) -> u32 {
+    pub fn get_avg_tps(&self) -> u32 {
         self.time.get_average_tps()
     }
     pub fn get_time_since_last_render(&self) -> f64 {
