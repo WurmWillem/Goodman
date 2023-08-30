@@ -6,7 +6,7 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::minor_types::{Sound, TimeManager, WindowUniform};
+use crate::minor_types::{SoundManager, TimeManager, UiManager, WindowUniform};
 use crate::prelude::Vec2;
 use crate::texture::{self};
 use crate::vert_buffers::{Instance, Vertex};
@@ -17,7 +17,7 @@ pub struct EngineBuilder {
     win_size: Vec2,
     win_resizable: bool,
 
-    engine_ui_enabled: bool,
+    show_engine_ui: bool,
 
     reset_rate: Option<f64>,
     target_fps: Option<u32>,
@@ -31,7 +31,7 @@ impl EngineBuilder {
             win_size,
             win_resizable: false,
 
-            engine_ui_enabled: false,
+            show_engine_ui: false,
 
             reset_rate: None,
             target_fps: None,
@@ -42,8 +42,8 @@ impl EngineBuilder {
         self.win_resizable = true;
         self
     }
-    pub fn enable_engine_ui(mut self) -> Self {
-        self.engine_ui_enabled = true;
+    pub fn show_engine_ui(mut self) -> Self {
+        self.show_engine_ui = true;
         self
     }
     pub fn enable_average_tps_and_set_reset_rate(mut self, reset_rate: Option<f64>) -> Self {
@@ -172,6 +172,8 @@ impl EngineBuilder {
         // We use the egui_wgpu_backend crate as the render backend.
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
+        let ui = UiManager::new(platform, egui_rpass, self.show_engine_ui);
+
         let inv_win_size = Vec2::new(1. / win_size.width as f64, 1. / win_size.height as f64);
 
         let all_fields = AllFields {
@@ -205,16 +207,12 @@ impl EngineBuilder {
 
             texture_amt_created: 0,
 
-            platform,
-            egui_rpass,
-            engine_ui_enabled: self.engine_ui_enabled,
-
-            game_ui: None,
+            ui,
 
             target_fps: self.target_fps,
             target_tps: self.target_tps,
 
-            sound: Sound::new(),
+            sound: SoundManager::new(),
         };
         Engine::new(all_fields)
     }
@@ -374,13 +372,9 @@ pub struct AllFields {
     pub target_fps: Option<u32>,
     pub target_tps: Option<u32>,
 
-    pub platform: Platform,
-    pub egui_rpass: egui_wgpu_backend::RenderPass,
-    pub game_ui: Option<crate::prelude::GoodManUI>,
+    pub ui: UiManager,
 
-    pub engine_ui_enabled: bool,
-
-    pub sound: Sound,
+    pub sound: SoundManager,
 }
 
 #[macro_export]

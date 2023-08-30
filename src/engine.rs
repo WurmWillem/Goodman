@@ -1,5 +1,5 @@
 use egui_wgpu_backend::ScreenDescriptor;
-use egui_winit_platform::Platform;
+use wgpu::{BindGroup, Buffer};
 use winit::{event::Event, event_loop::EventLoop, window::Window};
 
 use crate::{
@@ -7,7 +7,7 @@ use crate::{
     input::Input,
     math::Rect,
     minor_types::{DrawParams, TimeManager},
-    minor_types::{GoodManUI, Manager, Sound},
+    minor_types::{Manager, SoundManager, UiManager},
     prelude::Vec2,
     texture::Texture,
     vert_buffers::INDICES,
@@ -21,12 +21,15 @@ mod engine_manager;
 
 pub struct Engine {
     input: Input,
+    time: TimeManager,
+    ui: UiManager,
+    sound: SoundManager,
 
     window: Window,
     win_size: winit::dpi::PhysicalSize<u32>,
     inv_win_size: Vec2,
     win_background_color: wgpu::Color,
-    win_bind_group: wgpu::BindGroup,
+    win_bind_group: BindGroup,
 
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -34,30 +37,21 @@ pub struct Engine {
     config: wgpu::SurfaceConfiguration,
 
     render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    instance_buffer: wgpu::Buffer,
-    camera_buffer: wgpu::Buffer,
+    vertex_buffer: Buffer,
+    index_buffer: Buffer,
+    instance_buffer: Buffer,
+    camera_buffer: Buffer,
 
     instances: Vec<Instance>,
     instances_rendered: usize,
 
-    tex_bind: Option<wgpu::BindGroup>,
+    tex_bind: Option<BindGroup>,
     texture_amt_created: u32,
 
     camera: Camera,
-    camera_bind_group: wgpu::BindGroup,
-
-    time: TimeManager,
+    camera_bind_group: BindGroup,
 
     target_fps: Option<u32>,
-
-    platform: Platform,
-    egui_rpass: egui_wgpu_backend::RenderPass,
-    game_ui: Option<GoodManUI>,
-    engine_ui_enabled: bool,
-
-    sound: Sound,
 }
 impl Engine {
     pub fn start_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
@@ -68,7 +62,7 @@ impl Engine {
         manager.start();
 
         event_loop.run(move |event, _, control_flow| {
-            self.platform.handle_event(&event);
+            self.ui.platform.handle_event(&event);
 
             match event {
                 Event::WindowEvent {
@@ -80,7 +74,7 @@ impl Engine {
                     }
                 }
                 Event::MainEventsCleared => {
-                    self.time.update(&mut self.platform);
+                    self.time.update(&mut self.ui);
 
                     self.update();
                     manager.update(self.time.get_relevant_delta_t(), &self.input, &self.sound);
@@ -89,7 +83,7 @@ impl Engine {
                         .input
                         .is_button_pressed(crate::prelude::Button::RightMouse)
                     {
-                        println!("{}", self.time.get_average_tps());
+                        println!("{}", self.time.get_avg_tps());
                     }
                     self.input.reset_buttons();
 
@@ -154,19 +148,20 @@ impl Engine {
             );
         }
 
-        if self.engine_ui_enabled || self.game_ui.is_some() {
-            self.time.update_graph();
-
+        if self.ui.should_render() {
             // Begin to draw the UI frame.
-            self.platform.begin_frame();
+            self.ui.platform.begin_frame();
 
-            self.render_ui();
-            if let Some(game_ui) = &self.game_ui {
-                self.render_game_ui(game_ui);
-            }
+            self.ui.render_engine(
+                self.win_size,
+                &self.time,
+                self.target_fps,
+                self.instances_rendered,
+            );
+            self.ui.render_game_ui();
 
-            let full_output = self.platform.end_frame(Some(&self.window));
-            let paint_jobs = self.platform.context().tessellate(full_output.shapes);
+            let full_output = self.ui.platform.end_frame(Some(&self.window));
+            let paint_jobs = self.ui.platform.context().tessellate(full_output.shapes);
 
             // Upload all resources for the GPU.
             let screen_descriptor = ScreenDescriptor {
@@ -175,22 +170,25 @@ impl Engine {
                 scale_factor: self.window.scale_factor() as f32,
             };
             let tdelta: egui::TexturesDelta = full_output.textures_delta;
-            self.egui_rpass
+            self.ui
+                .egui_rpass
                 .add_textures(&self.device, &self.queue, &tdelta)
                 .expect("add texture ok");
 
-            self.egui_rpass.update_buffers(
+            self.ui.egui_rpass.update_buffers(
                 &self.device,
                 &self.queue,
                 &paint_jobs,
                 &screen_descriptor,
             );
 
-            self.egui_rpass
+            self.ui
+                .egui_rpass
                 .remove_textures(tdelta)
                 .expect("remove texture ok");
 
-            self.egui_rpass
+            self.ui
+                .egui_rpass
                 .execute_with_renderpass(&mut render_pass, &paint_jobs, &screen_descriptor)
                 .unwrap();
         }

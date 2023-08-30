@@ -15,7 +15,7 @@ async fn run() {
     let event_loop = EventLoop::new();
 
     let mut engine = EngineBuilder::new(WINDOW_SIZE, 3)
-        .enable_engine_ui()
+        .show_engine_ui()
         // .set_target_fps(144)
         // .set_target_tps(100 * 1000)
         .enable_average_tps_and_set_reset_rate(Some(1.))
@@ -51,7 +51,7 @@ impl Manager for Pong {
         }
     }
 
-    fn update(&mut self, delta_t: f64, input: &Input, _sound: &Sound) {
+    fn update(&mut self, delta_t: f64, input: &Input, _sound: &SoundManager) {
         self.left_paddle.update(
             input.is_button_held(Button::W),
             input.is_button_held(Button::S),

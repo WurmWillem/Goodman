@@ -1,7 +1,7 @@
 use crate::create_Engine_from_AllFields;
 use crate::engine::Engine;
 use crate::engine_builder::AllFields;
-use crate::prelude::{Color, GoodManUI, Manager};
+use crate::prelude::{Color, Manager};
 use crate::texture::{self, Texture};
 use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -9,50 +9,6 @@ use winit::{
 };
 
 impl Engine {
-    pub(crate) fn render_ui(&self) {
-        if !self.engine_ui_enabled {
-            return;
-        }
-
-        egui::Window::new("Engine").show(&self.platform.context(), |ui| {
-            let tps_points: egui::plot::PlotPoints = self
-                .time
-                .graph_vec
-                .iter()
-                .map(|vec| [vec.x, vec.y])
-                .collect();
-            let line = egui::plot::Line::new(tps_points);
-
-            egui::plot::Plot::new("sd")
-                .view_aspect(2.)
-                .include_y(0.)
-                .show(ui, |plot_ui| plot_ui.line(line));
-
-            ui.label(format!(
-                "window size: {:?}x{:?}",
-                self.win_size.width, self.win_size.height
-            ));
-            let fps = match self.target_fps {
-                Some(_) => self.time.get_avg_fps(),
-                None => self.get_avg_tps(),
-            };
-            ui.label(format!("FPS: {:?}", fps));
-            ui.label(format!("TPS: {:?}", self.get_avg_tps()));
-            ui.label(format!(
-                "textures rendered this frame: {:?}",
-                self.instances_rendered
-            ));
-        });
-    }
-
-    pub(crate) fn render_game_ui(&self, game_ui: &GoodManUI) {
-        egui::Window::new(game_ui.title.clone()).show(&self.platform.context(), |ui| {
-            for label in &game_ui.labels {
-                ui.label(label);
-            }
-        });
-    }
-
     pub(crate) fn handle_rendering<T>(&mut self, manager: &T, control_flow: &mut ControlFlow)
     where
         T: Manager + 'static,
@@ -121,7 +77,7 @@ impl Engine {
         create_Engine_from_AllFields!(all_fields, input window win_bind_group win_size inv_win_size win_background_color
         surface device queue config render_pipeline vertex_buffer index_buffer camera camera_bind_group
         camera_buffer instance_buffer instances instances_rendered time tex_bind
-        texture_amt_created platform egui_rpass game_ui target_fps sound engine_ui_enabled)
+        texture_amt_created target_fps sound ui)
     }
     pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
     where
@@ -151,7 +107,10 @@ impl Engine {
     }
 
     pub fn get_avg_tps(&self) -> u32 {
-        self.time.get_average_tps()
+        self.time.get_avg_tps()
+    }
+    pub fn get_avg_fps(&self) -> u32 {
+        self.time.get_avg_fps()
     }
     pub fn get_time_since_last_render(&self) -> f64 {
         self.time.get_time_since_last_render()
