@@ -1,5 +1,6 @@
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
+use wgpu::Color;
 use winit::dpi::PhysicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
@@ -15,6 +16,7 @@ pub struct EngineBuilder {
     texture_amount: u32,
 
     win_size: Vec2,
+    win_background_color: Color,
     win_resizable: bool,
 
     show_engine_ui: bool,
@@ -29,6 +31,7 @@ impl EngineBuilder {
             texture_amount: amount_of_textures_you_will_use,
 
             win_size,
+            win_background_color: Color::BLACK,
             win_resizable: false,
 
             show_engine_ui: false,
@@ -56,6 +59,15 @@ impl EngineBuilder {
     }
     pub fn set_target_tps(mut self, target_tps: u32) -> Self {
         self.target_tps = Some(target_tps);
+        self
+    }
+    pub fn set_background_color(mut self, color: Color) -> Self {
+        self.win_background_color = wgpu::Color {
+            r: color.r,
+            g: color.g,
+            b: color.b,
+            a: color.a,
+        };
         self
     }
 
@@ -153,13 +165,6 @@ impl EngineBuilder {
 
         let (vertex_buffer, index_buffer) = super::vert_buffers::create_buffers(&device);
 
-        let background_color = wgpu::Color {
-            r: 0.,
-            g: 0.,
-            b: 0.,
-            a: 1.,
-        };
-
         // We use the egui_winit_platform crate as the platform.
         let platform = Platform::new(PlatformDescriptor {
             physical_width: self.win_size.y as u32,
@@ -183,7 +188,7 @@ impl EngineBuilder {
             win_size,
             inv_win_size,
 
-            win_background_color: background_color,
+            win_background_color: self.win_background_color,
             surface,
             device,
             queue,
@@ -210,7 +215,6 @@ impl EngineBuilder {
             ui,
 
             target_fps: self.target_fps,
-            target_tps: self.target_tps,
 
             sound: SoundManager::new(),
         };
@@ -370,7 +374,6 @@ pub struct AllFields {
     pub time: TimeManager,
 
     pub target_fps: Option<u32>,
-    pub target_tps: Option<u32>,
 
     pub ui: UiManager,
 

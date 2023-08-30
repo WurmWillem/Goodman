@@ -1,7 +1,7 @@
 use crate::create_Engine_from_AllFields;
 use crate::engine::Engine;
 use crate::engine_builder::AllFields;
-use crate::prelude::{Color, Manager};
+use crate::prelude::Manager;
 use crate::texture::{self, Texture};
 use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -114,14 +114,5 @@ impl Engine {
     }
     pub fn get_time_since_last_render(&self) -> f64 {
         self.time.get_time_since_last_render()
-    }
-
-    pub fn set_background_color(&mut self, color: Color) {
-        self.win_background_color = wgpu::Color {
-            r: color.r,
-            g: color.g,
-            b: color.b,
-            a: color.a,
-        }
     }
 }

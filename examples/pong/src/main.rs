@@ -18,7 +18,6 @@ async fn run() {
         .show_engine_ui()
         // .set_target_fps(144)
         // .set_target_tps(100 * 1000)
-        .enable_average_tps_and_set_reset_rate(Some(1.))
         .build(&event_loop)
         .await;
 

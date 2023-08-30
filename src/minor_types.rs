@@ -193,7 +193,6 @@ impl UiManager {
     }
 }
 
-
 pub struct SoundManager {
     #[allow(dead_code)] // stream is unused but it has to stay in memory
     stream: rodio::OutputStream,
@@ -247,55 +246,6 @@ impl GoodManUI {
     pub fn add_label(&mut self, label: String) {
         self.labels.push(label);
     }
-}
-pub struct Color {
-    pub r: f64,
-    pub g: f64,
-    pub b: f64,
-    pub a: f64,
-}
-
-#[allow(missing_docs)]
-impl Color {
-    pub fn new(r: f64, g: f64, b: f64, a: f64) -> Self {
-        Color { r, g, b, a }
-    }
-    pub const TRANSPARENT: Self = Self {
-        r: 0.0,
-        g: 0.0,
-        b: 0.0,
-        a: 0.0,
-    };
-    pub const BLACK: Self = Self {
-        r: 0.0,
-        g: 0.0,
-        b: 0.0,
-        a: 1.0,
-    };
-    pub const WHITE: Self = Self {
-        r: 1.0,
-        g: 1.0,
-        b: 1.0,
-        a: 1.0,
-    };
-    pub const RED: Self = Self {
-        r: 1.0,
-        g: 0.0,
-        b: 0.0,
-        a: 1.0,
-    };
-    pub const GREEN: Self = Self {
-        r: 0.0,
-        g: 1.0,
-        b: 0.0,
-        a: 1.0,
-    };
-    pub const BLUE: Self = Self {
-        r: 0.0,
-        g: 0.0,
-        b: 1.0,
-        a: 1.0,
-    };
 }
 
 #[repr(C)]
