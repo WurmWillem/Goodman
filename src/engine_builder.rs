@@ -13,8 +13,6 @@ use crate::texture::{self};
 use crate::vert_buffers::{Instance, Vertex};
 
 pub struct EngineBuilder {
-    texture_amount: u32,
-
     win_size: Vec2,
     win_background_color: Color,
     win_resizable: bool,
@@ -26,10 +24,8 @@ pub struct EngineBuilder {
     target_tps: Option<u32>,
 }
 impl EngineBuilder {
-    pub fn new(win_size: Vec2, amount_of_textures_you_will_use: u32) -> Self {
+    pub fn new(win_size: Vec2) -> Self {
         Self {
-            texture_amount: amount_of_textures_you_will_use,
-
             win_size,
             win_background_color: Color::BLACK,
             win_resizable: false,
@@ -112,8 +108,8 @@ impl EngineBuilder {
 
         let time = TimeManager::new(self.reset_rate, target_tps, self.target_tps.is_some());
 
-        let tex_bind_layout = texture::create_bind_group_layout(&device, self.texture_amount);
-        let camera = Camera::new(false);
+        let tex_bind_layout = texture::create_bind_group_layout(&device, 0);
+        let camera = Camera::new(true);
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
         let camera_bind_group_layout = camera::create_bind_group_layout(&device);
         let camera_bind_group =
@@ -127,20 +123,7 @@ impl EngineBuilder {
             contents: bytemuck::cast_slice(&[window_size_uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        let window_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-                label: Some("camera_bind_group_layout"),
-            });
+        let window_bind_group_layout = create_win_layout(&device);
         let window_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &window_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
@@ -222,7 +205,27 @@ impl EngineBuilder {
     }
 }
 
-pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> wgpu::Adapter {
+pub fn create_shader(device: &wgpu::Device) -> wgpu::ShaderModule {
+    device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"))
+}
+
+pub fn create_win_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        entries: &[wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::VERTEX,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        }],
+        label: Some("camera_bind_group_layout"),
+    })
+}
+
+async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> wgpu::Adapter {
     instance
         .request_adapter(&wgpu::RequestAdapterOptionsBase {
             power_preference: wgpu::PowerPreference::HighPerformance,
@@ -233,7 +236,7 @@ pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) 
         .expect("Failed to create adapter")
 }
 
-pub async fn create_device_and_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
+async fn create_device_and_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
     let limits = wgpu::Limits {
         max_sampled_textures_per_shader_stage: 512,
         ..Default::default()
@@ -255,7 +258,7 @@ pub async fn create_device_and_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, 
         .expect("failed to create device or queue")
 }
 
-pub fn create_surface_format(surface_caps: &wgpu::SurfaceCapabilities) -> wgpu::TextureFormat {
+fn create_surface_format(surface_caps: &wgpu::SurfaceCapabilities) -> wgpu::TextureFormat {
     surface_caps
         .formats
         .iter()
@@ -264,7 +267,7 @@ pub fn create_surface_format(surface_caps: &wgpu::SurfaceCapabilities) -> wgpu::
         .unwrap_or(surface_caps.formats[0])
 }
 
-pub fn create_config(
+fn create_config(
     surface_format: &wgpu::TextureFormat,
     size: PhysicalSize<u32>,
     surface_caps: &wgpu::SurfaceCapabilities,
@@ -282,17 +285,13 @@ pub fn create_config(
 
 pub fn create_render_pipeline_layout(
     device: &wgpu::Device,
-    texture_bind_group_layout: &wgpu::BindGroupLayout,
-    camera_bind_group_layout: &wgpu::BindGroupLayout,
-    window_bind_group_layout: &wgpu::BindGroupLayout,
+    tex_layout: &wgpu::BindGroupLayout,
+    cam_layout: &wgpu::BindGroupLayout,
+    window_layout: &wgpu::BindGroupLayout,
 ) -> wgpu::PipelineLayout {
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[
-            texture_bind_group_layout,
-            camera_bind_group_layout,
-            window_bind_group_layout,
-        ],
+        bind_group_layouts: &[tex_layout, cam_layout, window_layout],
         push_constant_ranges: &[],
     })
 }

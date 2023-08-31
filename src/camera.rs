@@ -1,6 +1,6 @@
 use wgpu::{util::DeviceExt, Device};
 
-use crate::input::Input;
+use crate::{input::Input, prelude::Button};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -14,36 +14,35 @@ impl CameraUniform {
 }
 
 pub struct Camera {
-    pub movement_enabled: bool,
     pub uniform: CameraUniform,
+    movement_enabled: bool,
 }
 impl Camera {
-    //const SPEED: f32 = 0.00001;
+    const SPEED: f32 = 0.0001;
     pub fn new(movement_enabled: bool) -> Self {
         Self {
             movement_enabled,
             uniform: CameraUniform::new(),
         }
     }
-    pub fn update(&mut self, _input: &Input) -> bool {
-        todo!();
-        /*if input.is_d_pressed() {
+    pub fn update(&mut self, input: &Input) -> bool {
+        if !self.movement_enabled {
+            false
+        } else if input.is_button_held(Button::D) {
             self.uniform.pos[0] += Camera::SPEED;
-            return true;
-        }
-        if input.is_a_pressed() {
+            true
+        } else if input.is_button_held(Button::A) {
             self.uniform.pos[0] -= Camera::SPEED;
-            return true;
-        }
-        if input.is_w_pressed() {
+            true
+        } else if input.is_button_held(Button::W) {
             self.uniform.pos[1] += Camera::SPEED;
-            return true;
-        }
-        if input.is_s_pressed() {
+            true
+        } else if input.is_button_held(Button::S) {
             self.uniform.pos[1] -= Camera::SPEED;
-            return true;
+            true
+        } else {
+            false
         }
-        false*/
     }
 }
 

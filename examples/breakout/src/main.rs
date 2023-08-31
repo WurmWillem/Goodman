@@ -8,7 +8,7 @@ const WINDOW_SIZE: Vec2 = vec2(1200., 900.);
 
 async fn run() {
     let event_loop = EventLoop::new();
-    let mut engine = EngineBuilder::new(WINDOW_SIZE, 3).build(&event_loop).await;
+    let mut engine = EngineBuilder::new(WINDOW_SIZE).build(&event_loop).await;
 
     // engine.set_target_fps(Some(144));
     // engine.set_target_tps(Some(1000 * 1000));

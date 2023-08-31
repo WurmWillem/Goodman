@@ -1,6 +1,8 @@
 use crate::create_Engine_from_AllFields;
 use crate::engine::Engine;
-use crate::engine_builder::AllFields;
+use crate::engine_builder::{
+    create_render_pipeline, create_render_pipeline_layout, create_win_layout, AllFields,
+};
 use crate::prelude::Manager;
 use crate::texture::{self, Texture};
 use winit::{
@@ -27,7 +29,7 @@ impl Engine {
     }
 
     pub(crate) fn update(&mut self) {
-        if self.camera.movement_enabled && self.camera.update(&self.input) {
+        if self.camera.update(&self.input) {
             self.queue.write_buffer(
                 &self.camera_buffer,
                 0,
@@ -87,12 +89,21 @@ impl Engine {
     }
 
     pub fn use_textures(&mut self, textures: &Vec<Texture>, tex_amt: u32) {
-        let tex_bind_group_layout = texture::create_bind_group_layout(&self.device, tex_amt);
+        let tex_layout = texture::create_bind_group_layout(&self.device, tex_amt);
         self.tex_bind = Some(texture::create_bind_group(
             &self.device,
-            &tex_bind_group_layout,
+            &tex_layout,
             textures,
         ));
+
+        let cam_layout = crate::camera::create_bind_group_layout(&self.device);
+        let win_layout = create_win_layout(&self.device);
+        let pipeline_layout =
+            create_render_pipeline_layout(&self.device, &tex_layout, &cam_layout, &win_layout);
+
+        let shader = crate::engine_builder::create_shader(&self.device);
+        self.render_pipeline =
+            create_render_pipeline(&self.device, &pipeline_layout, &shader, &self.config);
     }
 
     pub fn create_texture(&mut self, bytes: &[u8]) -> Result<Texture, &'static str> {

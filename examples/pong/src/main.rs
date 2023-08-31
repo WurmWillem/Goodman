@@ -14,7 +14,7 @@ fn main() {
 async fn run() {
     let event_loop = EventLoop::new();
 
-    let mut engine = EngineBuilder::new(WINDOW_SIZE, 3)
+    let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .show_engine_ui()
         // .set_target_fps(144)
         // .set_target_tps(100 * 1000)

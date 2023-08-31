@@ -37,17 +37,17 @@ pub struct Engine {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
-    instance_buffer: Buffer,
-    camera_buffer: Buffer,
 
     instances: Vec<Instance>,
     instances_rendered: usize,
+    instance_buffer: Buffer,
 
     tex_bind: Option<BindGroup>,
     texture_amt_created: u32,
 
     camera: Camera,
     camera_bind_group: BindGroup,
+    camera_buffer: Buffer,
 
     target_fps: Option<u32>,
 }

@@ -6,7 +6,7 @@ use goodman::prelude::*;
 
 async fn run() {
     let event_loop = EventLoop::new();
-    let mut engine = EngineBuilder::new(vec2(700., 700.), 1)
+    let mut engine = EngineBuilder::new(vec2(700., 700.))
         .show_engine_ui()
         .build(&event_loop)
         .await;
