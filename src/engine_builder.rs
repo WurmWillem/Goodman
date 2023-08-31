@@ -7,7 +7,7 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::minor_types::{SoundManager, TimeManager, UiManager, WindowUniform};
+use crate::minor_types::{Sound, TimeManager, Ui, WindowUniform};
 use crate::prelude::Vec2;
 use crate::texture::{self};
 use crate::vert_buffers::{Instance, Vertex};
@@ -177,7 +177,7 @@ impl EngineBuilder {
         // We use the egui_wgpu_backend crate as the render backend.
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
-        let ui = UiManager::new(platform, egui_rpass, self.show_engine_ui);
+        let ui = Ui::new(platform, egui_rpass, self.show_engine_ui);
 
         let inv_win_size = Vec2::new(1. / win_size.width as f64, 1. / win_size.height as f64);
 
@@ -216,7 +216,7 @@ impl EngineBuilder {
 
             target_fps: self.target_fps,
 
-            sound: SoundManager::new(),
+            sound: Sound::new(),
         };
         Engine::new(all_fields)
     }
@@ -375,9 +375,9 @@ pub struct AllFields {
 
     pub target_fps: Option<u32>,
 
-    pub ui: UiManager,
+    pub ui: Ui,
 
-    pub sound: SoundManager,
+    pub sound: Sound,
 }
 
 #[macro_export]

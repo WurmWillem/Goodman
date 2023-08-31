@@ -75,7 +75,7 @@ impl Manager for Game {
         self.update_character_data();
     }
 
-    fn update(&mut self, _delta_t: f64, input: &Input, sound: &SoundManager) {
+    fn update(&mut self, _delta_t: f64, input: &Input, sound: &Sound) {
         let mut where_to_move = (0, 0);
         if input.is_button_pressed(Button::W) {
             where_to_move.1 = -1;

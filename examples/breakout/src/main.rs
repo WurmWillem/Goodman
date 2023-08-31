@@ -50,7 +50,7 @@ impl Manager for Breakout {
             textures,
         }
     }
-    fn update(&mut self, _delta_t: f64, _input: &Input, _sound: &SoundManager) {
+    fn update(&mut self, _delta_t: f64, _input: &Input, _sound: &Sound) {
         //400k - 700k, 10k textures
         /*self.paddle.update(input, delta_t);
         self.ball.update(delta_t);

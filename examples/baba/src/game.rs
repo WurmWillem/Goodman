@@ -1,4 +1,4 @@
-use goodman::prelude::SoundManager;
+use goodman::prelude::Sound;
 use rodio::Source;
 
 use crate::other::{Character, Direction, Move, Noun, NounPropCombi, Object, Property};
@@ -111,7 +111,7 @@ impl Game {
         }
     }
 
-    pub fn move_object(&mut self, mov: Move, sound: &SoundManager) {
+    pub fn move_object(&mut self, mov: Move, sound: &Sound) {
         self.grid[mov.to.j][mov.to.i] = self.grid[mov.from.j][mov.from.i];
         self.grid[mov.from.j][mov.from.i] = Object::Empty;
 

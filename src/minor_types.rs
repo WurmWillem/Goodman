@@ -11,7 +11,7 @@ pub type Vec2 = cgmath::Vector2<f64>;
 pub trait Manager {
     fn new(engine: &mut Engine) -> Self;
     fn start(&mut self) {}
-    fn update(&mut self, frame_time: f64, input: &Input, sound: &SoundManager);
+    fn update(&mut self, frame_time: f64, input: &Input, sound: &Sound);
     fn render(&self, engine: &mut Engine);
 }
 pub struct TimeManager {
@@ -54,7 +54,7 @@ impl TimeManager {
         }
     }
 
-    pub fn update(&mut self, ui: &mut UiManager) {
+    pub fn update(&mut self, ui: &mut Ui) {
         // Sleep until 1 / target_tps is reached
         if self.use_target_tps {
             self.loop_helper.loop_sleep();
@@ -125,14 +125,14 @@ impl Default for DrawParams {
     }
 }
 
-pub struct UiManager {
+pub struct Ui {
     pub platform: Platform,
     pub egui_rpass: egui_wgpu_backend::RenderPass,
     tps_graph: Vec<Vec2>,
     game_ui: Option<GoodManUI>,
     show_engine_ui: bool,
 }
-impl UiManager {
+impl Ui {
     pub fn should_render(&self) -> bool {
         self.show_engine_ui || self.game_ui.is_some()
     }
@@ -193,12 +193,12 @@ impl UiManager {
     }
 }
 
-pub struct SoundManager {
+pub struct Sound {
     #[allow(dead_code)] // stream is unused but it has to stay in memory
     stream: rodio::OutputStream,
     stream_handle: OutputStreamHandle,
 }
-impl SoundManager {
+impl Sound {
     pub fn new() -> Self {
         let (stream, stream_handle) =
             rodio::OutputStream::try_default().expect("can't find output device");

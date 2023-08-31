@@ -6,11 +6,9 @@ use crate::{
     camera::Camera,
     input::Input,
     math::Rect,
-    minor_types::{DrawParams, TimeManager},
-    minor_types::{Manager, SoundManager, UiManager},
+    minor_types::{DrawParams, Manager, Sound, TimeManager, Ui},
     prelude::Vec2,
     texture::Texture,
-    vert_buffers::INDICES,
     vert_buffers::{self, Instance},
 };
 
@@ -22,8 +20,8 @@ mod engine_manager;
 pub struct Engine {
     input: Input,
     time: TimeManager,
-    ui: UiManager,
-    sound: SoundManager,
+    ui: Ui,
+    sound: Sound,
 
     window: Window,
     win_size: winit::dpi::PhysicalSize<u32>,
@@ -141,11 +139,7 @@ impl Engine {
 
         if let Some(tex_bind) = &self.tex_bind {
             render_pass.set_bind_group(0, tex_bind, &[]);
-            render_pass.draw_indexed(
-                0..INDICES.len() as u32,
-                0,
-                0..self.instances_rendered as u32,
-            );
+            render_pass.draw_indexed(0..6, 0, 0..self.instances_rendered as u32);
         }
 
         if self.ui.should_render() {
