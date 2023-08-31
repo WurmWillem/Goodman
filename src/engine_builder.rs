@@ -7,9 +7,10 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::minor_types::{Sound, TimeManager, Ui, WindowUniform};
+use crate::minor_types::{Sound, TimeManager, WindowUniform};
 use crate::prelude::Vec2;
 use crate::texture::{self};
+use crate::ui::Ui;
 use crate::vert_buffers::{Instance, Vertex};
 
 pub struct EngineBuilder {

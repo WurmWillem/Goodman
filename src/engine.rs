@@ -1,4 +1,3 @@
-use egui_wgpu_backend::ScreenDescriptor;
 use wgpu::{BindGroup, Buffer};
 use winit::{event::Event, event_loop::EventLoop, window::Window};
 
@@ -6,9 +5,10 @@ use crate::{
     camera::Camera,
     input::Input,
     math::Rect,
-    minor_types::{DrawParams, Manager, Sound, TimeManager, Ui},
+    minor_types::{DrawParams, Manager, Sound, TimeManager},
     prelude::Vec2,
     texture::Texture,
+    ui::Ui,
     vert_buffers::{self, Instance},
 };
 
@@ -152,34 +152,11 @@ impl Engine {
                 self.target_fps,
                 self.instances_rendered,
             );
-            self.ui.render_game_ui();
+            self.ui.render_game();
 
-            let full_output = self.ui.platform.end_frame(Some(&self.window));
-            let paint_jobs = self.ui.platform.context().tessellate(full_output.shapes);
-
-            // Upload all resources for the GPU.
-            let screen_descriptor = ScreenDescriptor {
-                physical_width: self.config.width,
-                physical_height: self.config.height,
-                scale_factor: self.window.scale_factor() as f32,
-            };
-            let tdelta: egui::TexturesDelta = full_output.textures_delta;
-            self.ui
-                .egui_rpass
-                .add_textures(&self.device, &self.queue, &tdelta)
-                .expect("add texture ok");
-
-            self.ui.egui_rpass.update_buffers(
-                &self.device,
-                &self.queue,
-                &paint_jobs,
-                &screen_descriptor,
-            );
-
-            self.ui
-                .egui_rpass
-                .remove_textures(tdelta)
-                .expect("remove texture ok");
+            let (paint_jobs, screen_descriptor) =
+                self.ui
+                    .update_egui_rpass(&self.window, &self.config, &self.device, &self.queue);
 
             self.ui
                 .egui_rpass

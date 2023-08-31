@@ -1,11 +1,7 @@
-use crate::{engine::Engine, input::Input};
+use crate::{engine::Engine, input::Input, ui::Ui};
 
-use cgmath::vec2;
-use egui_wgpu_backend::RenderPass;
-use egui_winit_platform::Platform;
 use rodio::{OutputStreamHandle, Source};
 use spin_sleep::LoopHelper;
-use winit::dpi::PhysicalSize;
 
 pub type Vec2 = cgmath::Vector2<f64>;
 pub trait Manager {
@@ -77,18 +73,15 @@ impl TimeManager {
 
         // This if-let is true every report rate
         if let Some(avg_tps) = self.loop_helper.report_rate() {
-            self.avg_fps = (self.total_fps_this_report_interval.round() as u32
-                / self.frames_passed_this_report_interval) as u32;
+            self.avg_fps = self.total_fps_this_report_interval.round() as u32
+                / self.frames_passed_this_report_interval;
+
+            self.avg_delta_t = 1. / avg_tps;
 
             self.frames_passed_this_report_interval = 0;
             self.total_fps_this_report_interval = 0.;
 
-            self.avg_delta_t = 1. / avg_tps;
-
-            ui.tps_graph
-                .push(vec2(self.time_passed_since_creation, avg_tps));
-            ui.tps_graph
-                .retain(|vec| vec.x >= self.time_passed_since_creation - 10.)
+            ui.update_tps_graph(self.time_passed_since_creation, avg_tps);
         }
     }
 
@@ -122,74 +115,6 @@ pub struct DrawParams {
 impl Default for DrawParams {
     fn default() -> Self {
         Self { rotation: 0. }
-    }
-}
-
-pub struct Ui {
-    pub platform: Platform,
-    pub egui_rpass: egui_wgpu_backend::RenderPass,
-    tps_graph: Vec<Vec2>,
-    game_ui: Option<GoodManUI>,
-    show_engine_ui: bool,
-}
-impl Ui {
-    pub fn should_render(&self) -> bool {
-        self.show_engine_ui || self.game_ui.is_some()
-    }
-
-    pub fn render_engine(
-        &self,
-        win_size: PhysicalSize<u32>,
-        time: &TimeManager,
-        target_fps: Option<u32>,
-        tex_rendered: usize,
-    ) {
-        if !self.show_engine_ui {
-            return;
-        }
-
-        egui::Window::new("Engine").show(&self.platform.context(), |ui| {
-            let tps_points: egui::plot::PlotPoints =
-                self.tps_graph.iter().map(|vec| [vec.x, vec.y]).collect();
-            let line = egui::plot::Line::new(tps_points);
-
-            egui::plot::Plot::new("sd")
-                .view_aspect(2.)
-                .include_y(0.)
-                .show(ui, |plot_ui| plot_ui.line(line));
-
-            ui.label(format!(
-                "window size: {:?}x{:?}",
-                win_size.width, win_size.height
-            ));
-            let fps = match target_fps {
-                Some(_) => time.get_avg_fps(),
-                None => time.get_avg_tps(),
-            };
-            ui.label(format!("FPS: {:?}", fps));
-            ui.label(format!("TPS: {:?}", time.get_avg_tps()));
-            ui.label(format!("textures rendered this frame: {:?}", tex_rendered));
-        });
-    }
-
-    pub fn render_game_ui(&self) {
-        if let Some(game_ui) = &self.game_ui {
-            egui::Window::new(game_ui.title.clone()).show(&self.platform.context(), |ui| {
-                for label in &game_ui.labels {
-                    ui.label(label);
-                }
-            });
-        }
-    }
-
-    pub fn new(platform: Platform, egui_rpass: RenderPass, show_engine_ui: bool) -> Self {
-        Self {
-            tps_graph: vec![],
-            platform,
-            egui_rpass,
-            game_ui: None,
-            show_engine_ui,
-        }
     }
 }
 
@@ -227,25 +152,6 @@ macro_rules! create_textures {
         )*
        $engine.use_textures(&$textures, i);
     };
-}
-
-pub struct GoodManUI {
-    title: String,
-    labels: Vec<String>,
-}
-impl GoodManUI {
-    pub fn new() -> Self {
-        Self {
-            title: "".to_string(),
-            labels: vec![],
-        }
-    }
-    pub fn set_title(&mut self, label: &str) {
-        self.title = label.to_string();
-    }
-    pub fn add_label(&mut self, label: String) {
-        self.labels.push(label);
-    }
 }
 
 #[repr(C)]
