@@ -24,14 +24,14 @@ async fn run() {
 
     let event_loop = EventLoop::new();
 
-    let mut engine = EngineBuilder::new(WINDOW_SIZE, 11).build(&event_loop).await;
+    let mut engine = EngineBuilder::new(WINDOW_SIZE).build(&event_loop).await;
     // engine.set_target_fps(Some(144));
     // engine.set_target_tps(Some(300 * 1000));
     // engine.enable_feature(Feature::EngineUi);
 
     let game = Game::new(&mut engine);
 
-    engine.enter_loop(game, event_loop);
+    engine.start_loop(game, event_loop);
 }
 
 pub struct Game {

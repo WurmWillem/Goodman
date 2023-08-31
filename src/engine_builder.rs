@@ -1,37 +1,36 @@
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
+use wgpu::Color;
 use winit::dpi::PhysicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::minor_types::{Sound, TimeManager, WindowUniform};
+use crate::minor_types::{Sound, TimeManager, Ui, WindowUniform};
 use crate::prelude::Vec2;
 use crate::texture::{self};
 use crate::vert_buffers::{Instance, Vertex};
 
 pub struct EngineBuilder {
-    texture_amount: u32,
-
     win_size: Vec2,
+    win_background_color: Color,
     win_resizable: bool,
 
-    engine_ui_enabled: bool,
+    show_engine_ui: bool,
 
     reset_rate: Option<f64>,
     target_fps: Option<u32>,
     target_tps: Option<u32>,
 }
 impl EngineBuilder {
-    pub fn new(win_size: Vec2, amount_of_textures_you_will_use: u32) -> Self {
+    pub fn new(win_size: Vec2) -> Self {
         Self {
-            texture_amount: amount_of_textures_you_will_use,
-
             win_size,
+            win_background_color: Color::BLACK,
             win_resizable: false,
 
-            engine_ui_enabled: false,
+            show_engine_ui: false,
 
             reset_rate: None,
             target_fps: None,
@@ -42,8 +41,8 @@ impl EngineBuilder {
         self.win_resizable = true;
         self
     }
-    pub fn enable_engine_ui(mut self) -> Self {
-        self.engine_ui_enabled = true;
+    pub fn show_engine_ui(mut self) -> Self {
+        self.show_engine_ui = true;
         self
     }
     pub fn enable_average_tps_and_set_reset_rate(mut self, reset_rate: Option<f64>) -> Self {
@@ -58,8 +57,17 @@ impl EngineBuilder {
         self.target_tps = Some(target_tps);
         self
     }
+    pub fn set_background_color(mut self, color: Color) -> Self {
+        self.win_background_color = wgpu::Color {
+            r: color.r,
+            g: color.g,
+            b: color.b,
+            a: color.a,
+        };
+        self
+    }
 
-    pub async fn build(&self, event_loop: &EventLoop<()>) -> Engine {
+    pub async fn build(&mut self, event_loop: &EventLoop<()>) -> Engine {
         // Engine::new(event_loop, self.win_size, self.win_resizable).await
         let window = WindowBuilder::new()
             .with_resizable(self.win_resizable)
@@ -87,14 +95,21 @@ impl EngineBuilder {
         let config = create_config(&surface_format, win_size, &surface_caps);
         surface.configure(&device, &config);
 
+        // Swap target_fps and target_tps because this way we use loop_helper which is more consistent
+        if self.target_fps.is_some() && self.target_tps.is_none() {
+            let temp = self.target_fps;
+            self.target_fps = self.target_tps;
+            self.target_tps = temp;
+        }
+
         // If target_fps is Some and target_tps is None then target_tps is fps
         let fps = self.target_fps.unwrap_or(144); // Doesn't matter because if target_fps is None and target_tps is None than use_target_tps is false
         let target_tps = self.target_tps.unwrap_or(fps);
 
         let time = TimeManager::new(self.reset_rate, target_tps, self.target_tps.is_some());
 
-        let tex_bind_layout = texture::create_bind_group_layout(&device, self.texture_amount);
-        let camera = Camera::new(false);
+        let tex_bind_layout = texture::create_bind_group_layout(&device, 0);
+        let camera = Camera::new(true);
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
         let camera_bind_group_layout = camera::create_bind_group_layout(&device);
         let camera_bind_group =
@@ -108,20 +123,7 @@ impl EngineBuilder {
             contents: bytemuck::cast_slice(&[window_size_uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-        let window_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                entries: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-                label: Some("camera_bind_group_layout"),
-            });
+        let window_bind_group_layout = create_win_layout(&device);
         let window_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &window_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
@@ -146,13 +148,6 @@ impl EngineBuilder {
 
         let (vertex_buffer, index_buffer) = super::vert_buffers::create_buffers(&device);
 
-        let background_color = wgpu::Color {
-            r: 0.,
-            g: 0.,
-            b: 0.,
-            a: 1.,
-        };
-
         // We use the egui_winit_platform crate as the platform.
         let platform = Platform::new(PlatformDescriptor {
             physical_width: self.win_size.y as u32,
@@ -165,6 +160,8 @@ impl EngineBuilder {
         // We use the egui_wgpu_backend crate as the render backend.
         let egui_rpass = egui_wgpu_backend::RenderPass::new(&device, surface_format, 1);
 
+        let ui = Ui::new(platform, egui_rpass, self.show_engine_ui);
+
         let inv_win_size = Vec2::new(1. / win_size.width as f64, 1. / win_size.height as f64);
 
         let all_fields = AllFields {
@@ -174,7 +171,7 @@ impl EngineBuilder {
             win_size,
             inv_win_size,
 
-            win_background_color: background_color,
+            win_background_color: self.win_background_color,
             surface,
             device,
             queue,
@@ -198,14 +195,9 @@ impl EngineBuilder {
 
             texture_amt_created: 0,
 
-            platform,
-            egui_rpass,
-            engine_ui_enabled: self.engine_ui_enabled,
-
-            game_ui: None,
+            ui,
 
             target_fps: self.target_fps,
-            target_tps: self.target_tps,
 
             sound: Sound::new(),
         };
@@ -213,7 +205,27 @@ impl EngineBuilder {
     }
 }
 
-pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> wgpu::Adapter {
+pub fn create_shader(device: &wgpu::Device) -> wgpu::ShaderModule {
+    device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"))
+}
+
+pub fn create_win_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        entries: &[wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::VERTEX,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        }],
+        label: Some("camera_bind_group_layout"),
+    })
+}
+
+async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> wgpu::Adapter {
     instance
         .request_adapter(&wgpu::RequestAdapterOptionsBase {
             power_preference: wgpu::PowerPreference::HighPerformance,
@@ -224,7 +236,7 @@ pub async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) 
         .expect("Failed to create adapter")
 }
 
-pub async fn create_device_and_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
+async fn create_device_and_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
     let limits = wgpu::Limits {
         max_sampled_textures_per_shader_stage: 512,
         ..Default::default()
@@ -246,7 +258,7 @@ pub async fn create_device_and_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, 
         .expect("failed to create device or queue")
 }
 
-pub fn create_surface_format(surface_caps: &wgpu::SurfaceCapabilities) -> wgpu::TextureFormat {
+fn create_surface_format(surface_caps: &wgpu::SurfaceCapabilities) -> wgpu::TextureFormat {
     surface_caps
         .formats
         .iter()
@@ -255,7 +267,7 @@ pub fn create_surface_format(surface_caps: &wgpu::SurfaceCapabilities) -> wgpu::
         .unwrap_or(surface_caps.formats[0])
 }
 
-pub fn create_config(
+fn create_config(
     surface_format: &wgpu::TextureFormat,
     size: PhysicalSize<u32>,
     surface_caps: &wgpu::SurfaceCapabilities,
@@ -273,17 +285,13 @@ pub fn create_config(
 
 pub fn create_render_pipeline_layout(
     device: &wgpu::Device,
-    texture_bind_group_layout: &wgpu::BindGroupLayout,
-    camera_bind_group_layout: &wgpu::BindGroupLayout,
-    window_bind_group_layout: &wgpu::BindGroupLayout,
+    tex_layout: &wgpu::BindGroupLayout,
+    cam_layout: &wgpu::BindGroupLayout,
+    window_layout: &wgpu::BindGroupLayout,
 ) -> wgpu::PipelineLayout {
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("Render Pipeline Layout"),
-        bind_group_layouts: &[
-            texture_bind_group_layout,
-            camera_bind_group_layout,
-            window_bind_group_layout,
-        ],
+        bind_group_layouts: &[tex_layout, cam_layout, window_layout],
         push_constant_ranges: &[],
     })
 }
@@ -365,13 +373,8 @@ pub struct AllFields {
     pub time: TimeManager,
 
     pub target_fps: Option<u32>,
-    pub target_tps: Option<u32>,
 
-    pub platform: Platform,
-    pub egui_rpass: egui_wgpu_backend::RenderPass,
-    pub game_ui: Option<crate::prelude::GoodManUI>,
-
-    pub engine_ui_enabled: bool,
+    pub ui: Ui,
 
     pub sound: Sound,
 }
