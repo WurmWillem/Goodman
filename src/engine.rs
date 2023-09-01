@@ -5,9 +5,10 @@ use crate::{
     camera::Camera,
     input::Input,
     math::Rect,
-    minor_types::{DrawParams, Manager, Sound, TimeManager},
+    minor_types::{DrawParams, Manager, Sound},
     prelude::Vec2,
     texture::Texture,
+    time::TimeManager,
     ui::Ui,
     vert_buffers::{self, Instance},
 };

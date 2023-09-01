@@ -27,7 +27,7 @@ macro_rules! CreateInputStruct {
         }
 
         impl Input {
-            pub fn new() -> Self {
+            pub(crate) fn new() -> Self {
                 Self {
                     cursor_pos: vec2(0., 0.),
                     $($field_name: Button::new(),)*
@@ -40,7 +40,7 @@ CreateInputStruct!(left_mouse right_mouse right_arrow left_arrow up_arrow down_a
     zero one two three four five six seven eight nine a b c d e f g h i j k l m n o p q r s t u v w x y z);
 
 impl Input {
-    pub fn process_events(&mut self, event: &WindowEvent) -> bool {
+    pub(crate) fn process_events(&mut self, event: &WindowEvent) -> bool {
         match event {
             WindowEvent::KeyboardInput {
                 input:
@@ -90,7 +90,7 @@ impl Input {
             _ => false,
         }
     }
-    pub fn reset_buttons(&mut self) {
+    pub(crate) fn reset_buttons(&mut self) {
         macro_rules! reset_buttons {
             ($($field_name: ident)*) => {
                 $(self.$field_name.pressed = false;)*

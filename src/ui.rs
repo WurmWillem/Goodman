@@ -1,4 +1,4 @@
-use crate::{minor_types::TimeManager, prelude::Vec2};
+use crate::{prelude::Vec2, time::TimeManager};
 use cgmath::vec2;
 use egui::ClippedPrimitive;
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};

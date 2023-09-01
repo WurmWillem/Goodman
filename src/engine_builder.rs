@@ -7,9 +7,10 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::minor_types::{Sound, TimeManager, WindowUniform};
+use crate::minor_types::{Sound, WindowUniform};
 use crate::prelude::Vec2;
 use crate::texture::{self};
+use crate::time::TimeManager;
 use crate::ui::Ui;
 use crate::vert_buffers::{Instance, Vertex};
 
@@ -107,7 +108,8 @@ impl EngineBuilder {
         let fps = self.target_fps.unwrap_or(144); // Doesn't matter because if target_fps is None and target_tps is None than use_target_tps is false
         let target_tps = self.target_tps.unwrap_or(fps);
 
-        let time = TimeManager::new(self.reset_rate, target_tps, self.target_tps.is_some());
+        let time =
+            crate::time::TimeManager::new(self.reset_rate, target_tps, self.target_tps.is_some());
 
         let tex_bind_layout = texture::create_bind_group_layout(&device, 0);
         let camera = Camera::new(true);
