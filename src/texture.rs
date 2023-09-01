@@ -3,10 +3,11 @@ use image::GenericImageView;
 use wgpu::Device;
 
 pub struct Texture {
-    pub texture: wgpu::Texture,
-    pub view: wgpu::TextureView,
-    pub sampler: wgpu::Sampler,
-    pub index: u32,
+    #[allow(dead_code)]
+    texture: wgpu::Texture,
+    pub(crate) view: wgpu::TextureView,
+    pub(crate) sampler: wgpu::Sampler,
+    pub(crate) index: u32,
 }
 impl Texture {
     pub fn from_bytes(
