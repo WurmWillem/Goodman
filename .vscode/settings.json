@@ -1,5 +1,3 @@
 {
     "rust-analyzer.showUnlinkedFileNotification": false,
-    "editor.autoIndent": "keep",
-    "editor.wrappingIndent": "same",
 }
