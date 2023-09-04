@@ -1,15 +1,15 @@
-use egui_wgpu_backend::ScreenDescriptor;
 use wgpu::{BindGroup, Buffer};
 use winit::{event::Event, event_loop::EventLoop, window::Window};
 
 use crate::{
     camera::Camera,
     input::Input,
-    math::Rect,
-    minor_types::{DrawParams, Manager, Sound, TimeManager, Ui},
-    prelude::Vec2,
+    math::{Rect32, Vec32},
+    minor_types::{DrawParams, Manager, Sound},
     texture::Texture,
-    vert_buffers::{self, Instance},
+    time::TimeManager,
+    ui::Ui,
+    vert_buffers::{self, Instance, TexCoords},
 };
 
 #[allow(unused_imports)]
@@ -25,7 +25,7 @@ pub struct Engine {
 
     window: Window,
     win_size: winit::dpi::PhysicalSize<u32>,
-    inv_win_size: Vec2,
+    inv_win_size: Vec32,
     win_background_color: wgpu::Color,
     win_bind_group: BindGroup,
 
@@ -37,8 +37,10 @@ pub struct Engine {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
+    tex_coords_buffer: Buffer,
 
     instances: Vec<Instance>,
+    tex_coords: Vec<TexCoords>,
     instances_rendered: usize,
     instance_buffer: Buffer,
 
@@ -134,7 +136,8 @@ impl Engine {
         render_pass.set_bind_group(2, &self.win_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+        render_pass.set_vertex_buffer(1, self.tex_coords_buffer.slice(..));
+        render_pass.set_vertex_buffer(2, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         if let Some(tex_bind) = &self.tex_bind {
@@ -152,34 +155,11 @@ impl Engine {
                 self.target_fps,
                 self.instances_rendered,
             );
-            self.ui.render_game_ui();
+            self.ui.render_game();
 
-            let full_output = self.ui.platform.end_frame(Some(&self.window));
-            let paint_jobs = self.ui.platform.context().tessellate(full_output.shapes);
-
-            // Upload all resources for the GPU.
-            let screen_descriptor = ScreenDescriptor {
-                physical_width: self.config.width,
-                physical_height: self.config.height,
-                scale_factor: self.window.scale_factor() as f32,
-            };
-            let tdelta: egui::TexturesDelta = full_output.textures_delta;
-            self.ui
-                .egui_rpass
-                .add_textures(&self.device, &self.queue, &tdelta)
-                .expect("add texture ok");
-
-            self.ui.egui_rpass.update_buffers(
-                &self.device,
-                &self.queue,
-                &paint_jobs,
-                &screen_descriptor,
-            );
-
-            self.ui
-                .egui_rpass
-                .remove_textures(tdelta)
-                .expect("remove texture ok");
+            let (paint_jobs, screen_descriptor) =
+                self.ui
+                    .update_egui_rpass(&self.window, &self.config, &self.device, &self.queue);
 
             self.ui
                 .egui_rpass
@@ -192,23 +172,30 @@ impl Engine {
         output.present();
 
         self.instances = Vec::with_capacity(self.instances_rendered);
+        self.tex_coords = Vec::with_capacity(self.instances_rendered * 4);
         self.instances_rendered = 0;
         self.time.enable_prev_iter_was_render();
         Ok(())
     }
 
-    pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
-        self.render_tex(rect, texture, 0.);
+    pub fn render_texture(&mut self, rect: Rect32, texture: &Texture) {
+        self.render_tex(rect, texture, 0., TexCoords::default());
     }
-    pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
-        self.render_tex(rect, texture, draw_params.rotation);
+    pub fn render_texture_ex(&mut self, rect: Rect32, texture: &Texture, draw_params: DrawParams) {
+        let tex_coords = match draw_params.source {
+            Some(rect) => TexCoords::from_rect_tex(rect, texture),
+            None => TexCoords::default(),
+        };
+        self.render_tex(rect, texture, draw_params.rotation, tex_coords);
     }
-    fn render_tex(&mut self, rect: &Rect, texture: &Texture, rotation: f64) {
+    fn render_tex(&mut self, rect: Rect32, tex: &Texture, rotation: f32, tex_coords: TexCoords) {
         let width = rect.w * self.inv_win_size.x;
         let height = rect.h * self.inv_win_size.y;
-        let inst = Instance::new(rect.x, rect.y, width, height, rotation, texture.index);
+        let inst = Instance::new(rect.x, rect.y, width, height, rotation, tex.index);
 
         self.instances.push(inst);
+        self.tex_coords.push(tex_coords);
+
         self.instances_rendered += 1;
     }
 
@@ -220,7 +207,18 @@ impl Engine {
                 bytemuck::cast_slice(&self.instances),
             );
         } else {
-            self.instance_buffer = vert_buffers::create_buffer(&self.device, &self.instances);
+            self.instance_buffer = vert_buffers::create_inst_buffer(&self.device, &self.instances);
+        }
+
+        if self.tex_coords_buffer.size() == self.tex_coords.len() as u64 * 32 {
+            self.queue.write_buffer(
+                &self.tex_coords_buffer,
+                0,
+                bytemuck::cast_slice(&self.tex_coords),
+            );
+        } else {
+            self.tex_coords_buffer =
+                vert_buffers::create_tex_coords_buffer(&self.device, &self.tex_coords);
         }
     }
 }

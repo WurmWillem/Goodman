@@ -6,5 +6,6 @@ mod math;
 mod minor_types;
 pub mod prelude;
 mod texture;
+mod time;
 mod ui;
 mod vert_buffers;

@@ -1,6 +1,51 @@
 use cgmath::{vec3, Deg, Matrix4};
 use wgpu::{util::DeviceExt, Device};
 
+use crate::prelude::Texture;
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct TexCoords {
+    pub coords: [[f32; 2]; 4],
+}
+impl TexCoords {
+    pub fn default() -> Self {
+        Self {
+            coords: ([[0., 1.], [1., 1.], [1., 0.], [0., 0.]]),
+        }
+    }
+
+    pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+        use std::mem::size_of;
+        wgpu::VertexBufferLayout {
+            array_stride: size_of::<TexCoords>() as u64,
+            step_mode: wgpu::VertexStepMode::Instance,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: size_of::<[f32; 2]>() as u64,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: size_of::<[f32; 4]>() as u64,
+                    shader_location: 3,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: size_of::<[f32; 6]>() as u64,
+                    shader_location: 4,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+            ],
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Instance {
@@ -8,14 +53,14 @@ pub struct Instance {
     index: u32,
 }
 impl Instance {
-    pub fn new(x: f64, y: f64, width: f64, height: f64, rotation: f64, index: u32) -> Self {
+    pub fn new(x: f32, y: f32, width: f32, height: f32, rotation: f32, index: u32) -> Self {
         let mat4 = Matrix4::from_translation(vec3(x, y, 0.))
             * Matrix4::from_angle_z(Deg(rotation))
             * Matrix4::from_nonuniform_scale(width, height, 1.);
 
-        let x = [mat4.x.x as f32, mat4.x.y as f32];
-        let y = [mat4.y.x as f32, mat4.y.y as f32];
-        let w = [mat4.w.x as f32, mat4.w.y as f32];
+        let x = [mat4.x.x, mat4.x.y];
+        let y = [mat4.y.x, mat4.y.y];
+        let w = [mat4.w.x, mat4.w.y];
 
         Self {
             model: [x, y, w],
@@ -53,13 +98,12 @@ impl Instance {
     }
 }
 
-const VERTEX_SCALE: f32 = 1.;
 #[rustfmt::skip]
 pub const VERTICES: &[Vertex] = &[
-    Vertex { position: [0. * VERTEX_SCALE, -2. * VERTEX_SCALE], tex_coords: [0.0, 1.0], },
-    Vertex { position: [2. * VERTEX_SCALE, -2. * VERTEX_SCALE], tex_coords: [1.0, 1.0], },
-    Vertex { position: [2. * VERTEX_SCALE, 0. * VERTEX_SCALE], tex_coords: [1.0, 0.0], },
-    Vertex { position: [0. * VERTEX_SCALE, 0. * VERTEX_SCALE], tex_coords: [0.0, 0.0], },
+    Vertex { position: [0., -2.]},
+    Vertex { position: [2., -2.]},
+    Vertex { position: [2., 0.]},
+    Vertex { position: [0., 0.]},
 ];
 
 #[rustfmt::skip]
@@ -71,25 +115,35 @@ pub const INDICES: &[u16] = &[
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
     position: [f32; 2],
-    tex_coords: [f32; 2],
 }
 impl Vertex {
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-            ],
+            attributes: &[wgpu::VertexAttribute {
+                offset: 0,
+                shader_location: 0,
+                format: wgpu::VertexFormat::Float32x2,
+            }],
+        }
+    }
+}
+
+impl TexCoords {
+    pub fn from_rect_tex(mut r: crate::math::Rect32, tex: &Texture) -> TexCoords {
+        r.x *= tex.get_inv_width();
+        r.w *= tex.get_inv_width();
+        r.y *= tex.get_inv_height();
+        r.h *= tex.get_inv_height();
+
+        let b = r.y + r.h;
+        let c = r.x + r.w;
+        let d = r.y + r.h;
+        let e = r.x + r.w;
+
+        TexCoords {
+            coords: [[r.x, b], [c, d], [e, r.y], [r.x, r.y]],
         }
     }
 }
@@ -106,11 +160,18 @@ pub fn create_buffers(device: &wgpu::Device) -> (wgpu::Buffer, wgpu::Buffer) {
         contents: bytemuck::cast_slice(INDICES),
         usage: wgpu::BufferUsages::INDEX,
     });
-
     (vertex_buffer, index_buffer)
 }
 
-pub fn create_buffer(device: &Device, instance_data: &[Instance]) -> wgpu::Buffer {
+pub fn create_tex_coords_buffer(device: &Device, tex_coords_data: &[TexCoords]) -> wgpu::Buffer {
+    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Texture Coordinates Buffer"),
+        contents: bytemuck::cast_slice(tex_coords_data),
+        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+    })
+}
+
+pub fn create_inst_buffer(device: &Device, instance_data: &[Instance]) -> wgpu::Buffer {
     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Instance Buffer"),
         contents: bytemuck::cast_slice(instance_data),

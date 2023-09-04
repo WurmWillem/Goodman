@@ -1,3 +1,4 @@
+use cgmath::vec2;
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
 use wgpu::Color;
@@ -7,13 +8,15 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::minor_types::{Sound, TimeManager, Ui, WindowUniform};
-use crate::prelude::Vec2;
+use crate::minor_types::{Sound, WindowUniform};
+use crate::prelude::Vec32;
 use crate::texture::{self};
-use crate::vert_buffers::{Instance, Vertex};
+use crate::time::TimeManager;
+use crate::ui::Ui;
+use crate::vert_buffers::{Instance, TexCoords, Vertex};
 
 pub struct EngineBuilder {
-    win_size: Vec2,
+    win_size: Vec32,
     win_background_color: Color,
     win_resizable: bool,
 
@@ -24,7 +27,7 @@ pub struct EngineBuilder {
     target_tps: Option<u32>,
 }
 impl EngineBuilder {
-    pub fn new(win_size: Vec2) -> Self {
+    pub fn new(win_size: Vec32) -> Self {
         Self {
             win_size,
             win_background_color: Color::BLACK,
@@ -106,10 +109,11 @@ impl EngineBuilder {
         let fps = self.target_fps.unwrap_or(144); // Doesn't matter because if target_fps is None and target_tps is None than use_target_tps is false
         let target_tps = self.target_tps.unwrap_or(fps);
 
-        let time = TimeManager::new(self.reset_rate, target_tps, self.target_tps.is_some());
+        let time =
+            crate::time::TimeManager::new(self.reset_rate, target_tps, self.target_tps.is_some());
 
         let tex_bind_layout = texture::create_bind_group_layout(&device, 0);
-        let camera = Camera::new(true);
+        let camera = Camera::new(false);
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
         let camera_bind_group_layout = camera::create_bind_group_layout(&device);
         let camera_bind_group =
@@ -134,7 +138,7 @@ impl EngineBuilder {
         });
 
         let instances = vec![];
-        let instance_buffer = super::vert_buffers::create_buffer(&device, &instances);
+        let instance_buffer = super::vert_buffers::create_inst_buffer(&device, &instances);
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
         let render_pipeline_layout = create_render_pipeline_layout(
@@ -147,6 +151,8 @@ impl EngineBuilder {
             create_render_pipeline(&device, &render_pipeline_layout, &shader, &config);
 
         let (vertex_buffer, index_buffer) = super::vert_buffers::create_buffers(&device);
+        let tex_coords_buffer =
+            super::vert_buffers::create_tex_coords_buffer(&device, &[TexCoords::default()]);
 
         // We use the egui_winit_platform crate as the platform.
         let platform = Platform::new(PlatformDescriptor {
@@ -162,7 +168,7 @@ impl EngineBuilder {
 
         let ui = Ui::new(platform, egui_rpass, self.show_engine_ui);
 
-        let inv_win_size = Vec2::new(1. / win_size.width as f64, 1. / win_size.height as f64);
+        let inv_win_size = vec2(1. / win_size.width as f32, 1. / win_size.height as f32);
 
         let all_fields = AllFields {
             input: crate::prelude::Input::new(),
@@ -176,10 +182,12 @@ impl EngineBuilder {
             device,
             queue,
             config,
+            tex_coords: vec![],
 
             render_pipeline,
             vertex_buffer,
             index_buffer,
+            tex_coords_buffer,
 
             camera,
             camera_bind_group,
@@ -308,7 +316,7 @@ pub fn create_render_pipeline(
         vertex: wgpu::VertexState {
             module: shader,
             entry_point: "vs_main",
-            buffers: &[Vertex::desc(), Instance::desc()],
+            buffers: &[Vertex::desc(), TexCoords::desc(), Instance::desc()],
         },
         fragment: Some(wgpu::FragmentState {
             module: shader,
@@ -346,7 +354,7 @@ pub struct AllFields {
 
     pub window: winit::window::Window,
     pub win_size: winit::dpi::PhysicalSize<u32>,
-    pub inv_win_size: Vec2,
+    pub inv_win_size: Vec32,
     pub win_background_color: wgpu::Color,
     pub win_bind_group: wgpu::BindGroup,
 
@@ -360,7 +368,9 @@ pub struct AllFields {
     pub index_buffer: wgpu::Buffer,
     pub instance_buffer: wgpu::Buffer,
     pub camera_buffer: wgpu::Buffer,
+    pub tex_coords_buffer: wgpu::Buffer,
 
+    pub tex_coords: Vec<TexCoords>,
     pub instances: Vec<Instance>,
     pub instances_rendered: usize,
 

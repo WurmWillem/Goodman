@@ -1,5 +1,5 @@
 fn main() {
-    pollster::block_on(run())
+    block_on(run())
 }
 
 use goodman::prelude::*;

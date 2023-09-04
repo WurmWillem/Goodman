@@ -1,4 +1,4 @@
-use crate::prelude::Vec2;
+use crate::prelude::Vec64;
 use cgmath::vec2;
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
@@ -22,12 +22,12 @@ impl Button {
 macro_rules! CreateInputStruct {
     ($($field_name: ident)*) => {
         pub struct Input {
-            cursor_pos: Vec2,
+            cursor_pos: Vec64,
             $($field_name: Button,)*
         }
 
         impl Input {
-            pub fn new() -> Self {
+            pub(crate) fn new() -> Self {
                 Self {
                     cursor_pos: vec2(0., 0.),
                     $($field_name: Button::new(),)*
@@ -36,11 +36,11 @@ macro_rules! CreateInputStruct {
         }
     };
 }
-CreateInputStruct!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow 
-    zero one two three four five six seven eight nine);
+CreateInputStruct!(left_mouse right_mouse right_arrow left_arrow up_arrow down_arrow 
+    zero one two three four five six seven eight nine a b c d e f g h i j k l m n o p q r s t u v w x y z);
 
 impl Input {
-    pub fn process_events(&mut self, event: &WindowEvent) -> bool {
+    pub(crate) fn process_events(&mut self, event: &WindowEvent) -> bool {
         match event {
             WindowEvent::KeyboardInput {
                 input:
@@ -65,8 +65,9 @@ impl Input {
                     };
                 }
 
-                set_button_to_is_pressed!(self, is_pressed, keycode, W,w A,a S,s D,d Right,right_arrow Left,left_arrow Down,down_arrow Up,up_arrow
-                    Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine)
+                set_button_to_is_pressed!(self, is_pressed, keycode, Right,right_arrow Left,left_arrow Down,down_arrow Up,up_arrow
+                    Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine
+                    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z)
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 let is_pressed = *state == ElementState::Pressed;
@@ -89,14 +90,14 @@ impl Input {
             _ => false,
         }
     }
-    pub fn reset_buttons(&mut self) {
+    pub(crate) fn reset_buttons(&mut self) {
         macro_rules! reset_buttons {
             ($($field_name: ident)*) => {
                 $(self.$field_name.pressed = false;)*
             };
         }
         reset_buttons!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow
-            zero one two three four five six seven eight nine);
+            zero one two three four five six seven eight nine a b c d e f g h i j k l m n o p q r s t u v w x y z);
     }
 }
 
@@ -112,20 +113,18 @@ macro_rules! is_button_pressed_or_held {
     };
 }
 is_button_pressed_or_held!(is_button_pressed, pressed, 
-    LeftMouse,left_mouse RightMouse,right_mouse W,w A,a S,s D,d RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
-    Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine);
+    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
+    Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine
+    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z);
 
 is_button_pressed_or_held!(is_button_held, held,
-    LeftMouse,left_mouse RightMouse,right_mouse W,w A,a S,s D,d RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
-    Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine);
+    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
+    Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine
+    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z);
 
 pub enum ButtonEnum {
     LeftMouse,
     RightMouse,
-    W,
-    A,
-    S,
-    D,
     RightArrow,
     LeftArrow,
     UpArrow,
@@ -140,4 +139,30 @@ pub enum ButtonEnum {
     Seven,
     Eight,
     Nine,
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+    I,
+    J,
+    K,
+    L,
+    M,
+    N,
+    O,
+    P,
+    Q,
+    R,
+    S,
+    T,
+    U,
+    V,
+    W,
+    X,
+    Y,
+    Z,
 }

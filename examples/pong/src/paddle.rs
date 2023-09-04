@@ -3,16 +3,16 @@ use goodman::prelude::*;
 use crate::WINDOW_SIZE;
 
 const SPEED: f64 = 1000.;
-const SIZE: Vec2 = vec2(32., 192.);
+const SIZE: Vec64 = vec2(32., 192.);
 
 #[derive(Debug, Clone, Copy)]
 pub struct Paddle {
-    pub rect: Rect,
+    pub rect: Rect64,
 }
 impl Paddle {
     pub fn new(x: f64, y: f64) -> Self {
         Self {
-            rect: rect_vec(vec2(x, y), SIZE),
+            rect: rect64_vec(vec2(x, y), SIZE),
         }
     }
 
