@@ -18,9 +18,9 @@ fn main() {
 }
 
 async fn run() {
-    // The following two lines change the working directory, you should remove them
-    let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
-    std::env::set_current_dir(root).unwrap();
+    // The following two lines change the working directory, you should remove them if you are not running this project with the entire goodman project included
+    // let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
+    // std::env::set_current_dir(root).unwrap();
 
     let event_loop = EventLoop::new();
 
