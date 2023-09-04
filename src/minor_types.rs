@@ -13,6 +13,11 @@ pub struct DrawParams {
     pub rotation: f32,
     pub source: Option<Rect32>,
 }
+impl DrawParams {
+    pub fn from_source(source: Rect32) -> Self {
+        DrawParams { source: Some(source), ..Default::default() }
+    }
+}
 impl Default for DrawParams {
     fn default() -> Self {
         Self {

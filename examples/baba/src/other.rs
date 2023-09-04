@@ -1,3 +1,5 @@
+use goodman::prelude::{Rect32, rect32};
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Object {
     Empty,
@@ -7,20 +9,23 @@ pub enum Object {
     Property(Property),
 }
 impl Object {
-    pub fn get_tex_index(&self) -> usize {
-        match self {
-            Object::Empty => 0,
-            Object::Is => 1,
-            Object::Noun(Noun::Baba) => 2,
-            Object::Character(Character::Baba) => 3,
-            Object::Property(Property::You) => 4,
-            Object::Noun(Noun::Flag) => 5,
-            Object::Character(Character::Flag) => 6,
-            Object::Property(Property::Win) => 7,
-            Object::Noun(Noun::Wall) => 8,
-            Object::Character(Character::Wall) => 9,
-            Object::Property(Property::Stop) => 10,
-        }
+    pub fn get_tex_index(&self) -> Rect32 {
+        let index = match self {
+            Object::Empty => 11,
+            Object::Is => 6,
+            Object::Noun(Noun::Baba) => 0,
+            Object::Character(Character::Baba) => 1,
+            Object::Property(Property::You) => 7,
+            Object::Noun(Noun::Flag) => 2,
+            Object::Character(Character::Flag) => 4,
+            Object::Property(Property::Win) => 3,
+            Object::Noun(Noun::Wall) => 9,
+            Object::Character(Character::Wall) => 10,
+            Object::Property(Property::Stop) => 8,
+        };
+        let j: u32 = (index as f32 / 4.) as u32;
+        let i = index % 4;
+        rect32(i as f32 * 26., j as f32 * 26., 26., 26.)
     }
 }
 

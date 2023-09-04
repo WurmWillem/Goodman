@@ -19,8 +19,8 @@ fn main() {
 
 async fn run() {
     // The following two lines change the working directory, you should remove them if you are not running this project with the entire goodman project included
-    // let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
-    // std::env::set_current_dir(root).unwrap();
+    let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
+    std::env::set_current_dir(root).unwrap();
 
     let event_loop = EventLoop::new();
 
@@ -50,12 +50,20 @@ impl Manager for Game {
         // .play_sound(music_source.convert_samples().repeat_infinite())
         // .unwrap();
 
+        // println!("{}", 3 % 4);
+        let x = 9;
+        let j: u32 = (x as f32 / 4.) as u32;
+        let i = x % 4;
+        println!("{}", j);
+        println!("{}", i);
+
         let pop_file = BufReader::new(File::open("src/assets/pop.mp3").unwrap());
         let source = Decoder::new(pop_file).unwrap().buffered();
 
         let mut textures = vec![];
-        create_textures!(engine, textures, "assets/floor.png" "assets/is.png" "assets/baba.png" "assets/baba c.png" "assets/you.png"
-            "assets/flag.png" "assets/flag c.png" "assets/win.png" "assets/wall.png" "assets/wall c.png" "assets/stop.png");
+        /*create_textures!(engine, textures, "assets/floor.png" "assets/is.png" "assets/baba.png" "assets/baba c.png" "assets/you.png"
+            "assets/flag.png" "assets/flag c.png" "assets/win.png" "assets/wall.png" "assets/wall c.png" "assets/stop.png");*/
+        create_textures!(engine, textures, "assets/sheet.png");
 
         let mut grid = vec![vec![]];
         let current_level = Level::Level1;
@@ -184,11 +192,17 @@ impl Manager for Game {
         for j in 0..self.grid.len() {
             for i in 0..self.grid[0].len() {
                 let pos = vec2(i as f32 * size.x, j as f32 * size.y);
-                engine.render_texture(rect32_vec(pos, size), &self.textures[0]);
+
+                let source = rect32(26., 26., 26., 26.);
+                let draw_params = DrawParams::from_source(source);
+                engine.render_texture_ex(rect32_vec(pos, size * 1.1), &self.textures[0], draw_params);
+                // engine.render_texture(rect32_vec(pos, size), &self.textures[0]);
 
                 if self.grid[j][i] != Object::Empty {
-                    let index = self.grid[j][i].get_tex_index();
-                    engine.render_texture(rect32_vec(pos, size), &self.textures[index]);
+                    let source = self.grid[j][i].get_tex_index();
+                    let draw_params = DrawParams::from_source(source);
+                    engine.render_texture_ex(rect32_vec(pos, size), &self.textures[0], draw_params);
+                    // engine.render_texture(rect32_vec(pos, size), &self.textures[0]);
                 };
             }
         }
