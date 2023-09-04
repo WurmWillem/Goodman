@@ -10,7 +10,7 @@ use rodio::{Decoder, Source};
 use std::fs::File;
 use std::io::BufReader;
 
-pub const WINDOW_SIZE: Vec2 = vec2(1200., 750.); //1500x1000
+pub const WINDOW_SIZE: Vec32 = vec2(1200., 750.); //1500x1000
 const GRID_SIZE: (usize, usize) = (20, 14);
 
 fn main() {
@@ -18,9 +18,9 @@ fn main() {
 }
 
 async fn run() {
-    // The following two lines change the working directory, you should remove them
-    let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
-    std::env::set_current_dir(root).unwrap();
+    // The following two lines change the working directory, you should remove them if you are not running this project with the entire goodman project included
+    // let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
+    // std::env::set_current_dir(root).unwrap();
 
     let event_loop = EventLoop::new();
 
@@ -177,18 +177,18 @@ impl Manager for Game {
 
     fn render(&self, engine: &mut Engine) {
         let size = vec2(
-            WINDOW_SIZE.x / self.grid[0].len() as f64,
-            WINDOW_SIZE.y / self.grid.len() as f64,
+            WINDOW_SIZE.x / self.grid[0].len() as f32,
+            WINDOW_SIZE.y / self.grid.len() as f32,
         );
 
         for j in 0..self.grid.len() {
             for i in 0..self.grid[0].len() {
-                let pos = vec2(i as f64 * size.x, j as f64 * size.y);
-                engine.render_texture(&rect_vec(pos, size), &self.textures[0]);
+                let pos = vec2(i as f32 * size.x, j as f32 * size.y);
+                engine.render_texture(rect32_vec(pos, size), &self.textures[0]);
 
                 if self.grid[j][i] != Object::Empty {
                     let index = self.grid[j][i].get_tex_index();
-                    engine.render_texture(&rect_vec(pos, size), &self.textures[index]);
+                    engine.render_texture(rect32_vec(pos, size), &self.textures[index]);
                 };
             }
         }
