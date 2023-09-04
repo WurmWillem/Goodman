@@ -12,7 +12,7 @@ use crate::prelude::Vec2;
 use crate::texture::{self};
 use crate::time::TimeManager;
 use crate::ui::Ui;
-use crate::vert_buffers::{Instance, Vertex};
+use crate::vert_buffers::{Instance, TexCoords, Vertex, DEFAULT_TEX_COORDS};
 
 pub struct EngineBuilder {
     win_size: Vec2,
@@ -112,7 +112,7 @@ impl EngineBuilder {
             crate::time::TimeManager::new(self.reset_rate, target_tps, self.target_tps.is_some());
 
         let tex_bind_layout = texture::create_bind_group_layout(&device, 0);
-        let camera = Camera::new(true);
+        let camera = Camera::new(false);
         let camera_buffer = camera::create_buffer(&device, camera.uniform);
         let camera_bind_group_layout = camera::create_bind_group_layout(&device);
         let camera_bind_group =
@@ -137,7 +137,7 @@ impl EngineBuilder {
         });
 
         let instances = vec![];
-        let instance_buffer = super::vert_buffers::create_buffer(&device, &instances);
+        let instance_buffer = super::vert_buffers::create_inst_buffer(&device, &instances);
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
         let render_pipeline_layout = create_render_pipeline_layout(
@@ -150,6 +150,8 @@ impl EngineBuilder {
             create_render_pipeline(&device, &render_pipeline_layout, &shader, &config);
 
         let (vertex_buffer, index_buffer) = super::vert_buffers::create_buffers(&device);
+        let tex_coords_buffer =
+            super::vert_buffers::create_tex_coords_buffer(&device, &DEFAULT_TEX_COORDS);
 
         // We use the egui_winit_platform crate as the platform.
         let platform = Platform::new(PlatformDescriptor {
@@ -179,10 +181,12 @@ impl EngineBuilder {
             device,
             queue,
             config,
+            tex_coords: vec![],
 
             render_pipeline,
             vertex_buffer,
             index_buffer,
+            tex_coords_buffer,
 
             camera,
             camera_bind_group,
@@ -311,7 +315,7 @@ pub fn create_render_pipeline(
         vertex: wgpu::VertexState {
             module: shader,
             entry_point: "vs_main",
-            buffers: &[Vertex::desc(), Instance::desc()],
+            buffers: &[Vertex::desc(), TexCoords::desc(), Instance::desc()],
         },
         fragment: Some(wgpu::FragmentState {
             module: shader,
@@ -363,7 +367,9 @@ pub struct AllFields {
     pub index_buffer: wgpu::Buffer,
     pub instance_buffer: wgpu::Buffer,
     pub camera_buffer: wgpu::Buffer,
+    pub tex_coords_buffer: wgpu::Buffer,
 
+    pub tex_coords: Vec<TexCoords>,
     pub instances: Vec<Instance>,
     pub instances_rendered: usize,
 

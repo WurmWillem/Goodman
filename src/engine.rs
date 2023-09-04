@@ -10,7 +10,7 @@ use crate::{
     texture::Texture,
     time::TimeManager,
     ui::Ui,
-    vert_buffers::{self, Instance},
+    vert_buffers::{self, Instance, TexCoords, DEFAULT_TEX_COORDS},
 };
 
 #[allow(unused_imports)]
@@ -38,8 +38,10 @@ pub struct Engine {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
+    tex_coords_buffer: Buffer,
 
     instances: Vec<Instance>,
+    tex_coords: Vec<TexCoords>,
     instances_rendered: usize,
     instance_buffer: Buffer,
 
@@ -135,7 +137,8 @@ impl Engine {
         render_pass.set_bind_group(2, &self.win_bind_group, &[]);
 
         render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+        render_pass.set_vertex_buffer(1, self.tex_coords_buffer.slice(..));
+        render_pass.set_vertex_buffer(2, self.instance_buffer.slice(..));
         render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
 
         if let Some(tex_bind) = &self.tex_bind {
@@ -170,23 +173,72 @@ impl Engine {
         output.present();
 
         self.instances = Vec::with_capacity(self.instances_rendered);
+        self.tex_coords = Vec::with_capacity(self.instances_rendered * 4);
         self.instances_rendered = 0;
         self.time.enable_prev_iter_was_render();
         Ok(())
     }
 
     pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
-        self.render_tex(rect, texture, 0.);
+        self.render_tex(rect, texture, 0., DEFAULT_TEX_COORDS);
     }
     pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
-        self.render_tex(rect, texture, draw_params.rotation);
+        let tex_coords = match draw_params.source {
+            Some(rect) => {
+                let mut rect = rect.clone();
+                rect.x /= texture.texture.width() as f64;
+                rect.w /= texture.texture.width() as f64;
+                rect.y /= texture.texture.height() as f64;
+                rect.h /= texture.texture.height() as f64;
+
+                let a = rect.x;
+                let b = rect.y + rect.h;
+
+                let c = rect.x + rect.w;
+                let d = rect.y + rect.h;
+
+                let e = rect.x + rect.w;
+                let f = rect.y;
+
+                let g = rect.x;
+                let h = rect.y;
+
+                [
+                    TexCoords {
+                        coords: [a as f32, b as f32],
+                    }, //Make render only accept Rect32
+                    TexCoords {
+                        coords: [c as f32, d as f32],
+                    },
+                    TexCoords {
+                        coords: [e as f32, f as f32],
+                    },
+                    TexCoords {
+                        coords: [g as f32, h as f32],
+                    },
+                ]
+            }
+            None => DEFAULT_TEX_COORDS,
+        };
+        self.render_tex(rect, texture, draw_params.rotation, tex_coords);
     }
-    fn render_tex(&mut self, rect: &Rect, texture: &Texture, rotation: f64) {
+    fn render_tex(
+        &mut self,
+        rect: &Rect,
+        texture: &Texture,
+        rotation: f64,
+        tex_coords: [TexCoords; 4],
+    ) {
         let width = rect.w * self.inv_win_size.x;
         let height = rect.h * self.inv_win_size.y;
         let inst = Instance::new(rect.x, rect.y, width, height, rotation, texture.index);
 
         self.instances.push(inst);
+        self.tex_coords.push(tex_coords[0]);
+        self.tex_coords.push(tex_coords[1]);
+        self.tex_coords.push(tex_coords[2]);
+        self.tex_coords.push(tex_coords[3]);
+
         self.instances_rendered += 1;
     }
 
@@ -198,7 +250,23 @@ impl Engine {
                 bytemuck::cast_slice(&self.instances),
             );
         } else {
-            self.instance_buffer = vert_buffers::create_buffer(&self.device, &self.instances);
+            self.instance_buffer = vert_buffers::create_inst_buffer(&self.device, &self.instances);
+        }
+
+        // self.tex_coords.remove(0);
+        // self.tex_coords.remove(0);
+        // self.tex_coords.remove(0);
+        // self.tex_coords.remove(0);
+
+        if self.tex_coords_buffer.size() == self.tex_coords.len() as u64 * 8 {
+            self.queue.write_buffer(
+                &self.tex_coords_buffer,
+                0,
+                bytemuck::cast_slice(&self.tex_coords),
+            );
+        } else {
+            self.tex_coords_buffer =
+                vert_buffers::create_tex_coords_buffer(&self.device, &self.tex_coords);
         }
     }
 }

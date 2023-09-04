@@ -79,7 +79,7 @@ impl Engine {
         create_Engine_from_AllFields!(all_fields, input window win_bind_group win_size inv_win_size win_background_color
         surface device queue config render_pipeline vertex_buffer index_buffer camera camera_bind_group
         camera_buffer instance_buffer instances instances_rendered time tex_bind
-        texture_amt_created target_fps sound ui)
+        texture_amt_created target_fps sound ui tex_coords_buffer tex_coords)
     }
     pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
     where

@@ -4,7 +4,7 @@ use wgpu::Device;
 
 pub struct Texture {
     #[allow(dead_code)]
-    texture: wgpu::Texture,
+    pub(crate) texture: wgpu::Texture,
     pub(crate) view: wgpu::TextureView,
     pub(crate) sampler: wgpu::Sampler,
     pub(crate) index: u32,

@@ -1,3 +1,12 @@
+/*for i in 1..(self.tex_coords.len() + 1) {
+            println!("{:?}", self.tex_coords[i - 1].coords);
+            if i % 4 == 0 {
+                println!()
+            }
+        }
+        println!();
+        println!();*/
+
 /*// Change this to the location of the assets folder on your pc
         let path_to_assets_folder =
             "/home/wurmwillem/Programming/Goodman/examples/baba/src/assets/";

@@ -12,16 +12,19 @@ var<uniform> camera: CameraUniform;
 @group(2) @binding(0) 
 var<uniform> window_size: WindowSizeUniform;
 
-struct InstanceInput {
-    @location(5) vec2_0: vec2<f32>,
-    @location(6) vec2_1: vec2<f32>,
-    @location(7) vec2_2: vec2<f32>,
-    @location(8) index: u32,
-};
-
 struct VertexInput {
     @location(0) pos: vec2<f32>,
-    @location(1) tex_coords: vec2<f32>,
+};
+
+struct TexCoordsInput {
+    @location(1) coords: vec2<f32>,
+}
+
+struct InstanceInput {
+    @location(2) vec2_0: vec2<f32>,
+    @location(3) vec2_1: vec2<f32>,
+    @location(4) vec2_2: vec2<f32>,
+    @location(5) index: u32,
 };
 
 struct VertexOutput {
@@ -33,11 +36,12 @@ struct VertexOutput {
 @vertex
 fn vs_main(
     vertex: VertexInput,
+    tex_coords: TexCoordsInput,
     instance: InstanceInput,
 ) -> VertexOutput {
 
     var out: VertexOutput;
-    out.tex_coords = vertex.tex_coords;
+    out.tex_coords = tex_coords.coords;
     out.index = instance.index;
 
     var instance_mat = mat4x4<f32>(

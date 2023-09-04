@@ -1,4 +1,4 @@
-use crate::{engine::Engine, input::Input};
+use crate::{engine::Engine, input::Input, prelude::Rect};
 use rodio::{OutputStreamHandle, Source};
 
 pub type Vec2 = cgmath::Vector2<f64>;
@@ -12,10 +12,14 @@ pub trait Manager {
 #[derive(Debug, Clone, Copy)]
 pub struct DrawParams {
     pub rotation: f64,
+    pub source: Option<Rect>,
 }
 impl Default for DrawParams {
     fn default() -> Self {
-        Self { rotation: 0. }
+        Self {
+            rotation: 0.,
+            source: None,
+        }
     }
 }
 
