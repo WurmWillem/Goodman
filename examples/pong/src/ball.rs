@@ -1,13 +1,13 @@
 use goodman::prelude::*;
 
-use crate::{Paddle, WINDOW_SIZE};
+use crate::WINDOW_SIZE;
 
 const DIAMETER: f64 = 48.;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Ball {
-    pub pos: Vec2,
-    pub vel: Vec2,
+    pub pos: Vec64,
+    pub vel: Vec64,
 }
 impl Ball {
     pub fn new() -> Self {
@@ -58,7 +58,7 @@ impl Ball {
         }
     }*/
 
-    pub fn to_rect(self) -> Rect {
-        rect_vec(self.pos, vec2(DIAMETER, DIAMETER))
+    pub fn to_rect(self) -> Rect32 {
+        rect64_vec(self.pos, vec2(DIAMETER, DIAMETER)).into()
     }
 }

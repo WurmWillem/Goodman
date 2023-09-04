@@ -4,15 +4,14 @@ fn main() {
     block_on(run());
 }
 
-const WINDOW_SIZE: Vec2 = vec2(1200., 900.);
+const WINDOW_SIZE: Vec32 = vec2(1200., 900.);
 
 async fn run() {
     let event_loop = EventLoop::new();
-    let mut engine = EngineBuilder::new(WINDOW_SIZE).build(&event_loop).await;
-
-    // engine.set_target_fps(Some(144));
-    // engine.set_target_tps(Some(1000 * 1000));
-    // engine.enable_feature(Feature::EngineUi);
+    let mut engine = EngineBuilder::new(WINDOW_SIZE)
+        .show_engine_ui()
+        .build(&event_loop)
+        .await;
 
     let breakout = Breakout::new(&mut engine);
 
@@ -80,21 +79,21 @@ impl Manager for Breakout {
 
         self.blocks.iter().for_each(|row| {
             row.iter().for_each(|block| {
-                state.render_texture(&block.rect, &self.textures[2]);
+                state.render_texture(block.rect.into(), &self.textures[2]);
             })
         });
     }
 }
 
 struct Block {
-    rect: Rect,
+    rect: Rect64,
     // lives: usize,
 }
 impl Block {
-    const SIZE: Vec2 = vec2(12., 9.);
+    const SIZE: Vec64 = vec2(12., 9.);
     pub fn new(x: f64, y: f64) -> Self {
         Self {
-            rect: rect_vec(vec2(x, y), Self::SIZE),
+            rect: rect64_vec(vec2(x, y), Self::SIZE),
             // lives: 1,
         }
     }

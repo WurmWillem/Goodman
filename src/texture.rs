@@ -1,4 +1,5 @@
 use anyhow::*;
+use cgmath::vec2;
 use image::GenericImageView;
 use wgpu::Device;
 
@@ -8,8 +9,16 @@ pub struct Texture {
     pub(crate) view: wgpu::TextureView,
     pub(crate) sampler: wgpu::Sampler,
     pub(crate) index: u32,
+    inv_size: cgmath::Vector2<f32>,
 }
 impl Texture {
+    pub(crate) fn get_inv_width(&self) -> f32 {
+        self.inv_size.x
+    }
+    pub(crate) fn get_inv_height(&self) -> f32 {
+        self.inv_size.y
+    }
+
     pub fn from_bytes(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -30,7 +39,7 @@ impl Texture {
         Ok(Self::from_image(device, queue, &img, index, Some(label)))
     }
 
-    pub fn from_image(
+    pub(crate) fn from_image(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         img: &image::DynamicImage,
@@ -83,11 +92,14 @@ impl Texture {
             ..Default::default()
         });
 
+        let inv_size = vec2(1. / texture.width() as f32, 1. / texture.height() as f32);
+
         Self {
             texture,
             view,
             sampler,
             index,
+            inv_size,
         }
     }
 }

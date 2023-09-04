@@ -1,4 +1,4 @@
-use crate::{prelude::Vec2, time::TimeManager};
+use crate::{prelude::Vec64, time::TimeManager};
 use cgmath::vec2;
 use egui::ClippedPrimitive;
 use egui_wgpu_backend::{RenderPass, ScreenDescriptor};
@@ -9,7 +9,7 @@ use winit::{dpi::PhysicalSize, window::Window};
 pub struct Ui {
     pub platform: Platform,
     pub egui_rpass: egui_wgpu_backend::RenderPass,
-    tps_graph: Vec<Vec2>,
+    tps_graph: Vec<Vec64>,
     game_ui: Option<GoodManUi>,
     show_engine_ui: bool,
 }

@@ -5,7 +5,7 @@ use ball::Ball;
 mod paddle;
 use paddle::Paddle;
 
-pub const WINDOW_SIZE: Vec2 = vec2(1200., 800.);
+pub const WINDOW_SIZE: Vec64 = vec2(1200., 800.);
 
 fn main() {
     block_on(run());
@@ -14,7 +14,8 @@ fn main() {
 async fn run() {
     let event_loop = EventLoop::new();
 
-    let mut engine = EngineBuilder::new(WINDOW_SIZE)
+    let window_size = vec2(WINDOW_SIZE.x as f32, WINDOW_SIZE.y as f32);
+    let mut engine = EngineBuilder::new(window_size)
         .show_engine_ui()
         .set_target_fps(144)
         // .set_target_tps(100 * 1000)
@@ -74,15 +75,15 @@ impl Manager for Pong {
         ui.add_label(format!("ball position: {} {}", self.ball.pos.x as u32, self.ball.pos.y as u32));
         engine.set_game_ui(ui);*/
         let you = DrawParams {
-            source: Some(rect(24., 0., 24., 24.)),
+            source: Some(rect32(24., 0., 24., 24.)),
             ..Default::default()
         };
         let win = DrawParams {
-            source: Some(rect(0., 0., 24., 24.)),
+            source: Some(rect32(0., 0., 24., 24.)),
             ..Default::default()
         };
-        engine.render_texture_ex(&self.ball.to_rect(), &self.textures[3], win);
-        engine.render_texture_ex(&self.right_paddle.rect, &self.textures[3], you);
+        engine.render_texture_ex(self.ball.to_rect(), &self.textures[3], win);
+        engine.render_texture_ex(self.right_paddle.rect.into(), &self.textures[3], you);
 
         /*engine.render_texture(&self.left_paddle.rect, &self.textures[0]);
         engine.render_texture(&self.right_paddle.rect, &self.textures[1]);

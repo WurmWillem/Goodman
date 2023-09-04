@@ -1,116 +1,130 @@
-use crate::minor_types::Vec2;
 use cgmath::vec2;
-use std::ops::{Add, Div, DivAssign, Mul, Sub};
+use std::ops::{Div, DivAssign, Mul, MulAssign};
 
-#[derive(Debug, Clone, Copy)]
-pub struct Rect {
-    pub x: f64,
-    pub y: f64,
-    pub w: f64,
-    pub h: f64,
-}
-impl Rect {
-    pub fn new(pos: Vec2, size: Vec2) -> Self {
-        Self {
-            x: pos.x,
-            y: pos.y,
-            w: size.x,
-            h: size.y,
-        }
-    }
+pub type Vec64 = cgmath::Vector2<f64>;
+pub type Vec32 = cgmath::Vector2<f32>;
 
-    /// Returns the center position of the `Rect`.
-    pub fn center(&self) -> Vec2 {
-        vec2(self.x + self.w * 0.5, self.y + self.h * 0.5)
-    }
-
-    /// Returns an intersection rect if any
-    pub fn intersect(&self, other: Rect) -> Option<Rect> {
-        let left = self.x.max(other.x);
-        let top = self.y.max(other.y);
-        let right = (self.x + self.w).min(other.x + other.w);
-        let bottom = (self.y + self.h).min(other.y + other.h);
-
-        if right < left || bottom < top {
-            return None;
+macro_rules! create_rect {
+    ($r: ident, $vec: ty, $f: ty, $func: ident) => {
+        #[derive(Debug, Copy, Clone)]    
+        pub struct $r {
+            pub x: $f,
+            pub y: $f,
+            pub w: $f,
+            pub h: $f,
         }
 
-        Some(Rect {
-            x: left,
-            y: top,
-            w: right - left,
-            h: bottom - top,
-        })
-    }
+        impl $r {
+            pub fn new(pos: $vec, size: $vec) -> Self {
+                Self {
+                    x: pos.x,
+                    y: pos.y,
+                    w: size.x,
+                    h: size.y,
+                }
+            }
+            /// Returns the center position of the `Rect`.
+            pub fn center(&self) -> $vec {
+                vec2(self.x + self.w * 0.5, self.y + self.h * 0.5)
+            }
+            /// Returns an intersection rect if any
+            pub fn intersect(&self, other: $r) -> Option<$r> {
+                let left = self.x.max(other.x);
+                let top = self.y.max(other.y);
+                let right = (self.x + self.w).min(other.x + other.w);
+                let bottom = (self.y + self.h).min(other.y + other.h);
 
-    pub fn xy(&self) -> Vec2 {
-        vec2(self.x, self.y)
-    }
-    pub fn wh(&self) -> Vec2 {
-        vec2(self.w, self.h)
-    }
-    pub fn xy_add(&mut self, var: Vec2) {
-        self.x += var.x;
-        self.y += var.y;
+                if right < left || bottom < top {
+                    return None;
+                }
+
+                Some($r {
+                    x: left,
+                    y: top,
+                    w: right - left,
+                    h: bottom - top,
+                })
+            }
+            pub fn xy(&self) -> $vec {
+                vec2(self.x, self.y)
+            }
+            pub fn wh(&self) -> $vec {
+                vec2(self.w, self.h)
+            }
+            pub fn xy_add(&mut self, var: $vec) {
+                self.x += var.x;
+                self.y += var.y;
+            }
+        }
+        impl Div<$f> for $r {
+            #[inline]
+            fn div(self, rhs: $f) -> $r {
+               $func(self.x / rhs, self.y / rhs, self.w / rhs, self.h / rhs)    
+            }
+            type Output = $r;
+        }
+        impl DivAssign<$f> for $r {
+            #[inline]
+            fn div_assign(&mut self, rhs: $f) {
+                self.x.div_assign(rhs);
+                self.y.div_assign(rhs);
+                self.w.div_assign(rhs);
+                self.h.div_assign(rhs);
+            }
+        }
+        impl Mul<$f> for $r {
+            #[inline]
+            fn mul(self, rhs: $f) -> $r {
+                $func(self.x * rhs, self.y * rhs, self.w * rhs, self.h * rhs)
+            }
+            type Output = $r;
+        }
+        impl MulAssign<$f> for $r {
+            #[inline]
+            fn mul_assign(&mut self, rhs: $f) {
+                self.x.mul_assign(rhs);
+                self.y.mul_assign(rhs);
+                self.w.mul_assign(rhs);
+                self.h.mul_assign(rhs);
+            }
+        }       
+    };
+}
+
+create_rect!(Rect64, Vec64, f64, rect64);
+create_rect!(Rect32, Vec32, f32, rect32);
+
+#[inline]
+pub fn rect64(x: f64, y: f64, w: f64, h: f64) -> Rect64 {
+    Rect64 { x, y, w, h }
+}
+#[inline]
+pub fn rect64_vec(pos: Vec64, size: Vec64) -> Rect64 {
+    Rect64 {
+        x: pos.x,
+        y: pos.y,
+        w: size.x,
+        h: size.y,
     }
 }
-impl Div<f64> for Rect {
-    #[inline]
-    fn div(self, rhs: f64) -> Rect {
-        rect_vec(
-            vec2(self.x / rhs, self.y / rhs),
-            vec2(self.w / rhs, self.h / rhs),
-        )
-    }
-    type Output = Rect;
-}
-impl DivAssign<f64> for Rect {
-    #[inline]
-    fn div_assign(&mut self, rhs: f64) {
-        self.x.div_assign(rhs);
-        self.y.div_assign(rhs);
-        self.w.div_assign(rhs);
-        self.h.div_assign(rhs);
+impl Into<Rect32> for Rect64 {
+    fn into(self) -> Rect32 {
+        rect32(self.x as f32, self.y as f32, self.w as f32, self.h as f32)
     }
 }
-impl Mul<f64> for Rect {
-    #[inline]
-    fn mul(self, rhs: f64) -> Rect {
-        rect_vec(
-            vec2(self.x * rhs, self.y * rhs),
-            vec2(self.w * rhs, self.h * rhs),
-        )
+impl From<Rect32> for Rect64 {
+    fn from(r: Rect32) -> Self {
+        rect64(r.x as f64, r.h as f64, r.w as f64, r.h as f64)
     }
-    type Output = Rect;
-}
-impl Sub<f64> for Rect {
-    #[inline]
-    fn sub(self, rhs: f64) -> Rect {
-        rect_vec(
-            vec2(self.x - rhs, self.y - rhs),
-            vec2(self.w - rhs, self.h - rhs),
-        )
-    }
-    type Output = Rect;
-}
-impl Add<f64> for Rect {
-    #[inline]
-    fn add(self, rhs: f64) -> Rect {
-        rect_vec(
-            vec2(self.x + rhs, self.y + rhs),
-            vec2(self.w + rhs, self.h + rhs),
-        )
-    }
-    type Output = Rect;
 }
 
 #[inline]
-pub fn rect(x: f64, y: f64, w: f64, h: f64) -> Rect {
-    Rect { x, y, w, h }
+pub fn rect32(x: f32, y: f32, w: f32, h: f32) -> Rect32 {
+    Rect32 { x, y, w, h }
 }
 #[inline]
-pub fn rect_vec(pos: Vec2, size: Vec2) -> Rect {
-    Rect {
+pub fn rect32_vec(pos: Vec32, size: Vec32) -> Rect32 {
+    Rect32 {
         x: pos.x,
         y: pos.y,
         w: size.x,

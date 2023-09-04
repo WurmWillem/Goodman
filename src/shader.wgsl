@@ -45,7 +45,6 @@ fn vs_main(
 
     var out: VertexOutput;
     out.index = instance.index;
-    // out.tex_coords = tex_coords.vec2_0;
 
     if vertex.pos.x == 0. && vertex.pos.y == -2. {
         out.tex_coords = tex_coords.vec2_0;
@@ -56,16 +55,6 @@ fn vs_main(
     } else if vertex.pos.x == 0. && vertex.pos.y == 0. {
         out.tex_coords = tex_coords.vec2_3;
     } 
-    /*
-    if vertex.pos == vec2<f32>(0., -2.) {
-        out.tex_coords = tex_coords.vec2_0;
-    } else if vertex.pos == vec2<f32>(2., -2.) {
-        out.tex_coords = tex_coords.vec2_1;
-    } else if vertex.pos == vec2<f32>(2., 0.) {
-        out.tex_coords = tex_coords.vec2_2;
-    } else if vertex.pos == vec2<f32>(0., 0.) {
-        out.tex_coords = tex_coords.vec2_3;
-    }*/
 
     var instance_mat = mat4x4<f32>(
         vec4<f32>(instance.vec2_0.x, instance.vec2_0.y, 0., 0.),

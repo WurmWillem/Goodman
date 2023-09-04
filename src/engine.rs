@@ -4,9 +4,8 @@ use winit::{event::Event, event_loop::EventLoop, window::Window};
 use crate::{
     camera::Camera,
     input::Input,
-    math::Rect,
+    math::{Rect32, Vec32},
     minor_types::{DrawParams, Manager, Sound},
-    prelude::Vec2,
     texture::Texture,
     time::TimeManager,
     ui::Ui,
@@ -26,7 +25,7 @@ pub struct Engine {
 
     window: Window,
     win_size: winit::dpi::PhysicalSize<u32>,
-    inv_win_size: Vec2,
+    inv_win_size: Vec32,
     win_background_color: wgpu::Color,
     win_bind_group: BindGroup,
 
@@ -179,69 +178,20 @@ impl Engine {
         Ok(())
     }
 
-    pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
+    pub fn render_texture(&mut self, rect: Rect32, texture: &Texture) {
         self.render_tex(rect, texture, 0., TexCoords::default());
     }
-    pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
+    pub fn render_texture_ex(&mut self, rect: Rect32, texture: &Texture, draw_params: DrawParams) {
         let tex_coords = match draw_params.source {
-            Some(rect) => {
-                let mut rect = rect.clone();
-                rect.x /= texture.texture.width() as f64;
-                rect.w /= texture.texture.width() as f64;
-                rect.y /= texture.texture.height() as f64;
-                rect.h /= texture.texture.height() as f64;
-
-                let a = rect.x;
-                let b = rect.y + rect.h;
-
-                let c = rect.x + rect.w;
-                let d = rect.y + rect.h;
-
-                let e = rect.x + rect.w;
-                let f = rect.y;
-
-                let g = rect.x;
-                let h = rect.y;
-
-                TexCoords {
-                    coords: 
-                    [
-                        [a as f32, b as f32],
-                        [c as f32, d as f32],
-                        [e as f32, f as f32],
-                        [g as f32, h as f32],
-                    ]
-                }
-
-                /*[
-                    TexCoords {
-                        coords: [a as f32, b as f32],
-                    }, //Make render only accept Rect32
-                    TexCoords {
-                        coords: [c as f32, d as f32],
-                    },
-                    TexCoords {
-                        coords: [e as f32, f as f32],
-                    },
-                    TexCoords {
-                        coords: [g as f32, h as f32],
-                    },
-                ]*/
-            }
+            Some(rect) => TexCoords::from_rect_tex(rect, texture),
             None => TexCoords::default(),
         };
         self.render_tex(rect, texture, draw_params.rotation, tex_coords);
     }
-    fn render_tex(
-        &mut self,
-        rect: &Rect,
-        texture: &Texture,
-        rotation: f64,
-        tex_coords: TexCoords,
-    ) {
+    fn render_tex(&mut self, rect: Rect32, tex: &Texture, rotation: f32, tex_coords: TexCoords) {
         let width = rect.w * self.inv_win_size.x;
         let height = rect.h * self.inv_win_size.y;
-        let inst = Instance::new(rect.x, rect.y, width, height, rotation, texture.index);
+        let inst = Instance::new(rect.x, rect.y, width, height, rotation, tex.index);
 
         self.instances.push(inst);
         self.tex_coords.push(tex_coords);
@@ -260,12 +210,7 @@ impl Engine {
             self.instance_buffer = vert_buffers::create_inst_buffer(&self.device, &self.instances);
         }
 
-        // self.tex_coords.remove(0);
-        // self.tex_coords.remove(0);
-        // self.tex_coords.remove(0);
-        // self.tex_coords.remove(0);
-
-        if self.tex_coords_buffer.size() == self.tex_coords.len() as u64 * 8 {
+        if self.tex_coords_buffer.size() == self.tex_coords.len() as u64 * 32 {
             self.queue.write_buffer(
                 &self.tex_coords_buffer,
                 0,

@@ -1,4 +1,4 @@
-use crate::prelude::Vec2;
+use crate::prelude::Vec64;
 use cgmath::vec2;
 use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 
@@ -22,7 +22,7 @@ impl Button {
 macro_rules! CreateInputStruct {
     ($($field_name: ident)*) => {
         pub struct Input {
-            cursor_pos: Vec2,
+            cursor_pos: Vec64,
             $($field_name: Button,)*
         }
 
@@ -66,7 +66,7 @@ impl Input {
                 }
 
                 set_button_to_is_pressed!(self, is_pressed, keycode, Right,right_arrow Left,left_arrow Down,down_arrow Up,up_arrow
-                    Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine 
+                    Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine
                     A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z)
             }
             WindowEvent::MouseInput { state, button, .. } => {
