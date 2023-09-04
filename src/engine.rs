@@ -10,7 +10,7 @@ use crate::{
     texture::Texture,
     time::TimeManager,
     ui::Ui,
-    vert_buffers::{self, Instance, TexCoords, DEFAULT_TEX_COORDS},
+    vert_buffers::{self, Instance, TexCoords},
 };
 
 #[allow(unused_imports)]
@@ -180,7 +180,7 @@ impl Engine {
     }
 
     pub fn render_texture(&mut self, rect: &Rect, texture: &Texture) {
-        self.render_tex(rect, texture, 0., DEFAULT_TEX_COORDS);
+        self.render_tex(rect, texture, 0., TexCoords::default());
     }
     pub fn render_texture_ex(&mut self, rect: &Rect, texture: &Texture, draw_params: DrawParams) {
         let tex_coords = match draw_params.source {
@@ -203,7 +203,17 @@ impl Engine {
                 let g = rect.x;
                 let h = rect.y;
 
-                [
+                TexCoords {
+                    coords: 
+                    [
+                        [a as f32, b as f32],
+                        [c as f32, d as f32],
+                        [e as f32, f as f32],
+                        [g as f32, h as f32],
+                    ]
+                }
+
+                /*[
                     TexCoords {
                         coords: [a as f32, b as f32],
                     }, //Make render only accept Rect32
@@ -216,9 +226,9 @@ impl Engine {
                     TexCoords {
                         coords: [g as f32, h as f32],
                     },
-                ]
+                ]*/
             }
-            None => DEFAULT_TEX_COORDS,
+            None => TexCoords::default(),
         };
         self.render_tex(rect, texture, draw_params.rotation, tex_coords);
     }
@@ -227,17 +237,14 @@ impl Engine {
         rect: &Rect,
         texture: &Texture,
         rotation: f64,
-        tex_coords: [TexCoords; 4],
+        tex_coords: TexCoords,
     ) {
         let width = rect.w * self.inv_win_size.x;
         let height = rect.h * self.inv_win_size.y;
         let inst = Instance::new(rect.x, rect.y, width, height, rotation, texture.index);
 
         self.instances.push(inst);
-        self.tex_coords.push(tex_coords[0]);
-        self.tex_coords.push(tex_coords[1]);
-        self.tex_coords.push(tex_coords[2]);
-        self.tex_coords.push(tex_coords[3]);
+        self.tex_coords.push(tex_coords);
 
         self.instances_rendered += 1;
     }

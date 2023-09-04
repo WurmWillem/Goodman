@@ -17,14 +17,17 @@ struct VertexInput {
 };
 
 struct TexCoordsInput {
-    @location(1) coords: vec2<f32>,
+    @location(1) vec2_0: vec2<f32>,
+    @location(2) vec2_1: vec2<f32>,
+    @location(3) vec2_2: vec2<f32>,
+    @location(4) vec2_3: vec2<f32>,
 }
 
 struct InstanceInput {
-    @location(2) vec2_0: vec2<f32>,
-    @location(3) vec2_1: vec2<f32>,
-    @location(4) vec2_2: vec2<f32>,
-    @location(5) index: u32,
+    @location(5) vec2_0: vec2<f32>,
+    @location(6) vec2_1: vec2<f32>,
+    @location(7) vec2_2: vec2<f32>,
+    @location(8) index: u32,
 };
 
 struct VertexOutput {
@@ -41,8 +44,28 @@ fn vs_main(
 ) -> VertexOutput {
 
     var out: VertexOutput;
-    out.tex_coords = tex_coords.coords;
     out.index = instance.index;
+    // out.tex_coords = tex_coords.vec2_0;
+
+    if vertex.pos.x == 0. && vertex.pos.y == -2. {
+        out.tex_coords = tex_coords.vec2_0;
+    } else if vertex.pos.x == 2. && vertex.pos.y == -2. {
+        out.tex_coords = tex_coords.vec2_1;
+    } else if vertex.pos.x == 2. && vertex.pos.y == 0. {
+        out.tex_coords = tex_coords.vec2_2;
+    } else if vertex.pos.x == 0. && vertex.pos.y == 0. {
+        out.tex_coords = tex_coords.vec2_3;
+    } 
+    /*
+    if vertex.pos == vec2<f32>(0., -2.) {
+        out.tex_coords = tex_coords.vec2_0;
+    } else if vertex.pos == vec2<f32>(2., -2.) {
+        out.tex_coords = tex_coords.vec2_1;
+    } else if vertex.pos == vec2<f32>(2., 0.) {
+        out.tex_coords = tex_coords.vec2_2;
+    } else if vertex.pos == vec2<f32>(0., 0.) {
+        out.tex_coords = tex_coords.vec2_3;
+    }*/
 
     var instance_mat = mat4x4<f32>(
         vec4<f32>(instance.vec2_0.x, instance.vec2_0.y, 0., 0.),

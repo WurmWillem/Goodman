@@ -12,7 +12,7 @@ use crate::prelude::Vec2;
 use crate::texture::{self};
 use crate::time::TimeManager;
 use crate::ui::Ui;
-use crate::vert_buffers::{Instance, TexCoords, Vertex, DEFAULT_TEX_COORDS};
+use crate::vert_buffers::{Instance, TexCoords, Vertex};
 
 pub struct EngineBuilder {
     win_size: Vec2,
@@ -151,7 +151,7 @@ impl EngineBuilder {
 
         let (vertex_buffer, index_buffer) = super::vert_buffers::create_buffers(&device);
         let tex_coords_buffer =
-            super::vert_buffers::create_tex_coords_buffer(&device, &DEFAULT_TEX_COORDS);
+            super::vert_buffers::create_tex_coords_buffer(&device, &[TexCoords::default()]);
 
         // We use the egui_winit_platform crate as the platform.
         let platform = Platform::new(PlatformDescriptor {

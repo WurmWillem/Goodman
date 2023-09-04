@@ -1,29 +1,58 @@
 use cgmath::{vec3, Deg, Matrix4};
 use wgpu::{util::DeviceExt, Device};
 
-pub const DEFAULT_TEX_COORDS: [TexCoords; 4] = [
+/*pub const DEFAULT_TEX_COORDS: [TexCoords; 4] = [
     TexCoords { coords: [0., 1.] },
     TexCoords { coords: [1., 1.] },
     TexCoords { coords: [1., 0.] },
     TexCoords { coords: [0., 0.] },
-];
+];*/
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct TexCoords {
-    pub coords: [f32; 2],
+    pub coords: [[f32; 2]; 4],
 }
 impl TexCoords {
+    /*pub const DEFAULT_TEX_COORDS: [[f32; 2]; 4] = [
+        [0., 1.],
+        [1., 1.],
+        [1., 0.],
+        [0., 0.],
+    ];*/
+    pub fn default() -> Self {
+        Self {
+            coords: ([[0., 1.], [1., 1.], [1., 0.], [0., 0.]]),
+        }
+    }
+
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
-        use std::mem;
+        use std::mem::size_of;
         wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<TexCoords>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[wgpu::VertexAttribute {
-                offset: 0,
-                shader_location: 1,
-                format: wgpu::VertexFormat::Float32x2,
-            }],
+            array_stride: size_of::<TexCoords>() as u64,
+            step_mode: wgpu::VertexStepMode::Instance,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: size_of::<[f32; 2]>() as u64,
+                    shader_location: 2,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: size_of::<[f32; 4]>() as u64,
+                    shader_location: 3,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+                wgpu::VertexAttribute {
+                    offset: size_of::<[f32; 6]>() as u64,
+                    shader_location: 4,
+                    format: wgpu::VertexFormat::Float32x2,
+                },
+            ],
         }
     }
 }
@@ -57,22 +86,22 @@ impl Instance {
             attributes: &[
                 wgpu::VertexAttribute {
                     offset: 0,
-                    shader_location: 2,
+                    shader_location: 5,
                     format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
                     offset: mem::size_of::<[f32; 2]>() as wgpu::BufferAddress,
-                    shader_location: 3,
+                    shader_location: 6,
                     format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
                     offset: mem::size_of::<[f32; 4]>() as wgpu::BufferAddress,
-                    shader_location: 4,
+                    shader_location: 7,
                     format: wgpu::VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
                     offset: mem::size_of::<[f32; 6]>() as wgpu::BufferAddress,
-                    shader_location: 5,
+                    shader_location: 8,
                     format: wgpu::VertexFormat::Uint32,
                 },
             ],
@@ -80,13 +109,12 @@ impl Instance {
     }
 }
 
-const VERTEX_SCALE: f32 = 1.;
 #[rustfmt::skip]
 pub const VERTICES: &[Vertex] = &[
-    Vertex { position: [0. * VERTEX_SCALE, -2. * VERTEX_SCALE]},
-    Vertex { position: [2. * VERTEX_SCALE, -2. * VERTEX_SCALE]},
-    Vertex { position: [2. * VERTEX_SCALE, 0. * VERTEX_SCALE]},
-    Vertex { position: [0. * VERTEX_SCALE, 0. * VERTEX_SCALE]},
+    Vertex { position: [0., -2.]},
+    Vertex { position: [2., -2.]},
+    Vertex { position: [2., 0.]},
+    Vertex { position: [0., 0.]},
 ];
 
 #[rustfmt::skip]

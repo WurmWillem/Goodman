@@ -16,7 +16,7 @@ async fn run() {
 
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .show_engine_ui()
-        // .set_target_fps(144)
+        .set_target_fps(144)
         // .set_target_tps(100 * 1000)
         .build(&event_loop)
         .await;
@@ -35,7 +35,7 @@ struct Pong {
 impl Manager for Pong {
     fn new(engine: &mut Engine) -> Self {
         let mut textures = vec![];
-        create_textures!(engine, textures, "assets/Computer.png" "assets/Player.png" "assets/Ball.png" "assets/dak.png");
+        create_textures!(engine, textures, "assets/Computer.png" "assets/Player.png" "assets/Ball.png" "assets/dak.png" "assets/w.png");
         // engine.use_textures(&textures);
 
         let left_paddle = Paddle::new(80., WINDOW_SIZE.y * 0.5);
@@ -81,11 +81,11 @@ impl Manager for Pong {
             source: Some(rect(0., 0., 24., 24.)),
             ..Default::default()
         };
-        engine.render_texture_ex(&self.ball.to_rect(), &self.textures[3], you);
-        engine.render_texture_ex(&self.right_paddle.rect, &self.textures[3], win);
+        engine.render_texture_ex(&self.ball.to_rect(), &self.textures[3], win);
+        engine.render_texture_ex(&self.right_paddle.rect, &self.textures[3], you);
 
         /*engine.render_texture(&self.left_paddle.rect, &self.textures[0]);
         engine.render_texture(&self.right_paddle.rect, &self.textures[1]);
-        engine.render_texture(&self.ball.to_rect(), &self.textures[2]);*/
+        engine.render_texture(&self.ball.to_rect(), &self.textures[4]);*/
     }
 }

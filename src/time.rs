@@ -64,8 +64,10 @@ impl TimeManager {
 
         // This if-let is true every report rate
         if let Some(avg_tps) = self.loop_helper.report_rate() {
-            self.avg_fps = self.total_fps_this_report_interval.round() as u32
-                / self.frames_passed_this_report_interval;
+            if self.frames_passed_this_report_interval != 0 {
+                self.avg_fps = self.total_fps_this_report_interval.round() as u32
+                    / self.frames_passed_this_report_interval;
+            }
 
             self.avg_delta_t = 1. / avg_tps;
 
