@@ -1,11 +1,16 @@
+use rodio::Decoder;
 use wgpu::{BindGroup, Buffer};
 use winit::{event::Event, event_loop::EventLoop, window::Window};
+
+use std::fs::File;
+use std::io::BufReader;
 
 use crate::{
     camera::Camera,
     input::Input,
     math::{Rect32, Vec32},
-    minor_types::{DrawParams, Manager, Sound},
+    minor_types::{DrawParams, Manager},
+    prelude::Sound,
     texture::Texture,
     time::TimeManager,
     ui::Ui,
@@ -54,6 +59,18 @@ pub struct Engine {
     target_fps: Option<u32>,
 }
 impl Engine {
+    pub fn create_sound_source(&self, path: &str) -> Result<Decoder<BufReader<File>>, String> {
+        let file = match File::open(path) {
+            Err(e) => return Err(e.to_string()),
+            Ok(f) => f,
+        };
+        let file = BufReader::new(file);
+        match Decoder::new(file) {
+            Err(e) => return Err(e.to_string()),
+            Ok(f) => Ok(f),
+        }
+    }
+
     pub fn start_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
         T: Manager + 'static,
@@ -188,10 +205,16 @@ impl Engine {
         };
         self.render_tex(rect, texture, draw_params.rotation, tex_coords);
     }
-    fn render_tex(&mut self, rect: Rect32, tex: &Texture, rotation: f32, tex_coords: TexCoords) {
-        let width = rect.w * self.inv_win_size.x;
-        let height = rect.h * self.inv_win_size.y;
-        let inst = Instance::new(rect.x, rect.y, width, height, rotation, tex.index);
+    fn render_tex(
+        &mut self,
+        mut rect: Rect32,
+        tex: &Texture,
+        rotation: f32,
+        tex_coords: TexCoords,
+    ) {
+        rect.w *= self.inv_win_size.x;
+        rect.h *= self.inv_win_size.y;
+        let inst = Instance::new(rect, rotation, tex.index);
 
         self.instances.push(inst);
         self.tex_coords.push(tex_coords);

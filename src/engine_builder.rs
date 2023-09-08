@@ -8,8 +8,8 @@ use winit::window::WindowBuilder;
 
 use crate::camera::{self, Camera};
 use crate::engine::Engine;
-use crate::minor_types::{Sound, WindowUniform};
-use crate::prelude::Vec32;
+use crate::minor_types::WindowUniform;
+use crate::prelude::{Sound, Vec32};
 use crate::texture::{self};
 use crate::time::TimeManager;
 use crate::ui::Ui;

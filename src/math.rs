@@ -6,7 +6,7 @@ pub type Vec32 = cgmath::Vector2<f32>;
 
 macro_rules! create_rect {
     ($r: ident, $vec: ty, $f: ty, $func: ident) => {
-        #[derive(Debug, Copy, Clone)]    
+        #[derive(Debug, Copy, Clone)]
         pub struct $r {
             pub x: $f,
             pub y: $f,
@@ -59,7 +59,7 @@ macro_rules! create_rect {
         impl Div<$f> for $r {
             #[inline]
             fn div(self, rhs: $f) -> $r {
-               $func(self.x / rhs, self.y / rhs, self.w / rhs, self.h / rhs)    
+                $func(self.x / rhs, self.y / rhs, self.w / rhs, self.h / rhs)
             }
             type Output = $r;
         }
@@ -87,7 +87,7 @@ macro_rules! create_rect {
                 self.w.mul_assign(rhs);
                 self.h.mul_assign(rhs);
             }
-        }       
+        }
     };
 }
 

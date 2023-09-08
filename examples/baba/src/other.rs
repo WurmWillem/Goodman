@@ -1,4 +1,4 @@
-use goodman::prelude::{Rect32, rect32};
+use goodman::prelude::{rect32, Rect32};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Object {
@@ -9,7 +9,7 @@ pub enum Object {
     Property(Property),
 }
 impl Object {
-    pub fn get_tex_index(&self) -> Rect32 {
+    pub fn get_source(&self) -> Rect32 {
         let index = match self {
             Object::Empty => 11,
             Object::Is => 6,
@@ -23,10 +23,14 @@ impl Object {
             Object::Character(Character::Wall) => 10,
             Object::Property(Property::Stop) => 8,
         };
-        let j: u32 = (index as f32 / 4.) as u32;
-        let i = index % 4;
-        rect32(i as f32 * 26., j as f32 * 26., 26., 26.)
+        get_source_from_index(index)
     }
+}
+
+pub fn get_source_from_index(index: u32) -> Rect32 {
+    let j = (index as f32 / 4.) as u32;
+    let i = index % 4;
+    rect32(i as f32 * 26., j as f32 * 26., 26., 26.)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

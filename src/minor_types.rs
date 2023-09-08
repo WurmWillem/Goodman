@@ -1,6 +1,4 @@
-use crate::{engine::Engine, input::Input, prelude::Rect32};
-use rodio::{OutputStreamHandle, Source};
-
+use crate::{engine::Engine, input::Input, prelude::Rect32, sound::Sound};
 pub trait Manager {
     fn new(engine: &mut Engine) -> Self;
     fn start(&mut self) {}
@@ -15,7 +13,10 @@ pub struct DrawParams {
 }
 impl DrawParams {
     pub fn from_source(source: Rect32) -> Self {
-        DrawParams { source: Some(source), ..Default::default() }
+        DrawParams {
+            source: Some(source),
+            ..Default::default()
+        }
     }
 }
 impl Default for DrawParams {
@@ -27,26 +28,35 @@ impl Default for DrawParams {
     }
 }
 
-pub struct Sound {
-    #[allow(dead_code)] // stream is unused but it has to stay in memory
-    stream: rodio::OutputStream,
-    stream_handle: OutputStreamHandle,
+pub struct Animation {
+    frames: Vec<u32>,
+    current_frame: usize,
+    time_passed: f32,
+    frame_duration: f32,
 }
-impl Sound {
-    pub(crate) fn new() -> Self {
-        let (stream, stream_handle) =
-            rodio::OutputStream::try_default().expect("can't find output device");
-        Self {
-            stream,
-            stream_handle,
+impl Animation {
+    pub fn new(frames: Vec<u32>, frame_duration: f32) -> Self {
+        Animation {
+            frames,
+            current_frame: 0,
+            time_passed: 0.,
+            frame_duration,
         }
     }
-    pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
-    where
-        S: Source<Item = f32> + Send + 'static,
-    {
-        self.stream_handle.play_raw(source)?;
-        Ok(())
+    pub fn update(&mut self, delta_t: f32) {
+        self.time_passed += delta_t;
+        if self.time_passed > self.frame_duration {
+            if self.frames.len() > self.current_frame + 1 {
+                self.current_frame += 1;
+            } else {
+                self.current_frame = 0;
+            }
+
+            self.time_passed -= self.frame_duration;
+        }
+    }
+    pub fn get_current_frame(&self) -> u32 {
+        self.frames[self.current_frame]
     }
 }
 
