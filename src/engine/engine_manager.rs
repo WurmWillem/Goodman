@@ -28,7 +28,7 @@ impl Engine {
         }
     }
 
-    pub(crate) fn update(&mut self) {
+    pub(crate) fn update_cam(&mut self) {
         if self.camera.update(&self.input) {
             self.queue.write_buffer(
                 &self.camera_buffer,
@@ -43,10 +43,6 @@ impl Engine {
         self.config.width = new_size.width;
         self.config.height = new_size.height;
         self.surface.configure(&self.device, &self.config);
-    }
-
-    pub(crate) fn input(&mut self, event: &WindowEvent) -> bool {
-        self.input.process_events(event)
     }
 
     pub(crate) fn handle_window_event(

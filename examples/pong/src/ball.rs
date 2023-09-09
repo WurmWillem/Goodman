@@ -1,6 +1,6 @@
 use goodman::prelude::*;
 
-use crate::WINDOW_SIZE;
+use crate::{paddle::Paddle, WINDOW_SIZE};
 
 const DIAMETER: f64 = 48.;
 
@@ -17,7 +17,7 @@ impl Ball {
         }
     }
 
-    /*pub fn update(&mut self, delta_t: f64) {
+    pub fn update(&mut self, delta_t: f64) {
         self.pos += self.vel * delta_t;
 
         if self.pos.x + DIAMETER > WINDOW_SIZE.x {
@@ -56,7 +56,7 @@ impl Ball {
             self.pos.x = paddle.rect.x + DIAMETER;
             self.vel.x *= -1.;
         }
-    }*/
+    }
 
     pub fn to_rect(self) -> Rect32 {
         rect64_vec(self.pos, vec2(DIAMETER, DIAMETER)).into()

@@ -86,14 +86,14 @@ impl Engine {
                     ref event,
                     window_id,
                 } if window_id == self.window.id() => {
-                    if !self.input(event) {
+                    if !self.input.process_events(event) {
                         self.handle_window_event(event, control_flow);
                     }
                 }
                 Event::MainEventsCleared => {
                     self.time.update(&mut self.ui);
 
-                    self.update();
+                    self.update_cam();
                     manager.update(self.time.get_relevant_delta_t(), &self.input, &self.sound);
 
                     if self
@@ -207,14 +207,14 @@ impl Engine {
     }
     fn render_tex(
         &mut self,
-        mut rect: Rect32,
+        rect: Rect32,
         tex: &Texture,
         rotation: f32,
         tex_coords: TexCoords,
     ) {
-        rect.w *= self.inv_win_size.x;
-        rect.h *= self.inv_win_size.y;
-        let inst = Instance::new(rect, rotation, tex.index);
+        // rect.w *= self.inv_win_size.x;
+        // rect.h *= self.inv_win_size.y;
+        let inst = Instance::new(rect, rotation, tex.index); //1600-1700
 
         self.instances.push(inst);
         self.tex_coords.push(tex_coords);

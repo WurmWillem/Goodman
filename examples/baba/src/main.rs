@@ -22,6 +22,7 @@ async fn run() {
     let event_loop = EventLoop::new();
 
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
+        .set_target_fps(144)
         // .show_engine_ui()
         .build(&event_loop)
         .await;
@@ -215,6 +216,6 @@ impl Manager for Game {
 impl Game {
     fn reset(&mut self) {
         self.noun_prop_combi = vec![];
-        self.update_character_data();
+        self.character_data = AllCharacterData::new();
     }
 }
