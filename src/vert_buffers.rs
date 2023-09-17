@@ -1,7 +1,7 @@
 use cgmath::{vec3, Deg, Matrix4};
 use wgpu::{util::DeviceExt, Device};
 
-use crate::prelude::Texture;
+use crate::prelude::{Rect32, Texture};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -53,10 +53,10 @@ pub struct Instance {
     index: u32,
 }
 impl Instance {
-    pub fn new(x: f32, y: f32, width: f32, height: f32, rotation: f32, index: u32) -> Self {
-        let mat4 = Matrix4::from_translation(vec3(x, y, 0.))
+    pub fn new(r: Rect32, rotation: f32, index: u32) -> Self {
+        let mat4 = Matrix4::from_translation(vec3(r.x, r.y, 0.))
             * Matrix4::from_angle_z(Deg(rotation))
-            * Matrix4::from_nonuniform_scale(width, height, 1.);
+            * Matrix4::from_nonuniform_scale(r.w, r.h, 1.);
 
         let x = [mat4.x.x, mat4.x.y];
         let y = [mat4.y.x, mat4.y.y];

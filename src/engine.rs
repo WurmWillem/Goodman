@@ -1,19 +1,21 @@
+use rodio::Decoder;
 use wgpu::{BindGroup, Buffer};
 use winit::{event::Event, event_loop::EventLoop, window::Window};
+
+use std::fs::File;
+use std::io::BufReader;
 
 use crate::{
     camera::Camera,
     input::Input,
-    math::{Rect32, Vec32},
-    minor_types::{DrawParams, Manager, Sound},
+    math::Rect32,
+    minor_types::{DrawParams, Manager},
+    prelude::Sound,
     texture::Texture,
     time::TimeManager,
     ui::Ui,
     vert_buffers::{self, Instance, TexCoords},
 };
-
-#[allow(unused_imports)]
-use std::time::Instant;
 
 mod engine_manager;
 
@@ -25,7 +27,6 @@ pub struct Engine {
 
     window: Window,
     win_size: winit::dpi::PhysicalSize<u32>,
-    inv_win_size: Vec32,
     win_background_color: wgpu::Color,
     win_bind_group: BindGroup,
 
@@ -54,6 +55,18 @@ pub struct Engine {
     target_fps: Option<u32>,
 }
 impl Engine {
+    pub fn create_sound_source(&self, path: &str) -> Result<Decoder<BufReader<File>>, String> {
+        let file = match File::open(path) {
+            Err(e) => return Err(e.to_string()),
+            Ok(f) => f,
+        };
+        let file = BufReader::new(file);
+        match Decoder::new(file) {
+            Err(e) => return Err(e.to_string()),
+            Ok(f) => Ok(f),
+        }
+    }
+
     pub fn start_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
         T: Manager + 'static,
@@ -69,14 +82,14 @@ impl Engine {
                     ref event,
                     window_id,
                 } if window_id == self.window.id() => {
-                    if !self.input(event) {
+                    if !self.input.process_events(event) {
                         self.handle_window_event(event, control_flow);
                     }
                 }
                 Event::MainEventsCleared => {
                     self.time.update(&mut self.ui);
 
-                    self.update();
+                    self.update_cam();
                     manager.update(self.time.get_relevant_delta_t(), &self.input, &self.sound);
 
                     if self
@@ -189,9 +202,7 @@ impl Engine {
         self.render_tex(rect, texture, draw_params.rotation, tex_coords);
     }
     fn render_tex(&mut self, rect: Rect32, tex: &Texture, rotation: f32, tex_coords: TexCoords) {
-        let width = rect.w * self.inv_win_size.x;
-        let height = rect.h * self.inv_win_size.y;
-        let inst = Instance::new(rect.x, rect.y, width, height, rotation, tex.index);
+        let inst = Instance::new(rect, rotation, tex.index);
 
         self.instances.push(inst);
         self.tex_coords.push(tex_coords);

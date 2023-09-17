@@ -1,14 +1,11 @@
 use game::Level;
 use goodman::prelude::*;
-use other::{AllCharacterData, Move, NounPropCombi, Object, Property, VecPos};
+use other::{
+    get_source_from_index, AllCharacterData, Move, NounPropCombi, Object, Property, VecPos,
+};
 
 mod game;
 mod other;
-
-use rodio::source::Buffered;
-use rodio::{Decoder, Source};
-use std::fs::File;
-use std::io::BufReader;
 
 pub const WINDOW_SIZE: Vec32 = vec2(1200., 750.); //1500x1000
 const GRID_SIZE: (usize, usize) = (20, 14);
@@ -19,15 +16,16 @@ fn main() {
 
 async fn run() {
     // The following two lines change the working directory, you should remove them if you are not running this project with the entire goodman project included
-    // let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
-    // std::env::set_current_dir(root).unwrap();
+    let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
+    std::env::set_current_dir(root).unwrap();
 
     let event_loop = EventLoop::new();
 
-    let mut engine = EngineBuilder::new(WINDOW_SIZE).build(&event_loop).await;
-    // engine.set_target_fps(Some(144));
-    // engine.set_target_tps(Some(300 * 1000));
-    // engine.enable_feature(Feature::EngineUi);
+    let mut engine = EngineBuilder::new(WINDOW_SIZE)
+        .set_target_fps(144)
+        // .show_engine_ui()
+        .build(&event_loop)
+        .await;
 
     let game = Game::new(&mut engine);
 
@@ -40,26 +38,32 @@ pub struct Game {
     noun_prop_combi: Vec<NounPropCombi>,
     current_level: Level,
     textures: Vec<Texture>,
-    source: Buffered<Decoder<BufReader<File>>>,
+    source: Buffered<SoundFile>,
+    baba_anim: Animation,
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        // let file = BufReader::new(File::open("src/assets/music.mp3").unwrap());
-        // let music_source = Decoder::new(file).unwrap().buffered();
-        // engine
-        // .play_sound(music_source.convert_samples().repeat_infinite())
-        // .unwrap();
+        /*let background_music = engine.create_sound_source("src/assets/music.mp3").unwrap();
+        engine
+            .play_sound(background_music.convert_samples())
+            .unwrap();*/
 
-        let pop_file = BufReader::new(File::open("src/assets/pop.mp3").unwrap());
-        let source = Decoder::new(pop_file).unwrap().buffered();
+        let source = engine
+            .create_sound_source("src/assets/pop.mp3")
+            .unwrap()
+            .buffered();
 
         let mut textures = vec![];
-        create_textures!(engine, textures, "assets/floor.png" "assets/is.png" "assets/baba.png" "assets/baba c.png" "assets/you.png"
-            "assets/flag.png" "assets/flag c.png" "assets/win.png" "assets/wall.png" "assets/wall c.png" "assets/stop.png");
+        /*create_textures!(engine, textures, "assets/floor.png" "assets/is.png" "assets/baba.png" "assets/baba c.png" "assets/you.png"
+        "assets/flag.png" "assets/flag c.png" "assets/win.png" "assets/wall.png" "assets/wall c.png" "assets/stop.png");*/
+        create_textures!(engine, textures, "assets/sheet.png");
 
         let mut grid = vec![vec![]];
         let current_level = Level::Level1;
         current_level.load_level(&mut grid);
+
+        let frames = vec![1, 11, 12]; //11
+        let baba_anim = Animation::new(frames, 0.3);
 
         Self {
             grid,
@@ -68,6 +72,7 @@ impl Manager for Game {
             current_level,
             textures,
             source,
+            baba_anim,
         }
     }
 
@@ -75,7 +80,9 @@ impl Manager for Game {
         self.update_character_data();
     }
 
-    fn update(&mut self, _delta_t: f64, input: &Input, sound: &Sound) {
+    fn update(&mut self, delta_t: f64, input: &Input, sound: &Sound) {
+        self.baba_anim.update(delta_t as f32);
+
         let mut where_to_move = (0, 0);
         if input.is_button_pressed(Button::W) {
             where_to_move.1 = -1;
@@ -184,12 +191,24 @@ impl Manager for Game {
         for j in 0..self.grid.len() {
             for i in 0..self.grid[0].len() {
                 let pos = vec2(i as f32 * size.x, j as f32 * size.y);
-                engine.render_texture(rect32_vec(pos, size), &self.textures[0]);
 
-                if self.grid[j][i] != Object::Empty {
-                    let index = self.grid[j][i].get_tex_index();
-                    engine.render_texture(rect32_vec(pos, size), &self.textures[index]);
-                };
+                let source = rect32(26., 26., 26., 26.);
+                let draw_params = DrawParams::from_source(source);
+                engine.render_texture_ex(
+                    rect32_vec(pos, size * 1.1),
+                    &self.textures[0],
+                    draw_params,
+                );
+
+                if self.grid[j][i] == Object::Character(other::Character::Baba) {
+                    let source = get_source_from_index(self.baba_anim.get_current_frame());
+                    let draw_params = DrawParams::from_source(source);
+                    engine.render_texture_ex(rect32_vec(pos, size), &self.textures[0], draw_params);
+                } else if self.grid[j][i] != Object::Empty {
+                    let source = self.grid[j][i].get_source();
+                    let draw_params = DrawParams::from_source(source);
+                    engine.render_texture_ex(rect32_vec(pos, size), &self.textures[0], draw_params);
+                }
             }
         }
     }
@@ -197,6 +216,6 @@ impl Manager for Game {
 impl Game {
     fn reset(&mut self) {
         self.noun_prop_combi = vec![];
-        self.update_character_data();
+        self.character_data = AllCharacterData::new();
     }
 }

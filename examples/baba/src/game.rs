@@ -115,7 +115,7 @@ impl Game {
         self.grid[mov.to.j][mov.to.i] = self.grid[mov.from.j][mov.from.i];
         self.grid[mov.from.j][mov.from.i] = Object::Empty;
 
-        if self.grid[mov.to.j][mov.to.i] == Object::Character(crate::other::Character::Baba) {
+        if self.grid[mov.to.j][mov.to.i] == Object::Character(Character::Baba) {
             sound
                 .play_sound(self.source.clone().convert_samples())
                 .unwrap();

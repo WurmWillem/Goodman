@@ -10,7 +10,7 @@ struct WindowSizeUniform {
 @group(1) @binding(0) 
 var<uniform> camera: CameraUniform;
 @group(2) @binding(0) 
-var<uniform> window_size: WindowSizeUniform;
+var<uniform> win_size: WindowSizeUniform;
 
 struct VertexInput {
     @location(0) pos: vec2<f32>,
@@ -57,18 +57,17 @@ fn vs_main(
     } 
 
     var instance_mat = mat4x4<f32>(
-        vec4<f32>(instance.vec2_0.x, instance.vec2_0.y, 0., 0.),
+        vec4<f32>(instance.vec2_0.x , instance.vec2_0.y, 0., 0.),
         vec4<f32>(instance.vec2_1.x, instance.vec2_1.y, 0., 0.),
         vec4<f32>(0., 0., 1., 0.),
         vec4<f32>(instance.vec2_2.x, instance.vec2_2.y, 0., 1.),
     );  
-    //instance_mat.x.x *= window_size.x;
-    //instance_mat.y.y *= window_size.y;
-    instance_mat.w.x = instance_mat.w.x * window_size.x * 2. - 1.;
-    instance_mat.w.y = instance_mat.w.y * window_size.y * -2. + 1.;
+    
+    instance_mat.w.x = instance_mat.w.x * win_size.x * 2. - 1.;
+    instance_mat.w.y = instance_mat.w.y * win_size.y * -2. + 1.;
 
-    let updated_pos = instance_mat * vec4<f32>(vertex.pos.x, vertex.pos.y, 0., 1.);
-    let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);
+    let updated_model = instance_mat * vec4<f32>(vertex.pos.x * win_size.x, vertex.pos.y * win_size.y, 0., 1.);
+    // let updated_model = vec4<f32>(updated_pos.x + camera.pos.x, updated_pos.y + camera.pos.y, updated_pos.z, updated_pos.w);
     out.clip_position = updated_model;
 
     return out;
