@@ -3,7 +3,7 @@ use crate::engine::Engine;
 use crate::engine_builder::{
     create_render_pipeline, create_render_pipeline_layout, create_win_layout, AllFields,
 };
-use crate::prelude::Manager;
+use crate::prelude::{Manager, UserUi};
 use crate::texture::{self, Texture};
 use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -72,11 +72,16 @@ impl Engine {
     }
 
     pub(crate) fn new(all_fields: AllFields) -> Engine {
-        create_Engine_from_AllFields!(all_fields, input window win_bind_group win_size inv_win_size win_background_color
+        create_Engine_from_AllFields!(all_fields, input window win_bind_group win_size win_background_color
         surface device queue config render_pipeline vertex_buffer index_buffer camera camera_bind_group
         camera_buffer instance_buffer instances instances_rendered time tex_bind
         texture_amt_created target_fps sound ui tex_coords_buffer tex_coords)
     }
+
+    pub fn set_user_ui(&mut self, ui: UserUi) {
+        self.ui.set_user_ui(ui);
+    }
+
     pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
     where
         S: rodio::Source<Item = f32> + Send + 'static,

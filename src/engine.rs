@@ -8,7 +8,7 @@ use std::io::BufReader;
 use crate::{
     camera::Camera,
     input::Input,
-    math::{Rect32, Vec32},
+    math::Rect32,
     minor_types::{DrawParams, Manager},
     prelude::Sound,
     texture::Texture,
@@ -16,9 +16,6 @@ use crate::{
     ui::Ui,
     vert_buffers::{self, Instance, TexCoords},
 };
-
-#[allow(unused_imports)]
-use std::time::Instant;
 
 mod engine_manager;
 
@@ -30,7 +27,6 @@ pub struct Engine {
 
     window: Window,
     win_size: winit::dpi::PhysicalSize<u32>,
-    inv_win_size: Vec32,
     win_background_color: wgpu::Color,
     win_bind_group: BindGroup,
 
@@ -205,16 +201,8 @@ impl Engine {
         };
         self.render_tex(rect, texture, draw_params.rotation, tex_coords);
     }
-    fn render_tex(
-        &mut self,
-        rect: Rect32,
-        tex: &Texture,
-        rotation: f32,
-        tex_coords: TexCoords,
-    ) {
-        // rect.w *= self.inv_win_size.x;
-        // rect.h *= self.inv_win_size.y;
-        let inst = Instance::new(rect, rotation, tex.index); //1600-1700
+    fn render_tex(&mut self, rect: Rect32, tex: &Texture, rotation: f32, tex_coords: TexCoords) {
+        let inst = Instance::new(rect, rotation, tex.index);
 
         self.instances.push(inst);
         self.tex_coords.push(tex_coords);

@@ -6,7 +6,7 @@ pub use crate::math::{rect32, rect32_vec, rect64, rect64_vec, Rect32, Rect64, Ve
 pub use crate::minor_types::{Animation, DrawParams, Manager};
 pub use crate::sound::{Sound, SoundFile};
 pub use crate::texture::Texture;
-pub use crate::ui::GoodManUi;
+pub use crate::ui::UserUi;
 
 pub use cgmath::vec2;
 pub use pollster::block_on;

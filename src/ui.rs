@@ -10,7 +10,7 @@ pub struct Ui {
     pub platform: Platform,
     pub egui_rpass: egui_wgpu_backend::RenderPass,
     tps_graph: Vec<Vec64>,
-    game_ui: Option<GoodManUi>,
+    user_ui: Option<UserUi>,
     show_engine_ui: bool,
 }
 impl Ui {
@@ -44,8 +44,13 @@ impl Ui {
 
         (paint_jobs, screen_descriptor)
     }
+
+    pub fn set_user_ui(&mut self, ui: UserUi) {
+        self.user_ui = Some(ui);
+    }
+
     pub fn should_render(&self) -> bool {
-        self.show_engine_ui || self.game_ui.is_some()
+        self.show_engine_ui || self.user_ui.is_some()
     }
 
     pub fn update_tps_graph(&mut self, x: f64, y: f64) {
@@ -89,7 +94,7 @@ impl Ui {
     }
 
     pub fn render_game(&self) {
-        if let Some(game_ui) = &self.game_ui {
+        if let Some(game_ui) = &self.user_ui {
             egui::Window::new(game_ui.title.clone()).show(&self.platform.context(), |ui| {
                 for label in &game_ui.labels {
                     ui.label(label);
@@ -103,20 +108,21 @@ impl Ui {
             tps_graph: vec![],
             platform,
             egui_rpass,
-            game_ui: None,
+            user_ui: None,
             show_engine_ui,
         }
     }
 }
 
-pub struct GoodManUi {
+#[derive(Debug, Clone)]
+pub struct UserUi {
     title: String,
     labels: Vec<String>,
 }
-impl GoodManUi {
-    pub fn new() -> Self {
+impl UserUi {
+    pub fn new(title: &str) -> Self {
         Self {
-            title: "".to_string(),
+            title: title.to_string(),
             labels: vec![],
         }
     }

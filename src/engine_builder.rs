@@ -1,4 +1,3 @@
-use cgmath::vec2;
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
 use wgpu::Color;
@@ -168,14 +167,11 @@ impl EngineBuilder {
 
         let ui = Ui::new(platform, egui_rpass, self.show_engine_ui);
 
-        let inv_win_size = vec2(1. / win_size.width as f32, 1. / win_size.height as f32);
-
         let all_fields = AllFields {
             input: crate::prelude::Input::new(),
             window,
             win_bind_group: window_bind_group,
             win_size,
-            inv_win_size,
 
             win_background_color: self.win_background_color,
             surface,
@@ -354,7 +350,6 @@ pub struct AllFields {
 
     pub window: winit::window::Window,
     pub win_size: winit::dpi::PhysicalSize<u32>,
-    pub inv_win_size: Vec32,
     pub win_background_color: wgpu::Color,
     pub win_bind_group: wgpu::BindGroup,
 

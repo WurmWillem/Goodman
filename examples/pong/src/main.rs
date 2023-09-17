@@ -70,10 +70,9 @@ impl Manager for Pong {
     }
 
     fn render(&self, engine: &mut Engine) {
-        /*let mut ui = GoodManUI::new();
-        ui.set_title("Pong");
+        /*let mut ui = UserUi::new("Pong");
         ui.add_label(format!("ball position: {} {}", self.ball.pos.x as u32, self.ball.pos.y as u32));
-        engine.set_game_ui(ui);*/
+        engine.set_user_ui(ui);*/
 
         engine.render_texture(self.left_paddle.rect.into(), &self.textures[0]);
         engine.render_texture(self.right_paddle.rect.into(), &self.textures[1]);
