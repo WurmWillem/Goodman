@@ -2,8 +2,8 @@ use crate::{engine::Engine, input::Input, prelude::Rect32, sound::Sound};
 pub trait Manager {
     fn new(engine: &mut Engine) -> Self;
     fn start(&mut self) {}
-    fn update(&mut self, frame_time: f64, input: &Input, sound: &Sound);
-    fn render(&self, engine: &mut Engine);
+    fn update(&mut self, delta_t: f64, input: &Input, sound: &Sound);
+    fn render(&mut self, engine: &mut Engine);
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -60,21 +60,63 @@ impl Animation {
     }
 }
 
-#[macro_export]
-macro_rules! create_textures {
-    ($engine: expr, $textures: expr, $($name: expr)*) => {
-        let mut i = 0;
-        $(
-            let tex_bytes = include_bytes!($name);
-            $textures.push($engine.create_texture(tex_bytes).unwrap());
-            i += 1;
-        )*
-       $engine.use_textures(&$textures, i);
-    };
-}
-
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct WindowUniform {
     pub size: [f32; 2],
+}
+
+pub struct Color {
+    /// Red component of the color
+    pub r: f64,
+    /// Green component of the color
+    pub g: f64,
+    /// Blue component of the color
+    pub b: f64,
+    /// Alpha component of the color
+    pub a: f64,
+}
+
+#[allow(missing_docs)]
+impl Color {
+    pub const fn new(r: f64, g: f64, b: f64, a: f64) -> Self {
+        Self { r, g, b, a }
+    }
+
+    pub const TRANSPARENT: Self = Self {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 0.0,
+    };
+    pub const BLACK: Self = Self {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+        a: 255.0,
+    };
+    pub const WHITE: Self = Self {
+        r: 255.0,
+        g: 255.0,
+        b: 255.0,
+        a: 255.0,
+    };
+    pub const RED: Self = Self {
+        r: 255.0,
+        g: 0.0,
+        b: 0.0,
+        a: 255.0,
+    };
+    pub const GREEN: Self = Self {
+        r: 0.0,
+        g: 255.0,
+        b: 0.0,
+        a: 255.0,
+    };
+    pub const BLUE: Self = Self {
+        r: 0.0,
+        g: 0.0,
+        b: 255.0,
+        a: 255.0,
+    };
 }

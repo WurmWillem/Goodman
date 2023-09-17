@@ -1,6 +1,5 @@
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
-use wgpu::Color;
 use winit::dpi::PhysicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
@@ -16,7 +15,7 @@ use crate::vert_buffers::{Instance, TexCoords, Vertex};
 
 pub struct EngineBuilder {
     win_size: Vec32,
-    win_background_color: Color,
+    win_background_color: wgpu::Color,
     win_resizable: bool,
 
     show_engine_ui: bool,
@@ -29,7 +28,7 @@ impl EngineBuilder {
     pub fn new(win_size: Vec32) -> Self {
         Self {
             win_size,
-            win_background_color: Color::BLACK,
+            win_background_color: wgpu::Color::BLACK,
             win_resizable: false,
 
             show_engine_ui: false,
@@ -51,20 +50,20 @@ impl EngineBuilder {
         self.reset_rate = reset_rate;
         self
     }
-    pub fn set_target_fps(mut self, target_fps: u32) -> Self {
+    pub fn with_target_fps(mut self, target_fps: u32) -> Self {
         self.target_fps = Some(target_fps);
         self
     }
-    pub fn set_target_tps(mut self, target_tps: u32) -> Self {
+    pub fn with_target_tps(mut self, target_tps: u32) -> Self {
         self.target_tps = Some(target_tps);
         self
     }
-    pub fn set_background_color(mut self, color: Color) -> Self {
+    pub fn with_background_color(mut self, color: crate::minor_types::Color) -> Self {
         self.win_background_color = wgpu::Color {
-            r: color.r,
-            g: color.g,
-            b: color.b,
-            a: color.a,
+            r: color.r / 255.,
+            g: color.g / 255.,
+            b: color.b / 255.,
+            a: color.a / 255.,
         };
         self
     }

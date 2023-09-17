@@ -22,7 +22,7 @@ async fn run() {
     let event_loop = EventLoop::new();
 
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
-        .set_target_fps(144)
+        .with_target_fps(144)
         // .show_engine_ui()
         .build(&event_loop)
         .await;
@@ -182,7 +182,7 @@ impl Manager for Game {
         }
     }
 
-    fn render(&self, engine: &mut Engine) {
+    fn render(&mut self, engine: &mut Engine) {
         let size = vec2(
             WINDOW_SIZE.x / self.grid[0].len() as f32,
             WINDOW_SIZE.y / self.grid.len() as f32,
