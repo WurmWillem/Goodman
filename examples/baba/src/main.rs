@@ -24,6 +24,7 @@ async fn run() {
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .with_target_fps(144)
         // .show_engine_ui()
+        .with_window_title("Baba".to_string())
         .build(&event_loop)
         .await;
 

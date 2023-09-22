@@ -4,7 +4,7 @@ fn main() {
     block_on(run());
 }
 
-const WINDOW_SIZE: Vec64 = vec2(1200., 800.);
+const WINDOW_SIZE: Vec64 = vec2(1920., 1000.);
 const BACKGROUND_COLOR: Color = Color::new(105., 105., 105., 0.);
 
 async fn run() {
@@ -15,7 +15,7 @@ async fn run() {
         .with_background_color(BACKGROUND_COLOR)
         .show_engine_ui()
         .with_target_fps(144)
-        // .set_target_tps(100 * 1000)
+        .with_target_tps(1000 * 1000)
         .build(&event_loop)
         .await;
 
@@ -31,15 +31,31 @@ struct Physics {
 impl Manager for Physics {
     fn new(engine: &mut Engine) -> Self {
         let mut textures = vec![];
-        create_textures!(engine, textures, "assets/circleb.png");
+        create_textures!(engine, textures, "assets/circle.png"); //10x10 circles, 37k tps
 
-        let circle_0 = Circle::new(32., vec2(100., 100.));
-        let circle_1 = Circle::new(64., vec2(500., 500.));
-
-        Physics {
-            circles: vec![circle_0, circle_1],
-            textures,
+        let mut circles = vec![];
+        for j in 0..10 {
+            for i in 0..10 {
+                let radius = 16. + (j * i) as f64 * 0.5;
+                let mass = radius / 16. * 2.;
+                let circle = Circle::new(
+                    radius,
+                    vec2(i as f64 * 34. + 34., j as f64 * 34. + 34.),
+                    mass,
+                );
+                circles.push(circle);
+            }
         }
+
+        /*let circle_0: Circle = Circle::new(16., vec2(17., 500.), 1.);
+        let circle_1: Circle = Circle::new(32., vec2(33., 100.), 4.);
+        let circle_2 = Circle::new(64., vec2(65., 500.), 16.);
+        let circle_3 = Circle::new(128., vec2(129., 500.), 64.);
+        let circle_4 = Circle::new(256., vec2(257., 500.), 256.);
+        let circles = vec![circle_0, circle_1, circle_2, circle_3, circle_4];
+        */
+
+        Physics { circles, textures }
     }
     fn update(&mut self, delta_t: f64, _input: &Input, _sound: &Sound) {
         self.circles.iter_mut().for_each(|circle| {
@@ -49,6 +65,7 @@ impl Manager for Physics {
         self.resolve_collisions();
     }
     fn render(&mut self, engine: &mut Engine) {
+        // self.resolve_collisions();
         /*let mut ui = UserUi::new("Physics Engine");
         ui.add_label(format!(
             "circle position: {} {}",
@@ -65,26 +82,15 @@ impl Physics {
     fn resolve_collisions(&mut self) {
         for j in 0..self.circles.len() {
             for i in j + 1..self.circles.len() {
-                let dist_x = self.circles[j].pos.x - self.circles[i].pos.x;
-                let dist_y = self.circles[j].pos.y - self.circles[i].pos.y;
+                let dist_x = (self.circles[j].pos.x + self.circles[j].radius)
+                    - (self.circles[i].pos.x + self.circles[i].radius);
+                let dist_y = (self.circles[j].pos.y - self.circles[j].radius)
+                    - (self.circles[i].pos.y - self.circles[i].radius);
 
                 let dist = dist_x.powi(2) + dist_y.powi(2);
-                if dist > (self.circles[j].radius + self.circles[i].radius).powi(2) * 1.1 {
-                    return;
+                if dist > (self.circles[j].radius + self.circles[i].radius).powi(2) {
+                    continue;
                 }
-                println!("d");
-
-                /*let middle_x = (self.circles[j].pos.x + self.circles[i].pos.x) * 0.5;
-                let middle_y = (self.circles[i].pos.y + self.circles[i].pos.y) * 0.5;
-
-                self.circles[j].pos.x = middle_x + self.circles[j].radius * dist_x / dist;
-                self.circles[j].pos.y = middle_y + self.circles[j].radius * dist_y / dist;
-
-                self.circles[i].pos.x = middle_x + self.circles[i].radius * -dist_x / dist;
-                self.circles[i].pos.y = middle_y + self.circles[i].radius * -dist_y / dist;
-
-                self.circles[j].vel *= -1.;
-                self.circles[i].vel *= -1.;*/
 
                 let normal = (self.circles[i].pos - self.circles[j].pos).normalize();
 
@@ -103,9 +109,10 @@ impl Physics {
 
                 // Calculate impulse, clamp the impulse so the simulation won't explode because of extreme velocities
                 let impulse = impulse_scalar * normal;
-                if impulse.magnitude() > 10000. {
-                    dbg!("Dsfs");
-                }
+                /*if impulse.magnitude() > 100000. {
+                    // impulse *= 0.8;
+                    dbg!("Very high impulse");
+                }*/
 
                 // Calculate new velocity based on impulse
                 self.circles[j].vel -= inv_mass_0 * impulse;
@@ -124,17 +131,17 @@ struct Circle {
     mass: f64,
 }
 impl Circle {
-    fn new(radius: f64, pos: Vec64) -> Circle {
+    fn new(radius: f64, pos: Vec64, mass: f64) -> Circle {
         Circle {
             radius,
             pos,
             vel: vec2(500., -500.),
-            mass: 10.,
+            mass,
         }
     }
 
     fn update(&mut self, delta_t: f64) {
-        let mut f_res = vec2(0., 0.);
+        /*let mut f_res = vec2(0., 0.);
         // f_res.y -= self.mass * 9.81 * 3.;
 
         /*if f_res == vec2(0., 0.) {
@@ -142,7 +149,7 @@ impl Circle {
         }*/
         let acc = f_res / self.mass;
 
-        self.vel += acc * delta_t;
+        self.vel += acc * delta_t;*/
 
         let next_pos = self.pos + self.vel * delta_t;
 

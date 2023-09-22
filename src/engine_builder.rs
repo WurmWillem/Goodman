@@ -17,6 +17,7 @@ pub struct EngineBuilder {
     win_size: Vec32,
     win_background_color: wgpu::Color,
     win_resizable: bool,
+    win_title: String,
 
     show_engine_ui: bool,
 
@@ -30,6 +31,7 @@ impl EngineBuilder {
             win_size,
             win_background_color: wgpu::Color::BLACK,
             win_resizable: false,
+            win_title: "Goodman".to_string(),
 
             show_engine_ui: false,
 
@@ -58,6 +60,10 @@ impl EngineBuilder {
         self.target_tps = Some(target_tps);
         self
     }
+    pub fn with_window_title(mut self, win_title: String) -> Self {
+        self.win_title = win_title;
+        self
+    }
     pub fn with_background_color(mut self, color: crate::minor_types::Color) -> Self {
         self.win_background_color = wgpu::Color {
             r: color.r / 255.,
@@ -71,6 +77,7 @@ impl EngineBuilder {
     pub async fn build(&mut self, event_loop: &EventLoop<()>) -> Engine {
         // Engine::new(event_loop, self.win_size, self.win_resizable).await
         let window = WindowBuilder::new()
+            .with_title(self.win_title.clone())
             .with_resizable(self.win_resizable)
             .with_inner_size(PhysicalSize::new(self.win_size.x, self.win_size.y))
             .build(event_loop)
