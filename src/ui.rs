@@ -87,6 +87,7 @@ impl Ui {
                 Some(_) => time.get_avg_fps(),
                 None => time.get_avg_tps(),
             };
+
             ui.label(format!("FPS: {:?}", fps));
             ui.label(format!("TPS: {:?}", time.get_avg_tps()));
             ui.label(format!("textures rendered this frame: {:?}", tex_rendered));

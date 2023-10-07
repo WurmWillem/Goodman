@@ -90,7 +90,7 @@ impl AllCharacterData {
         match char {
             Character::Baba => self.baba.is_win,
             Character::Flag => self.flag.is_win,
-            Character::Wall => self.wall.is_you,
+            Character::Wall => self.wall.is_win,
         }
     }
     pub fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
