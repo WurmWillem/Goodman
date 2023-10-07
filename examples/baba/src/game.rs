@@ -1,6 +1,3 @@
-use goodman::prelude::Sound;
-use rodio::Source;
-
 use crate::other::{
     AllCharacterData, Character, Direction, Move, Noun, NounPropCombi, Object, Property,
 };
@@ -113,15 +110,9 @@ impl Game {
         }
     }
 
-    pub fn move_object(&mut self, mov: Move, sound: &Sound) {
+    pub fn move_object(&mut self, mov: Move) {
         self.grid[mov.to.j][mov.to.i] = self.grid[mov.from.j][mov.from.i];
         self.grid[mov.from.j][mov.from.i] = Object::Empty;
-
-        if self.grid[mov.to.j][mov.to.i] == Object::Character(Character::Baba) {
-            sound
-                .play_sound(self.source.clone().convert_samples())
-                .unwrap();
-        };
     }
 
     pub fn win(&mut self) {

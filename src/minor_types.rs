@@ -28,14 +28,14 @@ impl Default for DrawParams {
     }
 }
 
-pub struct Animation {
-    frames: Vec<u32>,
+pub struct Animation<T: Copy> {
+    frames: Vec<T>,
     current_frame: usize,
     time_passed: f32,
     frame_duration: f32,
 }
-impl Animation {
-    pub fn new(frames: Vec<u32>, frame_duration: f32) -> Self {
+impl<T: Copy> Animation<T> { 
+    pub fn new(frames: Vec<T>, frame_duration: f32) -> Self {
         Animation {
             frames,
             current_frame: 0,
@@ -55,7 +55,7 @@ impl Animation {
             self.time_passed -= self.frame_duration;
         }
     }
-    pub fn get_current_frame(&self) -> u32 {
+    pub fn get_current_frame(&self) -> T {
         self.frames[self.current_frame]
     }
 }

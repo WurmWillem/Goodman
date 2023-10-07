@@ -1,6 +1,4 @@
-use crate::other::{
-    Character, Noun, Object, Property,
-};
+use crate::other::{Character, Noun, Object, Property};
 use crate::GRID_SIZE;
 
 #[derive(Debug, Clone, Copy)]
@@ -32,8 +30,6 @@ impl Level {
             Level::Level3 => load_level_3(grid),
         }
     }
-
-    
 }
 
 fn load_level_3(grid: &mut Vec<Vec<Object>>) {

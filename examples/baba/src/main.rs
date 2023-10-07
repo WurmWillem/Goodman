@@ -1,12 +1,12 @@
-use level::Level;
 use goodman::prelude::*;
+use level::Level;
 use other::{
     get_source_from_index, AllCharacterData, Move, NounPropCombi, Object, Property, VecPos,
 };
 
 mod game;
-mod other;
 mod level;
+mod other;
 
 pub const WINDOW_SIZE: Vec32 = vec2(1200., 750.); //1500x1000
 const GRID_SIZE: (usize, usize) = (20, 14);
@@ -16,10 +16,6 @@ fn main() {
 }
 
 async fn run() {
-    // The following two lines change the working directory, you should remove them if you are not running this project with the entire goodman project included
-    let root = std::path::Path::new("/home/wurmwillem/Programming/Goodman/examples/baba");
-    std::env::set_current_dir(root).unwrap();
-
     let event_loop = EventLoop::new();
 
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
@@ -41,17 +37,17 @@ pub struct Game {
     current_level: Level,
     textures: Vec<Texture>,
     source: Buffered<SoundFile>,
-    baba_anim: Animation,
+    baba_anim: Animation<u32>,
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        /*let background_music = engine.create_sound_source("src/assets/music.mp3").unwrap();
+        let background_music = engine.create_sound_source("examples/baba/src/assets/background.wav").unwrap();
         engine
-            .play_sound(background_music.convert_samples())
-            .unwrap();*/
+            .play_sound(background_music.convert_samples().repeat_infinite())
+            .unwrap();
 
         let source = engine
-            .create_sound_source("src/assets/pop.mp3")
+            .create_sound_source("examples/baba/src/assets/pop.mp3")
             .unwrap()
             .buffered();
 
@@ -172,12 +168,15 @@ impl Manager for Game {
         }
         for mov in &moves {
             if self.grid[mov.from.j][mov.from.i] != Object::Empty {
-                self.move_object(*mov, sound);
+                self.move_object(*mov);
             }
         }
 
         if !moves.is_empty() {
             self.update_character_data();
+            sound
+                .play_sound(self.source.clone().convert_samples())
+                .unwrap();
         }
     }
 
@@ -203,6 +202,7 @@ impl Manager for Game {
                     let source = get_source_from_index(self.baba_anim.get_current_frame());
                     let draw_params = DrawParams::from_source(source);
                     engine.render_texture_ex(rect32_vec(pos, size), &self.textures[0], draw_params);
+
                 } else if self.grid[j][i] != Object::Empty {
                     let source = self.grid[j][i].get_source();
                     let draw_params = DrawParams::from_source(source);
