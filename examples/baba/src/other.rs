@@ -22,16 +22,16 @@ impl Object {
             Object::Noun(Noun::Wall) => 9,
             Object::Character(Character::Wall) => 10,
             Object::Property(Property::Stop) => 8,
-            Object::Character(Character::Skull) => 12,
             Object::Noun(Noun::Skull) => 13,
-            Object::Property(Property::Defeat) => 14,
+            Object::Character(Character::Skull) => 14,
+            Object::Property(Property::Defeat) => 15,
         };
         get_source_from_index(index)
     }
 }
 
 pub fn get_source_from_index(index: u32) -> Rect32 {
-    let j = (index as f32 / 4.) as u32;
+    let j = (index as f32 * 0.25) as u32;
     let i = index % 4;
     rect32(i as f32 * 26., j as f32 * 26., 26., 26.)
 }
@@ -83,7 +83,6 @@ macro_rules! update_field_based_on_counter {
         };
     };
 }
-
 macro_rules! create_all_character_data {
     ($($field: ident, $enum: ident)*) => {
         pub struct AllCharacterData {

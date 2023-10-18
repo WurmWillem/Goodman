@@ -85,7 +85,7 @@ impl Game {
         }
     }
 
-    pub fn update_npcs(
+    fn update_npcs(
         &mut self,
         noun: Option<Noun>,
         property: Option<Property>,
@@ -125,5 +125,23 @@ impl Game {
         self.noun_prop_combi = vec![];
         self.character_data = AllCharacterData::new();
         self.update_character_data();
+    }
+
+    pub fn c(&mut self) {
+        let mut is_you_char_exists = false;
+        for j in 0..self.grid.len() {
+            for i in 0..self.grid[j].len() {
+                if let Object::Character(char) = self.grid[j][i] {
+                    if self.character_data.is_you(char) {
+                        is_you_char_exists = true;
+                    }
+                }
+            }
+        }
+
+        if !is_you_char_exists {
+            self.current_level.load_level(&mut self.grid);
+            self.reset();
+        }
     }
 }

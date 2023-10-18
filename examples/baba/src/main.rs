@@ -58,7 +58,7 @@ impl Manager for Game {
         create_textures!(engine, textures, "assets/sheet.png");
 
         let mut grid = vec![vec![]];
-        let current_level = Level::Level3;
+        let current_level = Level::Level4;
         current_level.load_level(&mut grid);
 
         let frames = vec![1, 11, 12]; //11
@@ -94,6 +94,7 @@ impl Manager for Game {
         load_level_if_button_pressed!(One, Level1);
         load_level_if_button_pressed!(Two, Level2);
         load_level_if_button_pressed!(Three, Level3);
+        load_level_if_button_pressed!(Four, Level4);
 
         let mut where_to_move = (0, 0);
         if input.is_button_pressed(Button::W) {
@@ -149,12 +150,12 @@ impl Manager for Game {
                         let to = VecPos::add_i32_tuple(from, where_to_move);
 
                         macro_rules! do_action_after_checking_property {
-                            ($char: ident, $property: ident, $action: expr) => {
+                            ($char: ident, $property: ident, $($action: expr)*) => {
                                 if self.character_data.get_if_enabled(
                                     $char.get_corresponding_noun(),
                                     Property::$property,
                                 ) {
-                                    $action;
+                                    $($action;)*
                                 }
                             };
                         }
@@ -162,7 +163,7 @@ impl Manager for Game {
                         if let Object::Character(char) = self.grid[from.j][from.i] {
                             do_action_after_checking_property!(char, Win, self.win());
                             do_action_after_checking_property!(char, Stop, break);
-                            do_action_after_checking_property!(char, Defeat, self.current_level.load_level(&mut self.grid));
+                            do_action_after_checking_property!(char, Defeat, self.grid[j][i] = Object::Empty self.c());
                         }
 
                         moves_to_make.push(Move::new(from, to));
