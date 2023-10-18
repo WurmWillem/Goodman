@@ -34,7 +34,7 @@ pub struct Animation<T: Copy> {
     time_passed: f32,
     frame_duration: f32,
 }
-impl<T: Copy> Animation<T> { 
+impl<T: Copy> Animation<T> {
     pub fn new(frames: Vec<T>, frame_duration: f32) -> Self {
         Animation {
             frames,

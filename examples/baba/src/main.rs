@@ -20,6 +20,7 @@ async fn run() {
 
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .with_target_fps(144)
+        .disable_sound()
         // .show_engine_ui()
         .with_window_title("Baba".to_string())
         .build(&event_loop)
@@ -41,7 +42,9 @@ pub struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        let background_music = engine.create_sound_source("examples/baba/src/assets/background.wav").unwrap();
+        let background_music = engine
+            .create_sound_source("examples/baba/src/assets/background.wav")
+            .unwrap();
         engine
             .play_sound(background_music.convert_samples().repeat_infinite())
             .unwrap();
@@ -202,7 +205,6 @@ impl Manager for Game {
                     let source = get_source_from_index(self.baba_anim.get_current_frame());
                     let draw_params = DrawParams::from_source(source);
                     engine.render_texture_ex(rect32_vec(pos, size), &self.textures[0], draw_params);
-
                 } else if self.grid[j][i] != Object::Empty {
                     let source = self.grid[j][i].get_source();
                     let draw_params = DrawParams::from_source(source);
