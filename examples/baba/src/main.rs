@@ -149,7 +149,7 @@ impl Manager for Game {
                         let to = VecPos::add_i32_tuple(from, where_to_move);
 
                         macro_rules! do_action_after_checking_property {
-                            ($property: ident, $char: ident, $action: expr) => {
+                            ($char: ident, $property: ident, $action: expr) => {
                                 if self.character_data.get_if_enabled(
                                     $char.get_corresponding_noun(),
                                     Property::$property,
@@ -160,8 +160,9 @@ impl Manager for Game {
                         }
 
                         if let Object::Character(char) = self.grid[from.j][from.i] {
-                            do_action_after_checking_property!(Win, char, self.win());
-                            do_action_after_checking_property!(Stop, char, break);
+                            do_action_after_checking_property!(char, Win, self.win());
+                            do_action_after_checking_property!(char, Stop, break);
+                            do_action_after_checking_property!(char, Defeat, self.current_level.load_level(&mut self.grid));
                         }
 
                         moves_to_make.push(Move::new(from, to));

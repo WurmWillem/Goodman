@@ -22,6 +22,9 @@ impl Object {
             Object::Noun(Noun::Wall) => 9,
             Object::Character(Character::Wall) => 10,
             Object::Property(Property::Stop) => 8,
+            Object::Character(Character::Skull) => 12,
+            Object::Noun(Noun::Skull) => 13,
+            Object::Property(Property::Defeat) => 14,
         };
         get_source_from_index(index)
     }
@@ -33,30 +36,33 @@ pub fn get_source_from_index(index: u32) -> Rect32 {
     rect32(i as f32 * 26., j as f32 * 26., 26., 26.)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Character {
-    Baba,
-    Flag,
-    Wall,
-}
-impl Character {
-    pub fn get_corresponding_noun(&self) -> Noun {
-        match self {
-            Character::Baba => Noun::Baba,
-            Character::Flag => Noun::Flag,
-            Character::Wall => Noun::Wall,
+macro_rules! create_character_enum {
+    ($($enum: ident)*) => {
+        #[derive(Debug, Clone, Copy, PartialEq)]
+        pub enum Character {
+            $($enum,)*
         }
-    }
-    pub fn iterator() -> impl Iterator<Item = Character> {
-        [Self::Baba, Self::Flag, Self::Wall].iter().copied()
-    }
+        impl Character {
+            pub fn get_corresponding_noun(&self) -> Noun {
+                match self {
+                    $(Character::$enum => Noun::$enum,)*
+                }
+            }
+            pub fn iterator() -> impl Iterator<Item = Character> {
+                [$(Self::$enum,)*].iter().copied()
+            }
+        }
+    };
 }
+
+create_character_enum!(Baba Flag Wall Skull);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Noun {
     Baba,
     Flag,
     Wall,
+    Skull,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -64,6 +70,7 @@ pub enum Property {
     You,
     Win,
     Stop,
+    Defeat,
 }
 
 macro_rules! update_field_based_on_counter {
@@ -88,6 +95,7 @@ macro_rules! create_all_character_data {
                     $($field: CharacterData::new(),)*
                 }
             }
+            
             pub fn is_you(&self, char: Character) -> bool {
                 match char {
                     $(Character::$enum => self.$field.is_you,)*
@@ -98,6 +106,7 @@ macro_rules! create_all_character_data {
                     $(Character::$enum => self.$field.is_win,)*
                 }
             }
+
             pub fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
                 let char_data = match noun {
                     $(Noun::$enum => &mut self.$field,)*
@@ -107,7 +116,8 @@ macro_rules! create_all_character_data {
                 update_field_based_on_counter!(property, char_data, i,
                     You, is_you_counter, is_you
                     Win, is_win_counter, is_win
-                    Stop, is_stop_counter, is_stop);
+                    Stop, is_stop_counter, is_stop
+                    Defeat, is_defeat_counter, is_defeat);
             }
 
             pub fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
@@ -118,19 +128,13 @@ macro_rules! create_all_character_data {
                     Property::You => char_data.is_you,
                     Property::Win => char_data.is_win,
                     Property::Stop => char_data.is_stop,
+                    Property::Defeat => char_data.is_defeat,
                 }
             }
         }
     };
 }
-
-create_all_character_data!(baba, Baba flag, Flag wall, Wall);
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Direction {
-    Hor,
-    Ver,
-}
+create_all_character_data!(baba, Baba  flag, Flag  wall, Wall  skull, Skull);
 
 macro_rules! create_character_data {
     ($($bool_field: ident, $counter_field: ident)*) => {
@@ -148,8 +152,7 @@ macro_rules! create_character_data {
         }
     };
 }
-
-create_character_data!(is_you, is_you_counter is_win, is_win_counter is_stop, is_stop_counter);
+create_character_data!(is_you, is_you_counter is_win, is_win_counter is_stop, is_stop_counter is_defeat, is_defeat_counter);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NounPropCombi {
@@ -197,4 +200,10 @@ impl VecPos {
         copy.j = (copy.j as i32 + t32_tuple.1) as usize;
         copy
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Direction {
+    Hor,
+    Ver,
 }

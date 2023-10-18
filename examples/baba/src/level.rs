@@ -6,6 +6,7 @@ pub enum Level {
     Level1,
     Level2,
     Level3,
+    Level4,
 }
 impl Level {
     pub fn load_next_level(&mut self, grid: &mut Vec<Vec<Object>>) {
@@ -17,6 +18,9 @@ impl Level {
                 *self = Level::Level3;
             }
             Level::Level3 => {
+                *self = Level::Level4;
+            }
+            Level::Level4 => {
                 *self = Level::Level1;
             }
         }
@@ -28,8 +32,20 @@ impl Level {
             Level::Level1 => load_level_1(grid),
             Level::Level2 => load_level_2(grid),
             Level::Level3 => load_level_3(grid),
+            Level::Level4 => load_level_4(grid),
         }
     }
+}
+
+fn load_level_4(grid: &mut Vec<Vec<Object>>) {
+    *grid = vec![vec![Object::Empty; GRID_SIZE.0]; GRID_SIZE.1];
+
+    grid[13][7] = Object::Noun(Noun::Baba);
+    grid[13][8] = Object::Is;
+    grid[13][9] = Object::Property(Property::You);
+
+    grid[2][2] = Object::Character(Character::Baba);
+    grid[11][15] = Object::Character(Character::Skull);
 }
 
 fn load_level_3(grid: &mut Vec<Vec<Object>>) {
