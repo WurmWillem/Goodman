@@ -9,6 +9,9 @@ use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::ControlFlow,
 };
+use std::fs::File;
+use std::io::BufReader;
+use rodio::Decoder;
 
 impl Engine {
     pub(crate) fn handle_rendering<T>(&mut self, manager: &mut T, control_flow: &mut ControlFlow)
@@ -76,6 +79,22 @@ impl Engine {
         surface device queue config render_pipeline vertex_buffer index_buffer camera camera_bind_group
         camera_buffer instance_buffer instances instances_rendered time tex_bind
         texture_amt_created target_fps sound ui tex_coords_buffer tex_coords)
+    }
+
+    pub fn create_sound_source(&self, path: &str) -> Result<Decoder<BufReader<File>>, String> {
+        let file = match File::open(path) {
+            Err(e) => return Err(e.to_string()),
+            Ok(f) => f,
+        };
+        let file = BufReader::new(file);
+        match Decoder::new(file) {
+            Err(e) => return Err(e.to_string()),
+            Ok(f) => Ok(f),
+        }
+    }
+
+    pub fn use_sound(&mut self, use_sound: bool) {
+        self.sound.use_sound(use_sound);
     }
 
     pub fn set_user_ui(&mut self, ui: UserUi) {

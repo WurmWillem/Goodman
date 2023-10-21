@@ -20,7 +20,6 @@ pub struct EngineBuilder {
     win_title: String,
 
     show_engine_ui: bool,
-    use_sound: bool,
 
     reset_rate: Option<f64>,
     target_fps: Option<u32>,
@@ -35,16 +34,11 @@ impl EngineBuilder {
             win_title: "Goodman".to_string(),
 
             show_engine_ui: false,
-            use_sound: true,
 
             reset_rate: None,
             target_fps: None,
             target_tps: None,
         }
-    }
-    pub fn disable_sound(mut self) -> Self {
-        self.use_sound = false;
-        self
     }
     pub fn set_window_to_be_resizable(mut self) -> Self {
         self.win_resizable = true;
@@ -215,7 +209,7 @@ impl EngineBuilder {
 
             target_fps: self.target_fps,
 
-            sound: Sound::new(self.use_sound),
+            sound: Sound::new(),
         };
         Engine::new(all_fields)
     }

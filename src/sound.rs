@@ -10,15 +10,16 @@ pub struct Sound {
     use_sound: bool,
 }
 impl Sound {
-    pub(crate) fn new(use_sound: bool) -> Self {
+    pub(crate) fn new() -> Self {
         let (stream, stream_handle) =
             rodio::OutputStream::try_default().expect("can't find output device");
         Self {
             stream,
             stream_handle,
-            use_sound,
+            use_sound: true,
         }
     }
+
     pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
     where
         S: Source<Item = f32> + Send + 'static,
@@ -27,5 +28,16 @@ impl Sound {
             self.stream_handle.play_raw(source)?;
         }
         Ok(())
+    }
+
+    pub fn use_sound(&mut self, use_sound: bool) {
+        self.use_sound = use_sound;
+        if !self.use_sound {
+            *self = Sound::new();
+        }
+    }
+
+    pub fn uses_sound(&self) -> bool {
+        self.use_sound
     }
 }

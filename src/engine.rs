@@ -1,9 +1,6 @@
-use rodio::Decoder;
 use wgpu::{BindGroup, Buffer};
 use winit::{event::Event, event_loop::EventLoop, window::Window};
 
-use std::fs::File;
-use std::io::BufReader;
 
 use crate::{
     camera::Camera,
@@ -55,18 +52,6 @@ pub struct Engine {
     target_fps: Option<u32>,
 }
 impl Engine {
-    pub fn create_sound_source(&self, path: &str) -> Result<Decoder<BufReader<File>>, String> {
-        let file = match File::open(path) {
-            Err(e) => return Err(e.to_string()),
-            Ok(f) => f,
-        };
-        let file = BufReader::new(file);
-        match Decoder::new(file) {
-            Err(e) => return Err(e.to_string()),
-            Ok(f) => Ok(f),
-        }
-    }
-
     pub fn start_loop<T>(mut self, mut manager: T, event_loop: EventLoop<()>)
     where
         T: Manager + 'static,
@@ -90,7 +75,7 @@ impl Engine {
                     self.time.update(&mut self.ui);
 
                     self.update_cam();
-                    manager.update(self.time.get_relevant_delta_t(), &self.input, &self.sound);
+                    manager.update(self.time.get_relevant_delta_t(), &self.input, &mut self.sound);
 
                     if self
                         .input

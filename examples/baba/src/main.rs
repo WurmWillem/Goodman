@@ -20,7 +20,6 @@ async fn run() {
 
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .with_target_fps(144)
-        .disable_sound()
         // .show_engine_ui()
         .with_window_title("Baba".to_string())
         .build(&event_loop)
@@ -42,6 +41,8 @@ pub struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
+        // engine.use_sound(false);
+
         let background_music = engine
             .create_sound_source("examples/baba/src/assets/background.wav")
             .unwrap();
@@ -79,7 +80,7 @@ impl Manager for Game {
         self.update_character_data();
     }
 
-    fn update(&mut self, delta_t: f64, input: &Input, sound: &Sound) {
+    fn update(&mut self, delta_t: f64, input: &Input, sound: &mut Sound) {
         self.baba_anim.update(delta_t as f32);
 
         macro_rules! load_level_if_button_pressed {
@@ -99,6 +100,10 @@ impl Manager for Game {
         if input.is_button_pressed(Button::R) {
             self.current_level.load_level(&mut self.grid);
             self.reset();
+        }
+
+        if input.is_button_pressed(Button::M) {
+            sound.use_sound(!sound.uses_sound());
         }
 
         let mut where_to_move = (0, 0);
