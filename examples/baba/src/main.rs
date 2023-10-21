@@ -96,6 +96,11 @@ impl Manager for Game {
         load_level_if_button_pressed!(Three, Level3);
         load_level_if_button_pressed!(Four, Level4);
 
+        if input.is_button_pressed(Button::R) {
+            self.current_level.load_level(&mut self.grid);
+            self.reset();
+        }
+
         let mut where_to_move = (0, 0);
         if input.is_button_pressed(Button::W) {
             where_to_move.1 = -1;
