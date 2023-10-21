@@ -27,11 +27,15 @@ default-features = false
 features = ["png", "jpeg"]
 
 [[bin]]
-name = "p"
+name = "pong"
 path = "examples/pong/src/main.rs"
 [[bin]]
-name = "b"
+name = "breakout"
 path = "examples/breakout/src/main.rs"
 [[bin]] 
 name = "baba"
 path = "examples/baba/src/main.rs"
+[[bin]] 
+name = "physics"
+path = "examples/physics/src/main.rs"
+

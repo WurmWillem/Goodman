@@ -104,6 +104,19 @@ impl Texture {
     }
 }
 
+#[macro_export]
+macro_rules! create_textures {
+    ($engine: expr, $textures: expr, $($name: expr)*) => {
+        let mut i = 0;
+        $(
+            let tex_bytes = include_bytes!($name);
+            $textures.push($engine.create_texture(tex_bytes).unwrap());
+            i += 1;
+        )*
+       $engine.use_textures(&$textures, i);
+    };
+}
+
 pub fn create_bind_group_layout(device: &Device, tex_amt: u32) -> wgpu::BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[

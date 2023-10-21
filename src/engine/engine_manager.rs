@@ -11,7 +11,7 @@ use winit::{
 };
 
 impl Engine {
-    pub(crate) fn handle_rendering<T>(&mut self, manager: &T, control_flow: &mut ControlFlow)
+    pub(crate) fn handle_rendering<T>(&mut self, manager: &mut T, control_flow: &mut ControlFlow)
     where
         T: Manager + 'static,
     {

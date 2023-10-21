@@ -66,7 +66,7 @@ impl Manager for Breakout {
         });*/
     }
 
-    fn render(&self, state: &mut Engine) {
+    fn render(&mut self, state: &mut Engine) {
         /*self.blocks.iter_mut().for_each(|row| {
             if row.len() > 0 {
                 row.remove(0);

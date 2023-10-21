@@ -1,6 +1,5 @@
 use egui_winit_platform::{Platform, PlatformDescriptor};
 use wgpu::util::DeviceExt;
-use wgpu::Color;
 use winit::dpi::PhysicalSize;
 use winit::event_loop::EventLoop;
 use winit::window::WindowBuilder;
@@ -16,10 +15,12 @@ use crate::vert_buffers::{Instance, TexCoords, Vertex};
 
 pub struct EngineBuilder {
     win_size: Vec32,
-    win_background_color: Color,
+    win_background_color: wgpu::Color,
     win_resizable: bool,
+    win_title: String,
 
     show_engine_ui: bool,
+    use_sound: bool,
 
     reset_rate: Option<f64>,
     target_fps: Option<u32>,
@@ -29,15 +30,21 @@ impl EngineBuilder {
     pub fn new(win_size: Vec32) -> Self {
         Self {
             win_size,
-            win_background_color: Color::BLACK,
+            win_background_color: wgpu::Color::BLACK,
             win_resizable: false,
+            win_title: "Goodman".to_string(),
 
             show_engine_ui: false,
+            use_sound: true,
 
             reset_rate: None,
             target_fps: None,
             target_tps: None,
         }
+    }
+    pub fn disable_sound(mut self) -> Self {
+        self.use_sound = false;
+        self
     }
     pub fn set_window_to_be_resizable(mut self) -> Self {
         self.win_resizable = true;
@@ -51,20 +58,24 @@ impl EngineBuilder {
         self.reset_rate = reset_rate;
         self
     }
-    pub fn set_target_fps(mut self, target_fps: u32) -> Self {
+    pub fn with_target_fps(mut self, target_fps: u32) -> Self {
         self.target_fps = Some(target_fps);
         self
     }
-    pub fn set_target_tps(mut self, target_tps: u32) -> Self {
+    pub fn with_target_tps(mut self, target_tps: u32) -> Self {
         self.target_tps = Some(target_tps);
         self
     }
-    pub fn set_background_color(mut self, color: Color) -> Self {
+    pub fn with_window_title(mut self, win_title: String) -> Self {
+        self.win_title = win_title;
+        self
+    }
+    pub fn with_background_color(mut self, color: crate::minor_types::Color) -> Self {
         self.win_background_color = wgpu::Color {
-            r: color.r,
-            g: color.g,
-            b: color.b,
-            a: color.a,
+            r: color.r / 255.,
+            g: color.g / 255.,
+            b: color.b / 255.,
+            a: color.a / 255.,
         };
         self
     }
@@ -72,6 +83,7 @@ impl EngineBuilder {
     pub async fn build(&mut self, event_loop: &EventLoop<()>) -> Engine {
         // Engine::new(event_loop, self.win_size, self.win_resizable).await
         let window = WindowBuilder::new()
+            .with_title(self.win_title.clone())
             .with_resizable(self.win_resizable)
             .with_inner_size(PhysicalSize::new(self.win_size.x, self.win_size.y))
             .build(event_loop)
@@ -203,7 +215,7 @@ impl EngineBuilder {
 
             target_fps: self.target_fps,
 
-            sound: Sound::new(),
+            sound: Sound::new(self.use_sound),
         };
         Engine::new(all_fields)
     }

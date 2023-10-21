@@ -22,41 +22,47 @@ impl Object {
             Object::Noun(Noun::Wall) => 9,
             Object::Character(Character::Wall) => 10,
             Object::Property(Property::Stop) => 8,
+            Object::Noun(Noun::Skull) => 13,
+            Object::Character(Character::Skull) => 14,
+            Object::Property(Property::Defeat) => 15,
         };
         get_source_from_index(index)
     }
 }
 
 pub fn get_source_from_index(index: u32) -> Rect32 {
-    let j = (index as f32 / 4.) as u32;
+    let j = (index as f32 * 0.25) as u32;
     let i = index % 4;
     rect32(i as f32 * 26., j as f32 * 26., 26., 26.)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Character {
-    Baba,
-    Flag,
-    Wall,
-}
-impl Character {
-    pub fn get_corresponding_noun(&self) -> Noun {
-        match self {
-            Character::Baba => Noun::Baba,
-            Character::Flag => Noun::Flag,
-            Character::Wall => Noun::Wall,
+macro_rules! create_character_enum {
+    ($($enum: ident)*) => {
+        #[derive(Debug, Clone, Copy, PartialEq)]
+        pub enum Character {
+            $($enum,)*
         }
-    }
-    pub fn iterator() -> impl Iterator<Item = Character> {
-        [Self::Baba, Self::Flag, Self::Wall].iter().copied()
-    }
+        impl Character {
+            pub fn get_corresponding_noun(&self) -> Noun {
+                match self {
+                    $(Character::$enum => Noun::$enum,)*
+                }
+            }
+            pub fn iterator() -> impl Iterator<Item = Character> {
+                [$(Self::$enum,)*].iter().copied()
+            }
+        }
+    };
 }
+
+create_character_enum!(Baba Flag Wall Skull);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Noun {
     Baba,
     Flag,
     Wall,
+    Skull,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -64,99 +70,88 @@ pub enum Property {
     You,
     Win,
     Stop,
+    Defeat,
 }
 
-pub struct AllCharacterData {
-    baba: CharacterData,
-    flag: CharacterData,
-    wall: CharacterData,
-}
-impl AllCharacterData {
-    pub fn new() -> Self {
-        Self {
-            baba: CharacterData::new(),
-            flag: CharacterData::new(),
-            wall: CharacterData::new(),
-        }
-    }
-    pub fn is_you(&self, char: Character) -> bool {
-        match char {
-            Character::Baba => self.baba.is_you,
-            Character::Flag => self.flag.is_you,
-            Character::Wall => self.wall.is_you,
-        }
-    }
-    pub fn is_win(&self, char: Character) -> bool {
-        match char {
-            Character::Baba => self.baba.is_win,
-            Character::Flag => self.flag.is_win,
-            Character::Wall => self.wall.is_you,
-        }
-    }
-    pub fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
-        let char_data = match noun {
-            Noun::Baba => &mut self.baba,
-            Noun::Flag => &mut self.flag,
-            Noun::Wall => &mut self.wall,
+macro_rules! update_field_based_on_counter {
+    ($property: expr, $char_data: expr, $i: expr, $($enum: ident, $counter: ident, $bool: ident)*) => {
+        match $property {
+            $(Property::$enum => {
+                $char_data.$counter = ($char_data.$counter as i32 + $i) as usize;
+                $char_data.$bool = $char_data.$counter > 0
+            })*
         };
-
-        let i = if enable { 1 } else { -1 };
-        match property {
-            Property::You => {
-                char_data.is_you_counter = (char_data.is_you_counter as i32 + i) as usize;
-                char_data.is_you = char_data.is_you_counter > 0
-            }
-            Property::Win => {
-                char_data.is_win_counter = (char_data.is_win_counter as i32 + i) as usize;
-                char_data.is_win = char_data.is_win_counter > 0
-            }
-            Property::Stop => {
-                char_data.is_stop_counter = (char_data.is_stop_counter as i32 + i) as usize;
-                char_data.is_stop = char_data.is_stop_counter > 0
-            }
-        };
-    }
-    pub fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
-        let char_data = match noun {
-            Noun::Baba => &self.baba,
-            Noun::Flag => &self.flag,
-            Noun::Wall => &self.wall,
-        };
-        match property {
-            Property::You => char_data.is_you,
-            Property::Win => char_data.is_win,
-            Property::Stop => char_data.is_stop,
+    };
+}
+macro_rules! create_all_character_data {
+    ($($field: ident, $enum: ident)*) => {
+        pub struct AllCharacterData {
+            $($field: CharacterData,)*
         }
-    }
-}
+        impl AllCharacterData {
+            pub fn new() -> Self {
+                Self {
+                    $($field: CharacterData::new(),)*
+                }
+            }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Direction {
-    Hor,
-    Ver,
-}
+            pub fn is_you(&self, char: Character) -> bool {
+                match char {
+                    $(Character::$enum => self.$field.is_you,)*
+                }
+            }
+            pub fn is_win(&self, char: Character) -> bool {
+                match char {
+                    $(Character::$enum => self.$field.is_win,)*
+                }
+            }
 
-#[derive(Debug, Clone, Copy)]
-pub struct CharacterData {
-    is_you: bool,
-    is_you_counter: usize,
-    is_win: bool,
-    is_win_counter: usize,
-    is_stop: bool,
-    is_stop_counter: usize,
-}
-impl CharacterData {
-    pub fn new() -> Self {
-        Self {
-            is_you: false,
-            is_you_counter: 0,
-            is_win: false,
-            is_win_counter: 0,
-            is_stop: false,
-            is_stop_counter: 0,
+            pub fn set_char_to_property(&mut self, noun: Noun, property: Property, enable: bool) {
+                let char_data = match noun {
+                    $(Noun::$enum => &mut self.$field,)*
+                };
+
+                let i = if enable { 1 } else { -1 };
+                update_field_based_on_counter!(property, char_data, i,
+                    You, is_you_counter, is_you
+                    Win, is_win_counter, is_win
+                    Stop, is_stop_counter, is_stop
+                    Defeat, is_defeat_counter, is_defeat);
+            }
+
+            pub fn get_if_enabled(&self, noun: Noun, property: Property) -> bool {
+                let char_data = match noun {
+                    $(Noun::$enum => &self.$field,)*
+                };
+                match property {
+                    Property::You => char_data.is_you,
+                    Property::Win => char_data.is_win,
+                    Property::Stop => char_data.is_stop,
+                    Property::Defeat => char_data.is_defeat,
+                }
+            }
         }
-    }
+    };
 }
+create_all_character_data!(baba, Baba  flag, Flag  wall, Wall  skull, Skull);
+
+macro_rules! create_character_data {
+    ($($bool_field: ident, $counter_field: ident)*) => {
+        #[derive(Debug, Clone, Copy)]
+        pub struct CharacterData {
+            $($bool_field: bool, $counter_field: usize,)*
+        }
+        impl CharacterData {
+            pub fn new() -> Self {
+                Self {
+                    $($bool_field: false,
+                    $counter_field: 0,)*
+                }
+            }
+        }
+    };
+}
+create_character_data!(is_you, is_you_counter is_win, is_win_counter is_stop, is_stop_counter is_defeat, is_defeat_counter);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NounPropCombi {
@@ -204,4 +199,10 @@ impl VecPos {
         copy.j = (copy.j as i32 + t32_tuple.1) as usize;
         copy
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Direction {
+    Hor,
+    Ver,
 }

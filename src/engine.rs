@@ -112,7 +112,7 @@ impl Engine {
                     }
                 }
                 Event::RedrawRequested(window_id) if window_id == self.window.id() => {
-                    self.handle_rendering(&manager, control_flow);
+                    self.handle_rendering(&mut manager, control_flow);
                 }
                 _ => {}
             }

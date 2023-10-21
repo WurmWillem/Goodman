@@ -69,7 +69,7 @@ impl Manager for Pong {
             .resolve_collisions_right_paddle(&self.right_paddle);
     }
 
-    fn render(&self, engine: &mut Engine) {
+    fn render(&mut self, engine: &mut Engine) {
         /*let mut ui = UserUi::new("Pong");
         ui.add_label(format!("ball position: {} {}", self.ball.pos.x as u32, self.ball.pos.y as u32));
         engine.set_user_ui(ui);*/

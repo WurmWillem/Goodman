@@ -21,5 +21,5 @@ impl Manager for StateManager {
         Self {}
     }
     fn update(&mut self, _frame_time: f64, _input: &Input, _sound: &Sound) {}
-    fn render(&self, _state: &mut Engine) {}
+    fn render(&mut self, _state: &mut Engine) {}
 }
