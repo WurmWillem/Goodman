@@ -127,21 +127,16 @@ impl Game {
         self.update_character_data();
     }
 
-    pub fn c(&mut self) {
-        let mut is_you_char_exists = false;
+    pub fn is_you_char_exists(&mut self) -> bool {
         for j in 0..self.grid.len() {
             for i in 0..self.grid[j].len() {
                 if let Object::Character(char) = self.grid[j][i] {
                     if self.character_data.is_you(char) {
-                        is_you_char_exists = true;
+                        return true;
                     }
                 }
             }
         }
-
-        if !is_you_char_exists {
-            self.current_level.load_level(&mut self.grid);
-            self.reset();
-        }
+        false
     }
 }

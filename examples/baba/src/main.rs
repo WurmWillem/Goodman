@@ -114,7 +114,7 @@ impl Manager for Game {
         }
 
         let mut moves: Vec<Move> = vec![];
-        for j in 0..self.grid.len() {
+        'outer: for j in 0..self.grid.len() {
             for i in 0..self.grid[0].len() {
                 let char = match self.grid[j][i] {
                     Object::Character(char) => char,
@@ -124,14 +124,9 @@ impl Manager for Game {
                     continue;
                 }
 
-                let i_j: VecPos = VecPos::new((i, j));
-
-                if moves.iter().find(|m| m.to == i_j).is_some() {
-                    continue;
-                }
-
-                let next_grid_pos = VecPos::add_i32_tuple(i_j, where_to_move);
-                let mov = Move::new(i_j, next_grid_pos);
+                let from = VecPos::new((i, j));
+                let next_grid_pos = VecPos::add_i32_tuple(from, where_to_move);
+                let mov = Move::new(from, next_grid_pos);
                 let mut moves_to_make = vec![mov];
 
                 loop {
@@ -141,8 +136,14 @@ impl Manager for Game {
                     }
 
                     if self.grid[to.j][to.i] == Object::Empty {
-                        for m in moves_to_make.iter().rev() {
-                            moves.push(*m);
+                        for i in (0..moves_to_make.len()).rev() {
+                            moves.push(moves_to_make[i]);
+                            let to = moves_to_make[i].to;
+                            if let Object::Character(char) = self.grid[to.j][to.i] {
+                                if self.character_data.is_you(char) {
+                                    break;
+                                }
+                            }
                         }
                         break;
                     } else {
@@ -161,9 +162,16 @@ impl Manager for Game {
                         }
 
                         if let Object::Character(char) = self.grid[from.j][from.i] {
-                            do_action_after_checking_property!(char, Win, self.win());
+                            do_action_after_checking_property!(char, Win, self.win() break 'outer);
                             do_action_after_checking_property!(char, Stop, break);
-                            do_action_after_checking_property!(char, Defeat, self.grid[j][i] = Object::Empty self.c());
+                            do_action_after_checking_property!(
+                                char,
+                                Defeat,
+                                if moves_to_make.len() < 2 {
+                                    self.grid[j][i] = Object::Empty;
+                                    break;
+                                }
+                            );
                         }
 
                         moves_to_make.push(Move::new(from, to));
@@ -171,13 +179,32 @@ impl Manager for Game {
                 }
             }
         }
-        for mov in &moves {
-            if self.grid[mov.from.j][mov.from.i] != Object::Empty {
-                self.move_object(*mov);
+
+        if where_to_move.0 != 0 {
+            moves.sort_by(|a, b| a.from.i.cmp(&b.from.i));
+        } else {
+            moves.sort_by(|a, b| a.from.j.cmp(&b.from.j));
+        }
+        if where_to_move.0 == -1 || where_to_move.1 == -1 {
+            for mov in &moves {
+                if self.grid[mov.from.j][mov.from.i] != Object::Empty {
+                    self.move_object(*mov);
+                }
+            }
+        } else {
+            for mov in moves.iter().rev() {
+                if self.grid[mov.from.j][mov.from.i] != Object::Empty {
+                    self.move_object(*mov);
+                }
             }
         }
 
         if !moves.is_empty() {
+            if !self.is_you_char_exists() {
+                self.current_level.load_level(&mut self.grid);
+                self.reset();
+            }
+
             self.update_character_data();
             sound
                 .play_sound(self.source.clone().convert_samples())

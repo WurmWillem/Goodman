@@ -94,7 +94,7 @@ macro_rules! create_all_character_data {
                     $($field: CharacterData::new(),)*
                 }
             }
-            
+
             pub fn is_you(&self, char: Character) -> bool {
                 match char {
                     $(Character::$enum => self.$field.is_you,)*

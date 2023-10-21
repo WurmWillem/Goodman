@@ -39,13 +39,13 @@ impl Level {
 
 fn create_hor_pattern(j: usize, i: usize, noun: Noun, prop: Property, grid: &mut Vec<Vec<Object>>) {
     grid[j][i] = Object::Noun(noun);
-    grid[j][i+1] = Object::Is;
-    grid[j][i+2] = Object::Property(prop);
+    grid[j][i + 1] = Object::Is;
+    grid[j][i + 2] = Object::Property(prop);
 }
 fn create_ver_pattern(j: usize, i: usize, noun: Noun, prop: Property, grid: &mut Vec<Vec<Object>>) {
     grid[j][i] = Object::Noun(noun);
-    grid[j+1][i] = Object::Is;
-    grid[j+2][i] = Object::Property(prop);
+    grid[j + 1][i] = Object::Is;
+    grid[j + 2][i] = Object::Property(prop);
 }
 
 fn load_level_4(grid: &mut Vec<Vec<Object>>) {
@@ -64,8 +64,6 @@ fn load_level_4(grid: &mut Vec<Vec<Object>>) {
     for j in 3..8 {
         grid[j][7] = Object::Character(Character::Wall);
     }
-    
-
 
     for j in 0..8 {
         grid[j][12] = Object::Character(Character::Skull);
@@ -74,11 +72,7 @@ fn load_level_4(grid: &mut Vec<Vec<Object>>) {
         grid[8][i] = Object::Character(Character::Skull);
     }
 
-    
-
-
     grid[2][2] = Object::Character(Character::Baba);
-
     grid[5][16] = Object::Character(Character::Flag);
 }
 
