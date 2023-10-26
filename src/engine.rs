@@ -1,7 +1,6 @@
 use wgpu::{BindGroup, Buffer};
 use winit::{event::Event, event_loop::EventLoop, window::Window};
 
-
 use crate::{
     camera::Camera,
     input::Input,
@@ -75,7 +74,11 @@ impl Engine {
                     self.time.update(&mut self.ui);
 
                     self.update_cam();
-                    manager.update(self.time.get_relevant_delta_t(), &self.input, &mut self.sound);
+                    manager.update(
+                        self.time.get_relevant_delta_t(),
+                        &self.input,
+                        &mut self.sound,
+                    );
 
                     if self
                         .input

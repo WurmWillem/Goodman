@@ -5,13 +5,13 @@ use crate::engine_builder::{
 };
 use crate::prelude::{Manager, UserUi};
 use crate::texture::{self, Texture};
+use rodio::Decoder;
+use std::fs::File;
+use std::io::BufReader;
 use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::ControlFlow,
 };
-use std::fs::File;
-use std::io::BufReader;
-use rodio::Decoder;
 
 impl Engine {
     pub(crate) fn handle_rendering<T>(&mut self, manager: &mut T, control_flow: &mut ControlFlow)
