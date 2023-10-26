@@ -112,8 +112,8 @@ impl Input {
         reset_buttons!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow
             zero one two three four five six seven eight nine a b c d e f g h i j k l m n o p q r s t u v w x y z
             escape f1 f2 f3 f4 f5 f6 f7 f8 f9  f10  f11  f12
-            insert home delete end page_down page_up back enter space caps tab period 
-            plus minus equals slash backslash apostrophe asterisk comma 
+            insert home delete end page_down page_up back enter space caps tab period
+            plus minus equals slash backslash apostrophe asterisk comma
             r_control r_shift r_alt l_control l_shift l_alt);
     }
 }

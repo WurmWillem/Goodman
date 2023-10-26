@@ -206,7 +206,9 @@ impl Engine {
                 0,
                 bytemuck::cast_slice(&self.instances),
             );
+            println!("update");
         } else {
+            println!("new");
             self.instance_buffer = vert_buffers::create_inst_buffer(&self.device, &self.instances);
         }
 

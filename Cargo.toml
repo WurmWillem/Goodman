@@ -41,4 +41,7 @@ path = "examples/physics/src/main.rs"
 [[bin]] 
 name = "chess"
 path = "examples/chess/src/main.rs"
+[[bin]] 
+name = "sim"
+path = "examples/particle_sim/src/main.rs"
 
