@@ -17,7 +17,7 @@ async fn run() {
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .show_engine_ui()
         .with_target_fps(144)
-        .with_target_tps(10)
+        // .with_target_tps(10)
         .build(&event_loop)
         .await;
 
@@ -62,37 +62,26 @@ impl Manager for Simulation {
                     continue;
                 }
 
-                if j < PART_AMT.1 - 1 {
-                    if self.particles[j + 1][i].kind == PartKind::Empty {
-                        self.particles[j + 1][i] = self.particles[j][i];
-                        self.particles[j][i] = Particle::new(PartKind::Empty);
-                        self.particles[j + 1][i].has_updated = true;
-                    } else if i < PART_AMT.0 - 1
-                        && self.particles[j + 1][i + 1].kind == PartKind::Empty
-                    {
-                        self.particles[j + 1][i + 1] = self.particles[j][i];
-                        self.particles[j][i] = Particle::new(PartKind::Empty);
-                        self.particles[j + 1][i + 1].has_updated = true;
-                    } else if i > 0
-                    && self.particles[j + 1][i - 1].kind == PartKind::Empty
-                    {
-                        self.particles[j + 1][i - 1] = self.particles[j][i];
-                        self.particles[j][i] = Particle::new(PartKind::Empty);
-                        self.particles[j + 1][i - 1].has_updated = true;
-                    }
-                }
+                macro_rules! m {
+                    ($parts: expr, $j: expr, $i: expr, $($j_add: expr, $i_add: expr)*) => {
+                        $(
+                            if $j as isize + $j_add < 0 || $i as isize + $i_add < 0 {
+                                continue;
+                            }
+                            let (new_j, new_i) = (($j as isize + $j_add) as usize, ($i as isize + $i_add) as usize);
 
-                if j < PART_AMT.1 - 1 && self.particles[j + 1][i].kind == PartKind::Empty {
-                    self.particles[j + 1][i] = self.particles[j][i];
-                    self.particles[j][i] = Particle::new(PartKind::Empty);
-                    self.particles[j + 1][i].has_updated = true;
+                            if $parts.get(new_j).is_some() && $parts.get(new_i).is_some() && $parts[new_j][new_i].kind == PartKind::Empty {
+                                self.particles[new_j][new_i] = self.particles[$j][$i];
+                                self.particles[$j][$i] = Particle::new(PartKind::Empty);
+                                self.particles[new_j][new_i].has_updated = true;
+                                continue;
+                            }
+                        )*
+                    };
                 }
+                m!(self.particles, j, i,    1, 0   1, -1   1, 1);
 
-                /*if self
-                    .particles
-                    .get(j + 1)
-                    .is_some_and(|row| row[i].kind != PartKind::Empty)
-                {}*/
+                
             }
         }
         for j in 0..self.particles.len() {
