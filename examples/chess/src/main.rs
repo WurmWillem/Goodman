@@ -128,21 +128,21 @@ impl Chess {
                 engine.render_texture(rect, &self.textures[index]);
             }
         }
-        /*for j in 0..8 {
+        for j in 0..8 {
             for i in 0..8 {
                 let moves = Data::get_moves(&self.pieces[j][i]);
                 if moves.len() > 0 {
                     for m in moves {
-                        /*draw_circle(
-                            m.1 as f32 * SQUARE + SQUARE / 2.0,
-                            m.0 as f32 * SQUARE + SQUARE / 2.0,
-                            SQUARE / 6.0,
-                            MY_GRAY,
-                        );*/
-                        todo!()
+                        let rect = rect32(
+                            m.1 as f32 * SQUARE + SQUARE * 0.345,
+                            m.0 as f32 * SQUARE + SQUARE * 0.345,
+                            SQUARE * 0.33,
+                            SQUARE * 0.33,
+                        );
+                        engine.render_texture(rect, &self.textures[15]);
                     }
                 }
             }
-        }*/
+        }
     }
 }

@@ -63,18 +63,6 @@ impl Data {
         }
     }
 
-    pub fn get_color(piece: &Piece) -> Color {
-        match piece {
-            Piece::None => RAYWHITE,
-            Piece::Pawn(data)
-            | Piece::Knight(data)
-            | Piece::Bishop(data)
-            | Piece::Rook(data)
-            | Piece::Queen(data)
-            | Piece::King(data) => data.color.clone(),
-        }
-    }
-
     pub fn get_if_selected(piece: &Piece) -> bool {
         return match &piece {
             Piece::Pawn(dat)

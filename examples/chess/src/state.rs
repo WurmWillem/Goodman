@@ -104,19 +104,6 @@ impl State {
             }
         }
     }
-
-    pub fn check_for_check(&self, pieces: &mut Vec<Vec<Piece>>) {
-        for j in 0..8 {
-            for i in 0..8 {
-                for m in &Piece::calculate_moves(pieces, &pieces[j][i], j, i) {
-                    match pieces[m.0][m.1] {
-                        Piece::King(_) => println!("king found at {:?}", m),
-                        _ => (),
-                    }
-                }
-            }
-        }
-    }
 }
 
 fn square_clicked(x: usize, y: usize, input: &Input) -> bool {
