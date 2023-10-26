@@ -66,6 +66,7 @@ pub struct WindowUniform {
     pub size: [f32; 2],
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Color {
     /// Red component of the color
     pub r: f64,

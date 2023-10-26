@@ -37,7 +37,6 @@ impl Manager for Pong {
     fn new(engine: &mut Engine) -> Self {
         let mut textures = vec![];
         create_textures!(engine, textures, "assets/Computer.png" "assets/Player.png" "assets/Ball.png");
-        // engine.use_textures(&textures);
 
         let left_paddle = Paddle::new(80., WINDOW_SIZE.y * 0.5);
         let right_paddle = Paddle::new(WINDOW_SIZE.x - 80., WINDOW_SIZE.y * 0.5);

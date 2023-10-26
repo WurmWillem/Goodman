@@ -33,6 +33,10 @@ macro_rules! CreateInputStruct {
                     $($field_name: Button::new(),)*
                 }
             }
+
+            pub fn get_cursor_pos(&self) -> Vec64 {
+                self.cursor_pos
+            }
         }
     };
 }
@@ -73,8 +77,8 @@ impl Input {
                     Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine
                     A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z
                     Escape,escape F1,f1 F2,f2 F3,f3 F4,f4 F5,f5 F6,f6 F7,f7 F8,f8 F9,f9 F10,f10 F11,f11 F12,f12
-                    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Return,enter Space,space Capital,caps Tab,tab Period,period 
-                    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma 
+                    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Return,enter Space,space Capital,caps Tab,tab Period,period
+                    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma
                     RControl,r_control RShift,r_shift RAlt,r_alt LControl,l_control LShift,l_shift LAlt,l_alt
                 )
             }
@@ -125,22 +129,22 @@ macro_rules! is_button_pressed_or_held {
         }
     };
 }
-is_button_pressed_or_held!(is_button_pressed, pressed, 
-    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
+is_button_pressed_or_held!(is_button_pressed, pressed,
+    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow
     Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine
     A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z
     Escape,escape F1,f1 F2,f2 F3,f3 F4,f4 F5,f5 F6,f6 F7,f7 F8,f8 F9,f9 F10,f10 F11,f11 F12,f12
-    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Enter,enter Space,space Caps,caps Tab,tab Period,period 
-    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma 
+    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Enter,enter Space,space Caps,caps Tab,tab Period,period
+    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma
     RControl,r_control RShift,r_shift RAlt,r_alt LControl,l_control LShift,l_shift LAlt,l_alt
 );
-is_button_pressed_or_held!(is_button_held, held, 
-    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
+is_button_pressed_or_held!(is_button_held, held,
+    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow
     Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine
     A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z
     Escape,escape F1,f1 F2,f2 F3,f3 F4,f4 F5,f5 F6,f6 F7,f7 F8,f8 F9,f9 F10,f10 F11,f11 F12,f12
-    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Enter,enter Space,space Caps,caps Tab,tab Period,period 
-    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma 
+    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Enter,enter Space,space Caps,caps Tab,tab Period,period
+    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma
     RControl,r_control RShift,r_shift RAlt,r_alt LControl,l_control LShift,l_shift LAlt,l_alt
 );
 
