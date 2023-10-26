@@ -43,6 +43,7 @@ pub struct Engine {
 
     tex_bind: Option<BindGroup>,
     texture_amt_created: u32,
+    use_near_filter_mode: bool,
 
     camera: Camera,
     camera_bind_group: BindGroup,

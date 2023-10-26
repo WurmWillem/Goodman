@@ -78,7 +78,7 @@ impl Engine {
         create_Engine_from_AllFields!(all_fields, input window win_bind_group win_size win_background_color
         surface device queue config render_pipeline vertex_buffer index_buffer camera camera_bind_group
         camera_buffer instance_buffer instances instances_rendered time tex_bind
-        texture_amt_created target_fps sound ui tex_coords_buffer tex_coords)
+        texture_amt_created target_fps sound ui tex_coords_buffer tex_coords use_near_filter_mode)
     }
 
     pub fn create_sound_source(&self, path: &str) -> Result<Decoder<BufReader<File>>, String> {
@@ -127,11 +127,16 @@ impl Engine {
     }
 
     pub fn create_texture(&mut self, bytes: &[u8]) -> Result<Texture, &'static str> {
-        let tex =
-            match Texture::from_bytes(&self.device, &self.queue, self.texture_amt_created, bytes) {
-                Ok(tex) => tex,
-                Err(_) => return Err("failed to create texture"),
-            };
+        let tex = match Texture::from_bytes(
+            &self.device,
+            &self.queue,
+            self.texture_amt_created,
+            bytes,
+            self.use_near_filter_mode,
+        ) {
+            Ok(tex) => tex,
+            Err(_) => return Err("failed to create texture"),
+        };
 
         self.texture_amt_created += 1;
         Ok(tex)

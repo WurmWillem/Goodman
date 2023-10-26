@@ -117,13 +117,14 @@ impl Chess {
     fn draw_board(&self, engine: &mut Engine) {
         for j in 0..8 {
             for i in 0..8 {
-                /*if Data::get_if_selected(&self.pieces[j][i]) {
-                    todo!();
+                let rect = rect32(i as f32 * SQUARE, j as f32 * SQUARE, SQUARE, SQUARE);
+
+                if Data::get_if_selected(&self.pieces[j][i]) {
+                    engine.render_texture(rect, &self.textures[14]);
                     continue;
-                }*/
+                }
                 let index = if (j + i) % 2 == 0 { 12 } else { 13 };
 
-                let rect = rect32(i as f32 * SQUARE, j as f32 * SQUARE, SQUARE, SQUARE);
                 engine.render_texture(rect, &self.textures[index]);
             }
         }

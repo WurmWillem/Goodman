@@ -21,6 +21,9 @@ pub struct EngineBuilder {
 
     show_engine_ui: bool,
 
+    // true recommended for pixel art, otherwise keep false
+    use_near_filter_mode: bool,
+
     reset_rate: Option<f64>,
     target_fps: Option<u32>,
     target_tps: Option<u32>,
@@ -35,6 +38,8 @@ impl EngineBuilder {
 
             show_engine_ui: false,
 
+            use_near_filter_mode: false,
+
             reset_rate: None,
             target_fps: None,
             target_tps: None,
@@ -46,6 +51,10 @@ impl EngineBuilder {
     }
     pub fn show_engine_ui(mut self) -> Self {
         self.show_engine_ui = true;
+        self
+    }
+    pub fn use_near_filter_mode(mut self) -> Self {
+        self.use_near_filter_mode = true;
         self
     }
     pub fn enable_average_tps_and_set_reset_rate(mut self, reset_rate: Option<f64>) -> Self {
@@ -202,8 +211,8 @@ impl EngineBuilder {
             time,
 
             tex_bind: None,
-
             texture_amt_created: 0,
+            use_near_filter_mode: self.use_near_filter_mode,
 
             ui,
 
@@ -377,6 +386,7 @@ pub struct AllFields {
 
     pub tex_bind: Option<wgpu::BindGroup>,
     pub texture_amt_created: u32,
+    pub use_near_filter_mode: bool,
 
     pub camera: Camera,
     pub camera_bind_group: wgpu::BindGroup,
