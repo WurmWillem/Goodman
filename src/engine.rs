@@ -80,13 +80,6 @@ impl Engine {
                         &self.input,
                         &mut self.sound,
                     );
-
-                    if self
-                        .input
-                        .is_button_pressed(crate::prelude::Button::RightMouse)
-                    {
-                        println!("{}", self.time.get_avg_tps());
-                    }
                     self.input.reset_buttons();
 
                     match self.target_fps {
