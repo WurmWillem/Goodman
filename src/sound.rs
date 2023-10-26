@@ -10,13 +10,13 @@ pub struct Sound {
     use_sound: bool,
 }
 impl Sound {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(use_sound: bool) -> Self {
         let (stream, stream_handle) =
             rodio::OutputStream::try_default().expect("can't find output device");
         Self {
             stream,
             stream_handle,
-            use_sound: true,
+            use_sound,
         }
     }
 
@@ -32,8 +32,8 @@ impl Sound {
 
     pub fn use_sound(&mut self, use_sound: bool) {
         self.use_sound = use_sound;
-        if !self.use_sound {
-            *self = Sound::new();
+        if !use_sound {
+            *self = Sound::new(false);
         }
     }
 

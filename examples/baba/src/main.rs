@@ -41,7 +41,7 @@ pub struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        // engine.use_sound(false);
+        engine.use_sound(false);
 
         let background_music = engine
             .create_sound_source("examples/baba/src/assets/background.wav")

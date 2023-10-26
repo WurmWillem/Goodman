@@ -209,7 +209,7 @@ impl EngineBuilder {
 
             target_fps: self.target_fps,
 
-            sound: Sound::new(),
+            sound: Sound::new(true),
         };
         Engine::new(all_fields)
     }
