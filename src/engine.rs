@@ -174,7 +174,7 @@ impl Engine {
         output.present();
 
         self.instances = Vec::with_capacity(self.instances_rendered);
-        self.tex_coords = Vec::with_capacity(self.instances_rendered * 4);
+        self.tex_coords = Vec::with_capacity(self.instances_rendered);
         self.instances_rendered = 0;
         self.time.enable_prev_iter_was_render();
         Ok(())
@@ -200,15 +200,13 @@ impl Engine {
     }
 
     fn update_instance_buffer(&mut self) {
-        if self.instance_buffer.size() == self.instances.len() as u64 * 24 {
+        if self.instance_buffer.size() == self.instances.len() as u64 * 28 {
             self.queue.write_buffer(
                 &self.instance_buffer,
                 0,
                 bytemuck::cast_slice(&self.instances),
             );
-            println!("update");
         } else {
-            println!("new");
             self.instance_buffer = vert_buffers::create_inst_buffer(&self.device, &self.instances);
         }
 
