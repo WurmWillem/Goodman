@@ -1,4 +1,4 @@
-use crate::{consts::SQUARE, piece_data::Data, pieces::*};
+use crate::{piece_data::Data, pieces::*, SQUARE};
 use goodman::prelude::*;
 
 #[derive(PartialEq, Debug)]

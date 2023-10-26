@@ -1,4 +1,5 @@
-use consts::{SCREENSIZE, SQUARE};
+//WARNING: some of this code is really old, proceed with caution
+
 use goodman::prelude::*;
 use piece_data::Data;
 use pieces::Piece;
@@ -10,6 +11,9 @@ mod piece_data;
 mod pieces;
 mod state;
 mod textures;
+
+pub const SCREENSIZE: f32 = 700.0;
+pub const SQUARE: f32 = SCREENSIZE / 8.0;
 
 fn main() {
     block_on(run())

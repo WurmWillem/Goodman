@@ -1,11 +1,9 @@
-use crate::{consts::RAYWHITE, pieces::Piece, state::Side};
-use goodman::prelude::*;
+use crate::{pieces::Piece, state::Side};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Data {
     pub index: usize,
     pub selected: bool,
-    pub color: Color,
     pub moves: Vec<(usize, usize)>,
     pub side: Side,
 }
@@ -14,7 +12,6 @@ impl Data {
         Self {
             index,
             selected: false,
-            color: RAYWHITE,
             moves: Vec::new(),
             side,
         }
@@ -33,7 +30,6 @@ impl Data {
         Self {
             index,
             selected: false,
-            color: RAYWHITE,
             moves: Vec::new(),
             side: Data::get_side(piece),
         }
@@ -104,7 +100,6 @@ impl Default for Data {
         Self {
             index: 0,
             selected: false,
-            color: RAYWHITE,
             moves: Vec::new(),
             side: Side::None,
         }
