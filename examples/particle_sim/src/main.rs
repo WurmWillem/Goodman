@@ -2,7 +2,7 @@ use goodman::prelude::*;
 
 const WINDOW_SIZE: Vec32 = vec2(700., 700.);
 const SCREEN_SIZE: Vec32 = vec2(700., 700.);
-const PART_AMT: (usize, usize) = (10, 10);
+const PART_AMT: (usize, usize) = (100, 100);
 const PART_SIZE: Vec32 = vec2(
     SCREEN_SIZE.x / PART_AMT.0 as f32,
     SCREEN_SIZE.y / PART_AMT.1 as f32,
@@ -17,6 +17,7 @@ async fn run() {
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .show_engine_ui()
         .with_target_fps(144)
+        .with_target_tps(10)
         .build(&event_loop)
         .await;
 
@@ -37,7 +38,7 @@ impl Manager for Simulation {
         for _ in 0..PART_AMT.1 {
             let mut row = vec![];
             for _ in 0..PART_AMT.0 {
-                row.push(Particle::new(ParticleKind::Empty));
+                row.push(Particle::new(PartKind::Empty));
             }
             particles.push(row);
         }
@@ -48,16 +49,62 @@ impl Manager for Simulation {
         }
     }
     fn update(&mut self, _frame_time: f64, input: &Input, _sound: &mut Sound) {
-        if input.is_button_pressed(Button::LeftMouse) {
+        if input.is_button_held(Button::LeftMouse) {
             let i = (input.get_cursor_pos().x / PART_SIZE.x as f64) as usize;
             let j = (input.get_cursor_pos().y / PART_SIZE.y as f64) as usize;
-            self.particles[j][i] = Particle::new(ParticleKind::Sand);
+            self.particles[j][i] = Particle::new(PartKind::Sand);
+        }
+
+        for j in 0..self.particles.len() {
+            for i in 0..self.particles[j].len() {
+                if self.particles[j][i].kind == PartKind::Empty || self.particles[j][i].has_updated
+                {
+                    continue;
+                }
+
+                if j < PART_AMT.1 - 1 {
+                    if self.particles[j + 1][i].kind == PartKind::Empty {
+                        self.particles[j + 1][i] = self.particles[j][i];
+                        self.particles[j][i] = Particle::new(PartKind::Empty);
+                        self.particles[j + 1][i].has_updated = true;
+                    } else if i < PART_AMT.0 - 1
+                        && self.particles[j + 1][i + 1].kind == PartKind::Empty
+                    {
+                        self.particles[j + 1][i + 1] = self.particles[j][i];
+                        self.particles[j][i] = Particle::new(PartKind::Empty);
+                        self.particles[j + 1][i + 1].has_updated = true;
+                    } else if i > 0
+                    && self.particles[j + 1][i - 1].kind == PartKind::Empty
+                    {
+                        self.particles[j + 1][i - 1] = self.particles[j][i];
+                        self.particles[j][i] = Particle::new(PartKind::Empty);
+                        self.particles[j + 1][i - 1].has_updated = true;
+                    }
+                }
+
+                if j < PART_AMT.1 - 1 && self.particles[j + 1][i].kind == PartKind::Empty {
+                    self.particles[j + 1][i] = self.particles[j][i];
+                    self.particles[j][i] = Particle::new(PartKind::Empty);
+                    self.particles[j + 1][i].has_updated = true;
+                }
+
+                /*if self
+                    .particles
+                    .get(j + 1)
+                    .is_some_and(|row| row[i].kind != PartKind::Empty)
+                {}*/
+            }
+        }
+        for j in 0..self.particles.len() {
+            for i in 0..self.particles[j].len() {
+                self.particles[j][i].has_updated = false;
+            }
         }
     }
     fn render(&mut self, engine: &mut Engine) {
         for j in 0..self.particles.len() {
             for i in 0..self.particles[j].len() {
-                if self.particles[j][i].kind == ParticleKind::Empty {
+                if self.particles[j][i].kind == PartKind::Empty {
                     continue;
                 }
 
@@ -72,24 +119,28 @@ impl Manager for Simulation {
 
 #[derive(Debug, Clone, Copy)]
 struct Particle {
-    kind: ParticleKind,
+    kind: PartKind,
+    has_updated: bool,
 }
 impl Particle {
-    fn new(kind: ParticleKind) -> Self {
-        Self { kind }
+    fn new(kind: PartKind) -> Self {
+        Self {
+            kind,
+            has_updated: false,
+        }
     }
 
     pub fn get_index(&self) -> usize {
         match self.kind {
-            ParticleKind::Empty => panic!("can't render empty particle"),
-            ParticleKind::Sand => 0,
+            PartKind::Empty => panic!("can't render empty particle"),
+            PartKind::Sand => 0,
             // ParticleKind::Water => 1,
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum ParticleKind {
+enum PartKind {
     Empty,
     Sand,
     // Water
