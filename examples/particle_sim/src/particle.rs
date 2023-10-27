@@ -10,7 +10,7 @@ impl Particle {
     pub fn new(kind: PartKind) -> Self {
         let y = match kind {
             PartKind::Empty => 0.,
-            PartKind::Sand => 0.,
+            PartKind::Sand => 1.,
             PartKind::Water => 0.,
         };
 
@@ -24,7 +24,7 @@ impl Particle {
     pub fn update(&mut self) {
         match self.kind {
             PartKind::Empty => panic!("can't update empty particle"),
-            PartKind::Sand => self.vel.y += 0.2,
+            PartKind::Sand => self.vel.y += 0.01,
             PartKind::Water => self.vel.y += 0.2,
         }
     }

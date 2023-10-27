@@ -1,5 +1,3 @@
-use std::vec;
-
 use goodman::prelude::*;
 use particle::Particle;
 
@@ -68,80 +66,39 @@ impl Manager for Simulation {
             self.particles = create_empty_part_vec();
         }
 
-        for j in 0..self.particles.len() {
+        let down_to_up = rand::random();
+        for _j in 0..self.particles.len() {
+            let mut y = _j;
+            if down_to_up {
+                y = self.particles.len() - 1 - y;
+            }
+
             let right_to_left = rand::random();
 
-            'outer: for i in 0..self.particles[j].len() {
-                let mut rand_i = i;
+            for _i in 0..self.particles[y].len() {
+                let mut x = _i;
                 if right_to_left {
-                    rand_i = self.particles[j].len() - 1 - i;
+                    x = self.particles[y].len() - 1 - x;
                 }
 
-                if self.particles[j][rand_i].kind == PartKind::Empty
-                    || self.particles[j][rand_i].has_updated
+                if self.particles[y][x].kind == PartKind::Empty || self.particles[y][x].has_updated
                 {
                     continue;
                 }
 
-                self.particles[j][rand_i].update();
+                self.particles[y][x].update();
 
-                macro_rules! update_particle {
-                    ($parts: expr, $($j_add: expr, $i_add: expr)*) => {
-                        $(
-                            let (i_add, j_add): (isize, isize) = if rand::random() {
-                                ($i_add, $j_add)
-                            } else {($i_add * -1, $j_add)};
-
-                            let mut k: isize;
-                            let add = if j_add == 0 {k = 0; 1} else if j_add > 0 {k = 1; 1} else {k = -1; -1};
-
-                            while k.abs() <= j_add.abs() {
-                                if j as isize + k < 0 || rand_i as isize + i_add < 0 {
-                                    break;
-                                }
-                                let (new_j, new_i) = ((j as isize + k) as usize, (rand_i as isize + i_add) as usize);
-
-                                if $parts.get(new_j).is_some() && $parts[new_j].get(new_i).is_some() && $parts[new_j][new_i].kind == PartKind::Empty {
-                                    $parts[new_j][new_i] = $parts[j][rand_i];
-                                    $parts[j][rand_i] = Particle::new(PartKind::Empty);
-                                    $parts[new_j][new_i].has_updated = true;
-                                    continue 'outer
-                                }
-                                k += add;
-                            }
-
-                            let mut k: isize;
-                            let add = if i_add == 0 {k = 0; 1} else if i_add > 0 {k = 1; 1} else {k = -1; -1};
-
-                            while k.abs() <= i_add.abs() {
-                                if j as isize + j_add < 0 || rand_i as isize + k < 0 {
-                                    break;
-                                }
-                                let (new_j, new_i) = ((j as isize + j_add) as usize, (rand_i as isize + k) as usize);
-
-                                if $parts.get(new_j).is_some() && $parts[new_j].get(new_i).is_some() && $parts[new_j][new_i].kind == PartKind::Empty {
-                                    $parts[new_j][new_i] = $parts[j][rand_i];
-                                    $parts[j][rand_i] = Particle::new(PartKind::Empty);
-                                    $parts[new_j][new_i].has_updated = true;
-                                    continue 'outer
-                                } else if i_add == 0 {
-                                    $parts[j][rand_i].vel.y = 1.;
-                                }
-                                k += add;
-                            }
-                        )*
-                    };
-                }
-
-                match self.particles[j][rand_i].kind {
+                match self.particles[y][x].kind {
                     PartKind::Empty => panic!("can't update empty particle"),
                     PartKind::Sand => {
-                        let j = self.particles[j][rand_i].vel.y as isize;
-                        update_particle!(self.particles, j,0  j,-1  j,1);
+                        let c = 1;
+                        self.update_particle(x, y, vec![(0, c), (-1, c), (1, c)]);
                     }
                     PartKind::Water => {
-                        let j = 1;
-                        update_particle!(self.particles,  j,0  j,-1  j,1  0,-DISPERSION  0,DISPERSION);
+                        let c = 1;
+                        let moves =
+                            vec![(0, c), (-1, c), (1, c), (-DISPERSION, 0), (DISPERSION, 0)];
+                        self.update_particle(x, y, moves);
                     }
                 }
             }
@@ -169,6 +126,41 @@ impl Manager for Simulation {
     }
 }
 impl Simulation {
+    fn update_particle(&mut self, i: usize, j: usize, moves: Vec<(isize, isize)>) {
+        // pr(j);
+        for m in &moves {
+            // println!("{:?}", m);
+            let mut k = if m.1 == 0 {
+                0
+            } else if m.1 >= 0 {
+                1
+            } else {
+                -1
+            };
+            let add = if k >= 0 { 1 } else { -1 };
+
+            let (is_safe, new_i, new_j) = self.get_new_pos(i, j, m.0, m.1);
+
+            if is_safe && self.particles[new_j][new_i].kind == PartKind::Empty {
+                // pr("fds");
+                self.particles[new_j][new_i] = self.particles[j][i];
+                self.particles[j][i] = Particle::new(PartKind::Empty);
+                self.particles[new_j][new_i].has_updated = true;
+                return;
+            }
+        }
+    }
+
+    fn get_new_pos(&self, i: usize, j: usize, i_add: isize, j_add: isize) -> (bool, usize, usize) {
+        let (new_j, new_i) = (j as isize + j_add, i as isize + i_add);
+        let b = new_j >= 0
+            && new_i >= 0
+            && self.particles.get(new_j as usize).is_some()
+            && self.particles[new_j as usize].get(new_i as usize).is_some();
+
+        (b, new_i as usize, new_j as usize)
+    }
+
     fn place_particles(&mut self, input: &Input, amt: usize, part_kind: PartKind) {
         use std::f32::consts::PI;
 
@@ -188,6 +180,8 @@ impl Simulation {
 
         let i = (input.get_cursor_pos().x / PART_SIZE.x as f64) as usize;
         let j = (input.get_cursor_pos().y / PART_SIZE.y as f64) as usize;
+        // self.particles[j][i] = Particle::new(part_kind);
+        // return;
 
         for v in &vec {
             let (new_j, new_i) = ((j as isize + v.0) as usize, (i as isize + v.1) as usize);
