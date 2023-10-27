@@ -28,8 +28,6 @@ version = "0.24"
 default-features = false
 features = ["png", "jpeg"]
 
-[workspace]
-examples = true
 
 [[example]]
 name = "pong"

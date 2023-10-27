@@ -1,3 +1,5 @@
+use std::vec;
+
 use goodman::prelude::*;
 use particle::Particle;
 
@@ -41,17 +43,8 @@ impl Manager for Simulation {
         let mut textures = vec![];
         create_textures!(engine, textures, "assets/sand.png" "assets/water.png");
 
-        let mut particles = vec![];
-        for _ in 0..PART_AMT.1 {
-            let mut row = vec![];
-            for _ in 0..PART_AMT.0 {
-                row.push(Particle::new(PartKind::Empty));
-            }
-            particles.push(row);
-        }
-
         Self {
-            particles,
+            particles: create_empty_part_vec(),
             textures,
         }
     }
@@ -64,8 +57,13 @@ impl Manager for Simulation {
             self.place_particles(input, amt, PartKind::Water);
         }
 
+        if input.is_button_pressed(Button::R) {
+            self.particles = create_empty_part_vec();
+        }
+
         for j in 0..self.particles.len() {
             let right_to_left = rand::random();
+
             'outer: for i in 0..self.particles[j].len() {
                 let mut rand_i = i;
                 if right_to_left {
@@ -136,7 +134,7 @@ impl Manager for Simulation {
                     }
                     PartKind::Water => {
                         let j = self.particles[j][rand_i].vel.y as isize;
-                        update_particle!(self.particles,  j,0  j,-1  j,1  j,-1 * DISPERSION  j,5 * DISPERSION);
+                        update_particle!(self.particles,  j,0  j,-1  j,1  j,-DISPERSION  j,DISPERSION);
                     }
                 }
             }
@@ -165,11 +163,20 @@ impl Manager for Simulation {
 }
 impl Simulation {
     fn place_particles(&mut self, input: &Input, amt: usize, part_kind: PartKind) {
-        let half = (amt as f32 * 0.5) as isize;
-        let mut vec = vec![(0, 0)];
-        for i in 0..half {
-            vec.push((0, i * 3));
-            vec.push((0, i * -3));
+        use std::f32::consts::PI;
+
+        let mut x_vec = vec![];
+        let d = 2. * PI / amt as f32;
+        for i in 0..amt {
+            let x = (i as f32 * d).cos() * amt as f32;
+            // pr(x);
+            x_vec.push(x as isize);
+        }
+
+        let mut vec = vec![];
+        for i in 0..amt {
+            let y = (i as f32 * d).sin() * amt as f32;
+            vec.push((x_vec[i], y as isize))
         }
 
         let i = (input.get_cursor_pos().x / PART_SIZE.x as f64) as usize;
@@ -187,6 +194,18 @@ impl Simulation {
             }
         }
     }
+}
+
+fn create_empty_part_vec() -> Vec<Vec<Particle>> {
+    let mut particles = vec![];
+        for _ in 0..PART_AMT.1 {
+            let mut row = vec![];
+            for _ in 0..PART_AMT.0 {
+                row.push(Particle::new(PartKind::Empty));
+            }
+            particles.push(row);
+        }
+    particles
 }
 
 #[allow(unused)]
