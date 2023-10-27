@@ -24,8 +24,8 @@ impl Particle {
     pub fn update(&mut self) {
         match self.kind {
             PartKind::Empty => panic!("can't update empty particle"),
-            PartKind::Sand => self.vel.y += 0.01,
-            PartKind::Water => self.vel.y += 0.2,
+            PartKind::Sand => self.vel.y += 0.05,
+            PartKind::Water => self.vel.y += 0.,
         }
     }
 

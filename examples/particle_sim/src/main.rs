@@ -13,7 +13,7 @@ const PART_SIZE: Vec32 = vec2(
     SCREEN_SIZE.y / PART_AMT.1 as f32,
 );
 
-const DISPERSION: isize = 5;
+const DISPERSION: isize = 1;
 
 fn main() {
     block_on(run())
@@ -91,7 +91,7 @@ impl Manager for Simulation {
                 match self.particles[y][x].kind {
                     PartKind::Empty => panic!("can't update empty particle"),
                     PartKind::Sand => {
-                        let c = 1;
+                        let c = self.particles[y][x].vel.y as isize;
                         self.update_particle(x, y, vec![(0, c), (-1, c), (1, c)]);
                     }
                     PartKind::Water => {
@@ -126,11 +126,14 @@ impl Manager for Simulation {
     }
 }
 impl Simulation {
-    fn update_particle(&mut self, i: usize, j: usize, moves: Vec<(isize, isize)>) {
+    fn update_particle(&mut self, i: usize, j: usize, mut moves: Vec<(isize, isize)>) {
         // pr(j);
-        for m in &moves {
-            // println!("{:?}", m);
-            let mut k = if m.1 == 0 {
+        for m in &mut moves {
+            // println!("{:?}", m)
+            if rand::random() {
+                (*m).0 *= -1;
+            }
+            let mut k: isize = if m.1 == 0 {
                 0
             } else if m.1 >= 0 {
                 1
@@ -139,15 +142,22 @@ impl Simulation {
             };
             let add = if k >= 0 { 1 } else { -1 };
 
-            let (is_safe, new_i, new_j) = self.get_new_pos(i, j, m.0, m.1);
+            while k.abs() <= m.1.abs() {
+                let (is_safe, new_i, new_j) = self.get_new_pos(i, j, m.0, k);
+                k += add;
 
-            if is_safe && self.particles[new_j][new_i].kind == PartKind::Empty {
-                // pr("fds");
-                self.particles[new_j][new_i] = self.particles[j][i];
-                self.particles[j][i] = Particle::new(PartKind::Empty);
-                self.particles[new_j][new_i].has_updated = true;
-                return;
+                if is_safe && self.particles[new_j][new_i].kind == PartKind::Empty {
+                    let prev_j = (new_j as isize - add) as usize;
+
+                    self.particles[new_j][new_i] = self.particles[prev_j][i];
+                    self.particles[new_j][new_i].has_updated = true;
+                    self.particles[prev_j][i] = Particle::new(PartKind::Empty);
+                } else {
+                    break;
+                }
             }
+
+            
         }
     }
 
