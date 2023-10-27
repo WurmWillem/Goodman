@@ -19,17 +19,25 @@ impl Texture {
         self.inv_size.y
     }
 
-    pub fn from_bytes(
+    pub(crate) fn from_bytes(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         index: u32,
         bytes: &[u8],
+        use_near_filter_mode: bool,
     ) -> Result<Self> {
         let img = image::load_from_memory(bytes)?;
-        Ok(Self::from_image(device, queue, &img, index, None))
+        Ok(Self::from_image(
+            device,
+            queue,
+            &img,
+            index,
+            None,
+            use_near_filter_mode,
+        ))
     }
 
-    pub fn from_path(
+    /*pub(crate) fn from_path(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         index: u32,
@@ -37,7 +45,7 @@ impl Texture {
     ) -> Result<Self> {
         let img = image::open(label)?;
         Ok(Self::from_image(device, queue, &img, index, Some(label)))
-    }
+    }*/
 
     pub(crate) fn from_image(
         device: &wgpu::Device,
@@ -45,6 +53,7 @@ impl Texture {
         img: &image::DynamicImage,
         index: u32,
         label: Option<&str>,
+        use_near_filter_mode: bool,
     ) -> Self {
         let rgba = img.to_rgba8();
         let dimensions = img.dimensions();
@@ -81,14 +90,19 @@ impl Texture {
             size,
         );
 
+        let filter_mode = if use_near_filter_mode {
+            wgpu::FilterMode::Nearest
+        } else {
+            wgpu::FilterMode::Linear
+        };
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
+            mag_filter: filter_mode,
+            min_filter: filter_mode,
+            mipmap_filter: filter_mode,
             ..Default::default()
         });
 

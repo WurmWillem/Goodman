@@ -19,6 +19,7 @@ impl Sound {
             use_sound,
         }
     }
+
     pub fn play_sound<S>(&self, source: S) -> Result<(), rodio::PlayError>
     where
         S: Source<Item = f32> + Send + 'static,
@@ -27,5 +28,16 @@ impl Sound {
             self.stream_handle.play_raw(source)?;
         }
         Ok(())
+    }
+
+    pub fn use_sound(&mut self, use_sound: bool) {
+        self.use_sound = use_sound;
+        if !use_sound {
+            *self = Sound::new(false);
+        }
+    }
+
+    pub fn uses_sound(&self) -> bool {
+        self.use_sound
     }
 }

@@ -57,7 +57,7 @@ impl Manager for Physics {
 
         Physics { circles, textures }
     }
-    fn update(&mut self, delta_t: f64, _input: &Input, _sound: &Sound) {
+    fn update(&mut self, delta_t: f64, _input: &Input, _sound: &mut Sound) {
         self.circles.iter_mut().for_each(|circle| {
             circle.update(delta_t);
         });

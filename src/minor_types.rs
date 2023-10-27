@@ -2,7 +2,7 @@ use crate::{engine::Engine, input::Input, prelude::Rect32, sound::Sound};
 pub trait Manager {
     fn new(engine: &mut Engine) -> Self;
     fn start(&mut self) {}
-    fn update(&mut self, delta_t: f64, input: &Input, sound: &Sound);
+    fn update(&mut self, delta_t: f64, input: &Input, sound: &mut Sound);
     fn render(&mut self, engine: &mut Engine);
 }
 
@@ -66,6 +66,7 @@ pub struct WindowUniform {
     pub size: [f32; 2],
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Color {
     /// Red component of the color
     pub r: f64,

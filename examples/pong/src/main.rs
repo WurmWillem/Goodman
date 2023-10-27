@@ -17,8 +17,8 @@ async fn run() {
     let window_size = vec2(WINDOW_SIZE.x as f32, WINDOW_SIZE.y as f32);
     let mut engine = EngineBuilder::new(window_size)
         .show_engine_ui()
-        // .set_target_fps(144)
-        // .set_target_tps(100 * 1000)
+        .with_target_fps(144)
+        .with_target_tps(1000 * 1000)
         .build(&event_loop)
         .await;
 
@@ -37,7 +37,6 @@ impl Manager for Pong {
     fn new(engine: &mut Engine) -> Self {
         let mut textures = vec![];
         create_textures!(engine, textures, "assets/Computer.png" "assets/Player.png" "assets/Ball.png");
-        // engine.use_textures(&textures);
 
         let left_paddle = Paddle::new(80., WINDOW_SIZE.y * 0.5);
         let right_paddle = Paddle::new(WINDOW_SIZE.x - 80., WINDOW_SIZE.y * 0.5);
@@ -51,7 +50,7 @@ impl Manager for Pong {
         }
     }
 
-    fn update(&mut self, delta_t: f64, input: &Input, _sound: &Sound) {
+    fn update(&mut self, delta_t: f64, input: &Input, _sound: &mut Sound) {
         self.left_paddle.update(
             input.is_button_held(Button::W),
             input.is_button_held(Button::S),

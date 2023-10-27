@@ -33,11 +33,20 @@ macro_rules! CreateInputStruct {
                     $($field_name: Button::new(),)*
                 }
             }
+
+            pub fn get_cursor_pos(&self) -> Vec64 {
+                self.cursor_pos
+            }
         }
     };
 }
 CreateInputStruct!(left_mouse right_mouse right_arrow left_arrow up_arrow down_arrow 
-    zero one two three four five six seven eight nine a b c d e f g h i j k l m n o p q r s t u v w x y z);
+    zero one two three four five six seven eight nine 
+    a b c d e f g h i j k l m n o p q r s t u v w x y z
+    escape f1 f2 f3 f4 f5 f6 f7 f8 f9  f10  f11  f12
+    insert home delete end page_down page_up back enter space caps tab period 
+    plus minus equals slash backslash apostrophe asterisk comma 
+    r_control r_shift r_alt l_control l_shift l_alt);
 
 impl Input {
     pub(crate) fn process_events(&mut self, event: &WindowEvent) -> bool {
@@ -64,10 +73,14 @@ impl Input {
                         }
                     };
                 }
-
                 set_button_to_is_pressed!(self, is_pressed, keycode, Right,right_arrow Left,left_arrow Down,down_arrow Up,up_arrow
                     Key0,zero Key1,one Key2,two Key3,three Key4,four Key5,five Key6,six Key7,seven Key8,eight Key9,nine
-                    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z)
+                    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z
+                    Escape,escape F1,f1 F2,f2 F3,f3 F4,f4 F5,f5 F6,f6 F7,f7 F8,f8 F9,f9 F10,f10 F11,f11 F12,f12
+                    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Return,enter Space,space Capital,caps Tab,tab Period,period
+                    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma
+                    RControl,r_control RShift,r_shift RAlt,r_alt LControl,l_control LShift,l_shift LAlt,l_alt
+                )
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 let is_pressed = *state == ElementState::Pressed;
@@ -97,7 +110,11 @@ impl Input {
             };
         }
         reset_buttons!(left_mouse right_mouse d a w s right_arrow left_arrow up_arrow down_arrow
-            zero one two three four five six seven eight nine a b c d e f g h i j k l m n o p q r s t u v w x y z);
+            zero one two three four five six seven eight nine a b c d e f g h i j k l m n o p q r s t u v w x y z
+            escape f1 f2 f3 f4 f5 f6 f7 f8 f9  f10  f11  f12
+            insert home delete end page_down page_up back enter space caps tab period
+            plus minus equals slash backslash apostrophe asterisk comma
+            r_control r_shift r_alt l_control l_shift l_alt);
     }
 }
 
@@ -112,15 +129,24 @@ macro_rules! is_button_pressed_or_held {
         }
     };
 }
-is_button_pressed_or_held!(is_button_pressed, pressed, 
-    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
+is_button_pressed_or_held!(is_button_pressed, pressed,
+    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow
     Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine
-    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z);
-
+    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z
+    Escape,escape F1,f1 F2,f2 F3,f3 F4,f4 F5,f5 F6,f6 F7,f7 F8,f8 F9,f9 F10,f10 F11,f11 F12,f12
+    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Enter,enter Space,space Caps,caps Tab,tab Period,period
+    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma
+    RControl,r_control RShift,r_shift RAlt,r_alt LControl,l_control LShift,l_shift LAlt,l_alt
+);
 is_button_pressed_or_held!(is_button_held, held,
-    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow 
+    LeftMouse,left_mouse RightMouse,right_mouse RightArrow,right_arrow LeftArrow,left_arrow DownArrow,down_arrow UpArrow,up_arrow
     Zero,zero One,one Two,two Three,three Four,four Five,five Six,six Seven,seven Eight,eight Nine,nine
-    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z);
+    A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z
+    Escape,escape F1,f1 F2,f2 F3,f3 F4,f4 F5,f5 F6,f6 F7,f7 F8,f8 F9,f9 F10,f10 F11,f11 F12,f12
+    Insert,insert Home,home Delete,delete End,end PageDown,page_down PageUp,page_up Back,back Enter,enter Space,space Caps,caps Tab,tab Period,period
+    Plus,plus Minus,minus Equals,equals Slash,slash Backslash,backslash Apostrophe,apostrophe Asterisk,asterisk Comma,comma
+    RControl,r_control RShift,r_shift RAlt,r_alt LControl,l_control LShift,l_shift LAlt,l_alt
+);
 
 pub enum ButtonEnum {
     LeftMouse,
@@ -139,6 +165,7 @@ pub enum ButtonEnum {
     Seven,
     Eight,
     Nine,
+
     A,
     B,
     C,
@@ -165,4 +192,47 @@ pub enum ButtonEnum {
     X,
     Y,
     Z,
+
+    Escape,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
+
+    Insert,
+    Home,
+    Delete,
+    End,
+    PageDown,
+    PageUp,
+    Back,
+    Enter,
+    Space,
+    Caps,
+    Tab,
+
+    Period,
+    Plus,
+    Minus,
+    Equals,
+    Slash,
+    Backslash,
+    Apostrophe,
+    Asterisk,
+    Comma,
+
+    RControl,
+    RShift,
+    RAlt,
+    LControl,
+    LShift,
+    LAlt,
 }
