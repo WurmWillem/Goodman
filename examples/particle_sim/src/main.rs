@@ -26,6 +26,7 @@ async fn run() {
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .show_engine_ui()
         .with_target_fps(144)
+        .use_near_filter_mode()
         // .with_target_tps(10)
         .build(&event_loop)
         .await;
@@ -37,6 +38,7 @@ async fn run() {
 struct Simulation {
     particles: Vec<Vec<Particle>>,
     textures: Vec<Texture>,
+    circle_size: usize,
 }
 impl Manager for Simulation {
     fn new(engine: &mut Engine) -> Self {
@@ -46,15 +48,20 @@ impl Manager for Simulation {
         Self {
             particles: create_empty_part_vec(),
             textures,
+            circle_size: 15,
         }
     }
     fn update(&mut self, _frame_time: f64, input: &Input, _sound: &mut Sound) {
-        let amt = 20;
+        if self.circle_size as i16 + input.get_wheel_movement() as i16 > 0 {
+            self.circle_size =
+                (self.circle_size as i16 + input.get_wheel_movement() as i16) as usize;
+        }
+
         if input.is_button_held(Button::LeftMouse) {
-            self.place_particles(input, amt, PartKind::Sand);
+            self.place_particles(input, self.circle_size, PartKind::Sand);
         }
         if input.is_button_held(Button::RightMouse) {
-            self.place_particles(input, amt, PartKind::Water);
+            self.place_particles(input, self.circle_size, PartKind::Water);
         }
 
         if input.is_button_pressed(Button::R) {
@@ -119,7 +126,7 @@ impl Manager for Simulation {
                                     $parts[j][rand_i] = Particle::new(PartKind::Empty);
                                     $parts[new_j][new_i].has_updated = true;
                                     continue 'outer
-                                } 
+                                }
                                 k += add;
                             }
                         )*
@@ -198,13 +205,13 @@ impl Simulation {
 
 fn create_empty_part_vec() -> Vec<Vec<Particle>> {
     let mut particles = vec![];
-        for _ in 0..PART_AMT.1 {
-            let mut row = vec![];
-            for _ in 0..PART_AMT.0 {
-                row.push(Particle::new(PartKind::Empty));
-            }
-            particles.push(row);
+    for _ in 0..PART_AMT.1 {
+        let mut row = vec![];
+        for _ in 0..PART_AMT.0 {
+            row.push(Particle::new(PartKind::Empty));
         }
+        particles.push(row);
+    }
     particles
 }
 
@@ -212,4 +219,3 @@ fn create_empty_part_vec() -> Vec<Vec<Particle>> {
 fn pr<T: std::fmt::Display + std::fmt::Debug>(x: T) {
     println!("{:?}", x);
 }
-

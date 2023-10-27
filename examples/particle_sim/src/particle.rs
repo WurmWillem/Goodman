@@ -17,7 +17,7 @@ impl Particle {
         Self {
             kind,
             has_updated: false,
-            vel: vec2(0., y,)
+            vel: vec2(0., y),
         }
     }
 

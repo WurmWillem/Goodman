@@ -1,6 +1,8 @@
 use crate::prelude::Vec64;
 use cgmath::vec2;
-use winit::event::{ElementState, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
+use winit::event::{
+    ElementState, KeyboardInput, MouseButton, MouseScrollDelta, VirtualKeyCode, WindowEvent,
+};
 
 struct Button {
     pressed: bool,
@@ -23,6 +25,7 @@ macro_rules! CreateInputStruct {
     ($($field_name: ident)*) => {
         pub struct Input {
             cursor_pos: Vec64,
+            mouse_wheel: i8, // wheel up = 1, down = -1, no movement = 0,
             $($field_name: Button,)*
         }
 
@@ -30,12 +33,17 @@ macro_rules! CreateInputStruct {
             pub(crate) fn new() -> Self {
                 Self {
                     cursor_pos: vec2(0., 0.),
+                    mouse_wheel: 0,
                     $($field_name: Button::new(),)*
                 }
             }
 
             pub fn get_cursor_pos(&self) -> Vec64 {
                 self.cursor_pos
+            }
+
+            pub fn get_wheel_movement(&self) -> i8 {
+                self.mouse_wheel // wheel up = 1, down = -1, no movement = 0,
             }
         }
     };
@@ -96,6 +104,13 @@ impl Input {
                     _ => false,
                 }
             }
+            WindowEvent::MouseWheel { delta, .. } => {
+                if let MouseScrollDelta::LineDelta(_, y) = delta {
+                    self.mouse_wheel = *y as i8;
+                    return true;
+                }
+                false
+            }
             WindowEvent::CursorMoved { position, .. } => {
                 self.cursor_pos = vec2(position.x, position.y);
                 false
@@ -115,6 +130,8 @@ impl Input {
             insert home delete end page_down page_up back enter space caps tab period
             plus minus equals slash backslash apostrophe asterisk comma
             r_control r_shift r_alt l_control l_shift l_alt);
+
+        self.mouse_wheel = 0;
     }
 }
 
