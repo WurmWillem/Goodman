@@ -1,12 +1,19 @@
 use goodman::prelude::*;
+use particle::Particle;
 
-const WINDOW_SIZE: Vec32 = vec2(700., 700.);
-const SCREEN_SIZE: Vec32 = vec2(700., 700.);
-const PART_AMT: (usize, usize) = (200, 200);
+use crate::particle::PartKind;
+
+mod particle;
+
+const WINDOW_SIZE: Vec32 = vec2(1100., 900.);
+const SCREEN_SIZE: Vec32 = vec2(1100., 900.);
+const PART_AMT: (usize, usize) = (300, 260);
 const PART_SIZE: Vec32 = vec2(
     SCREEN_SIZE.x / PART_AMT.0 as f32,
     SCREEN_SIZE.y / PART_AMT.1 as f32,
 );
+
+const DISPERSION: isize = 5;
 
 fn main() {
     block_on(run())
@@ -49,92 +56,92 @@ impl Manager for Simulation {
         }
     }
     fn update(&mut self, _frame_time: f64, input: &Input, _sound: &mut Sound) {
-        macro_rules! add_particles {
-            ($parts: expr, $button: expr, $part_kind: expr, $input: expr, $($j_add: expr, $i_add: expr)*) => {
-                if $input.is_button_held($button) {
-                    let i = ($input.get_cursor_pos().x / PART_SIZE.x as f64) as usize;
-                    let j = ($input.get_cursor_pos().y / PART_SIZE.y as f64) as usize;
-                    self.particles[j][i] = Particle::new($part_kind);
-
-                    $(let (new_j, new_i) = ((j as isize + $j_add) as usize, (i as isize + $i_add) as usize);
-                    if self.is_safe(j, i, $j_add, $i_add) && $parts[new_j][new_i].kind == PartKind::Empty {
-                        self.particles[new_j][new_i] = Particle::new($part_kind);
-                    })*
-                }
-            };
-        }
-
-        add_particles!(self.particles, Button::LeftMouse, PartKind::Sand, input, 0,-5  0,-3  0,-1  0,1  0,3  0,5  0,7);
-        add_particles!(self.particles, Button::RightMouse, PartKind::Water, input, 0,-5  0,-3  0,-1  0,1  0,3  0,5  0,7);
-
-        /*if input.is_button_held(Button::LeftMouse) {
-            let i = (input.get_cursor_pos().x / PART_SIZE.x as f64) as usize;
-            let j = (input.get_cursor_pos().y / PART_SIZE.y as f64) as usize;
-
-            
-
-            self.particles[j][i] = Particle::new(PartKind::Sand);
-
-            if self.is_safe(j, i, 0, 1) {
-                self.particles[j][i+1] = Particle::new(PartKind::Sand);
-            }
-            if self.is_safe(j, i, 0, 3) {
-                self.particles[j][i+3] = Particle::new(PartKind::Sand);
-            }
-            if self.is_safe(j, i, 0, 3) {
-                self.particles[j][i+3] = Particle::new(PartKind::Sand);
-            }
+        let amt = 20;
+        if input.is_button_held(Button::LeftMouse) {
+            self.place_particles(input, amt, PartKind::Sand);
         }
         if input.is_button_held(Button::RightMouse) {
-            let i = (input.get_cursor_pos().x / PART_SIZE.x as f64) as usize;
-            let j = (input.get_cursor_pos().y / PART_SIZE.y as f64) as usize;
-            self.particles[j][i] = Particle::new(PartKind::Water);
-            if self.is_safe(j, i, 0, 1) {
-                self.particles[j][i+1] = Particle::new(PartKind::Water);
-            }
-            if self.is_safe(j, i, 0, 3) {
-                self.particles[j][i+3] = Particle::new(PartKind::Water);
-            }
-            if self.is_safe(j, i, 0, 3) {
-                self.particles[j][i+3] = Particle::new(PartKind::Water);
-            }
-        }*/
+            self.place_particles(input, amt, PartKind::Water);
+        }
 
         for j in 0..self.particles.len() {
-            for i in 0..self.particles[j].len() {
-                if self.particles[j][i].kind == PartKind::Empty || self.particles[j][i].has_updated
+            let right_to_left = rand::random();
+            'outer: for i in 0..self.particles[j].len() {
+                let mut rand_i = i;
+                if right_to_left {
+                    rand_i = self.particles[j].len() - 1 - i;
+                }
+
+                if self.particles[j][rand_i].kind == PartKind::Empty
+                    || self.particles[j][rand_i].has_updated
                 {
                     continue;
                 }
 
-                macro_rules! update_particle {
-                    ($parts: expr, $j: expr, $i: expr, $($j_add: expr, $i_add: expr)*) => {
-                        $(
-                            if $j as isize + $j_add < 0 || $i as isize + $i_add < 0 || $parts[j][i].has_updated {
-                                continue;
-                            }
-                            let (new_j, new_i) = (($j as isize + $j_add) as usize, ($i as isize + $i_add) as usize);
+                self.particles[j][rand_i].update();
 
-                            if $parts.get(new_j).is_some() && $parts[new_j].get(new_i).is_some() && $parts[new_j][new_i].kind == PartKind::Empty {
-                                self.particles[new_j][new_i] = self.particles[$j][$i];
-                                self.particles[$j][$i] = Particle::new(PartKind::Empty);
-                                self.particles[new_j][new_i].has_updated = true;
-                                continue;
+                macro_rules! update_particle {
+                    ($parts: expr, $($j_add: expr, $i_add: expr)*) => {
+                        $(
+                            let (i_add, j_add): (isize, isize) = if rand::random() {
+                                ($i_add, $j_add)
+                            } else {($i_add * -1, $j_add)};
+
+                            let mut k: isize;
+                            let add = if i_add == 0 {k = 0; 1} else if i_add > 0 {k = 1; 1} else {k = -1; -1};
+
+                            while k.abs() <= i_add.abs() {
+                                if j as isize + j_add < 0 || rand_i as isize + k < 0 {
+                                    break;
+                                }
+                                let (new_j, new_i) = ((j as isize + j_add) as usize, (rand_i as isize + k) as usize);
+
+                                if $parts.get(new_j).is_some() && $parts[new_j].get(new_i).is_some() && $parts[new_j][new_i].kind == PartKind::Empty {
+                                    $parts[new_j][new_i] = $parts[j][rand_i];
+                                    $parts[j][rand_i] = Particle::new(PartKind::Empty);
+                                    $parts[new_j][new_i].has_updated = true;
+                                    continue 'outer
+                                } else if i_add == 0 {
+                                    $parts[j][rand_i].vel.y = 1.;
+                                }
+                                k += add;
+                            }
+
+                            let mut k: isize;
+                            let add = if j_add == 0 {k = 0; 1} else if j_add > 0 {k = 1; 1} else {k = -1; -1};
+
+                            while k.abs() <= j_add.abs() {
+                                if j as isize + j_add < 0 || rand_i as isize + k < 0 {
+                                    break;
+                                }
+                                let (new_j, new_i) = ((j as isize + j_add) as usize, (rand_i as isize + k) as usize);
+
+                                if $parts.get(new_j).is_some() && $parts[new_j].get(new_i).is_some() && $parts[new_j][new_i].kind == PartKind::Empty {
+                                    $parts[new_j][new_i] = $parts[j][rand_i];
+                                    $parts[j][rand_i] = Particle::new(PartKind::Empty);
+                                    $parts[new_j][new_i].has_updated = true;
+                                    continue 'outer
+                                } 
+                                k += add;
                             }
                         )*
                     };
                 }
-                match self.particles[j][i].kind {
+
+                match self.particles[j][rand_i].kind {
                     PartKind::Empty => continue,
                     PartKind::Sand => {
-                        update_particle!(self.particles, j, i,    1,0   1,-1   1,1);
+                        let j = self.particles[j][rand_i].vel.y as isize;
+                        update_particle!(self.particles, j,0  j,-1  j,1);
                     }
                     PartKind::Water => {
-                        update_particle!(self.particles, j, i,    1,0   1,-1   1,1    0,-1    0,1);
+                        let j = self.particles[j][rand_i].vel.y as isize;
+                        update_particle!(self.particles,  j,0  j,-1  j,1  j,-1 * DISPERSION  j,5 * DISPERSION);
                     }
                 }
             }
         }
+
         for j in 0..self.particles.len() {
             for i in 0..self.particles[j].len() {
                 self.particles[j][i].has_updated = false;
@@ -157,41 +164,33 @@ impl Manager for Simulation {
     }
 }
 impl Simulation {
-    fn is_safe(&self, j: usize, i: usize, j_add: isize, i_add: isize) -> bool {
-        let (new_j, new_i) = ((j as isize + j_add) as usize, (i as isize + i_add) as usize);
-
-        j as isize + j_add >= 0
-            && i as isize + i_add >= 0
-            && self.particles.get(new_j).is_some()
-            && self.particles[new_j].get(new_i).is_some()
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct Particle {
-    kind: PartKind,
-    has_updated: bool,
-}
-impl Particle {
-    fn new(kind: PartKind) -> Self {
-        Self {
-            kind,
-            has_updated: false,
+    fn place_particles(&mut self, input: &Input, amt: usize, part_kind: PartKind) {
+        let half = (amt as f32 * 0.5) as isize;
+        let mut vec = vec![(0, 0)];
+        for i in 0..half {
+            vec.push((0, i * 3));
+            vec.push((0, i * -3));
         }
-    }
 
-    pub fn get_index(&self) -> usize {
-        match self.kind {
-            PartKind::Empty => panic!("can't render empty particle"),
-            PartKind::Sand => 0,
-            PartKind::Water => 1,
+        let i = (input.get_cursor_pos().x / PART_SIZE.x as f64) as usize;
+        let j = (input.get_cursor_pos().y / PART_SIZE.y as f64) as usize;
+
+        for v in &vec {
+            let (new_j, new_i) = ((j as isize + v.0) as usize, (i as isize + v.1) as usize);
+            if j as isize + v.0 >= 0
+                && i as isize + v.1 >= 0
+                && self.particles.get(new_j).is_some()
+                && self.particles[new_j].get(new_i).is_some()
+                && self.particles[new_j][new_i].kind == PartKind::Empty
+            {
+                self.particles[new_j][new_i] = Particle::new(part_kind);
+            }
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum PartKind {
-    Empty,
-    Sand,
-    Water,
+#[allow(unused)]
+fn pr<T: std::fmt::Display + std::fmt::Debug>(x: T) {
+    println!("{:?}", x);
 }
+
