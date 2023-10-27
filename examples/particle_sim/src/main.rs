@@ -93,6 +93,24 @@ impl Manager for Simulation {
                             } else {($i_add * -1, $j_add)};
 
                             let mut k: isize;
+                            let add = if j_add == 0 {k = 0; 1} else if j_add > 0 {k = 1; 1} else {k = -1; -1};
+
+                            while k.abs() <= j_add.abs() {
+                                if j as isize + k < 0 || rand_i as isize + i_add < 0 {
+                                    break;
+                                }
+                                let (new_j, new_i) = ((j as isize + k) as usize, (rand_i as isize + i_add) as usize);
+
+                                if $parts.get(new_j).is_some() && $parts[new_j].get(new_i).is_some() && $parts[new_j][new_i].kind == PartKind::Empty {
+                                    $parts[new_j][new_i] = $parts[j][rand_i];
+                                    $parts[j][rand_i] = Particle::new(PartKind::Empty);
+                                    $parts[new_j][new_i].has_updated = true;
+                                    continue 'outer
+                                }
+                                k += add;
+                            }
+
+                            let mut k: isize;
                             let add = if i_add == 0 {k = 0; 1} else if i_add > 0 {k = 1; 1} else {k = -1; -1};
 
                             while k.abs() <= i_add.abs() {
@@ -111,37 +129,19 @@ impl Manager for Simulation {
                                 }
                                 k += add;
                             }
-
-                            let mut k: isize;
-                            let add = if j_add == 0 {k = 0; 1} else if j_add > 0 {k = 1; 1} else {k = -1; -1};
-
-                            while k.abs() <= j_add.abs() {
-                                if j as isize + j_add < 0 || rand_i as isize + k < 0 {
-                                    break;
-                                }
-                                let (new_j, new_i) = ((j as isize + j_add) as usize, (rand_i as isize + k) as usize);
-
-                                if $parts.get(new_j).is_some() && $parts[new_j].get(new_i).is_some() && $parts[new_j][new_i].kind == PartKind::Empty {
-                                    $parts[new_j][new_i] = $parts[j][rand_i];
-                                    $parts[j][rand_i] = Particle::new(PartKind::Empty);
-                                    $parts[new_j][new_i].has_updated = true;
-                                    continue 'outer
-                                }
-                                k += add;
-                            }
                         )*
                     };
                 }
 
                 match self.particles[j][rand_i].kind {
-                    PartKind::Empty => continue,
+                    PartKind::Empty => panic!("can't update empty particle"),
                     PartKind::Sand => {
                         let j = self.particles[j][rand_i].vel.y as isize;
                         update_particle!(self.particles, j,0  j,-1  j,1);
                     }
                     PartKind::Water => {
-                        let j = self.particles[j][rand_i].vel.y as isize;
-                        update_particle!(self.particles,  j,0  j,-1  j,1  j,-DISPERSION  j,DISPERSION);
+                        let j = 1;
+                        update_particle!(self.particles,  j,0  j,-1  j,1  0,-DISPERSION  0,DISPERSION);
                     }
                 }
             }
