@@ -50,11 +50,6 @@ impl Manager for Simulation {
         }
     }
 
-    fn start(&mut self) {
-        self.place_part_line((PART_AMT.1 as f32 * 0.5));
-        self.place_part_line((PART_AMT.1 as f32 * 0.5 + 1.));
-    }
-
     fn update(&mut self, _frame_time: f64, input: &Input, _sound: &mut Sound) {
         if self.circle_size as i16 + input.get_wheel_movement() as i16 > 0 {
             self.circle_size =
@@ -67,8 +62,8 @@ impl Manager for Simulation {
         if input.is_button_held(Button::RightMouse) {
             self.place_part_circle(input, self.circle_size, PartKind::Water);
         }
-        if input.is_button_held(Button::Three) {
-            // self.place_part_line(input);
+        if input.is_button_held(Button::MiddleMouse) {
+            self.place_part_line(input);
         }
 
         if input.is_button_pressed(Button::R) {
@@ -202,7 +197,6 @@ impl Simulation {
                 }
             }
         }
-        
     }
 
     fn get_new_pos(&self, i: usize, j: usize, i_add: isize, j_add: isize) -> (bool, usize, usize) {
@@ -216,17 +210,20 @@ impl Simulation {
         (b, u_i, u_j)
     }
 
-    fn place_part_line(&mut self, j: f32) {
-        // let i = (input.get_cursor_pos().x / PART_SIZE.x as f64).floor() as usize;
-        let j = j as usize;
+    fn place_part_line(&mut self, input: &Input) {
+        let i = (input.get_cursor_pos().x / PART_SIZE.x as f64).floor() as usize;
+        let j = (input.get_cursor_pos().y / PART_SIZE.y as f64).floor() as usize;
 
-        for c in 0..PART_AMT.0 {
-            let new_i = c;
+        for c in 0..10 {
+            let new_i = i + c - 5;
+            for d in 0..4 {
+                let j = j + d;
                 if self.particles.get(j).is_some()
-                && self.particles[j].get(new_i).is_some()
-                && self.particles[j][new_i].kind == PartKind::Empty
-            {
-                self.particles[j][new_i] = Particle::new(PartKind::Wood);
+                    && self.particles[j].get(new_i).is_some()
+                    && self.particles[j][new_i].kind == PartKind::Empty
+                {
+                    self.particles[j][new_i] = Particle::new(PartKind::Wood);
+                }
             }
         }
     }
