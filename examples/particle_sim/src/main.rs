@@ -13,7 +13,7 @@ const PART_SIZE: Vec32 = vec2(
     SCREEN_SIZE.y / PART_AMT.1 as f32,
 );
 
-const DISPERSION: isize = 1;
+const DISPERSION: isize = 5;
 
 fn main() {
     block_on(run())
@@ -133,15 +133,15 @@ impl Simulation {
             if rand::random() {
                 (*m).0 *= -1;
             }
-            let mut k: isize = if m.1 == 0 {
-                0
-            } else if m.1 >= 0 {
-                1
-            } else {
-                -1
+            let mut k: isize = 0;
+            if m.1 > 0 {
+                k = 1
+            } else if m.1 < 0 {
+                k = -1
             };
-            let add = if k >= 0 { 1 } else { -1 };
+            let add = k;
 
+            let mut should_return = false;
             while k.abs() <= m.1.abs() {
                 let (is_safe, new_i, new_j) = self.get_new_pos(i, j, m.0, k);
                 k += add;
@@ -152,23 +152,60 @@ impl Simulation {
                     self.particles[new_j][new_i] = self.particles[prev_j][i];
                     self.particles[new_j][new_i].has_updated = true;
                     self.particles[prev_j][i] = Particle::new(PartKind::Empty);
+
+                    should_return = true;
                 } else {
                     break;
                 }
             }
+            if should_return {
+                return;
+            }
 
-            
+            let mut k: isize = 0;
+            if m.0 > 0 {
+                k = 1
+            } else if m.0 < 0 {
+                k = -1
+            };
+            let add = k;
+            let mut should_return = false;
+            while k.abs() <= m.0.abs() {
+                // pr(format!(" i = {} + k = {}", i, k));
+                let (is_safe, new_i, new_j) = self.get_new_pos(i, j, k, m.1);
+                k += add;
+
+                if is_safe && self.particles[new_j][new_i].kind == PartKind::Empty {
+                    // pr(format!("{} - {}", new_i, add));
+                    let prev_i = (new_i as isize - add) as usize;
+                    // pr(prev_i);
+
+                    self.particles[new_j][new_i] = self.particles[j][prev_i];
+                    self.particles[new_j][new_i].has_updated = true;
+                    self.particles[j][prev_i] = Particle::new(PartKind::Empty);
+
+                    // pr(k);
+
+                    should_return = true;
+                } else {
+                    break;
+                }
+            }
+            if should_return {
+                return;
+            }
         }
     }
 
     fn get_new_pos(&self, i: usize, j: usize, i_add: isize, j_add: isize) -> (bool, usize, usize) {
         let (new_j, new_i) = (j as isize + j_add, i as isize + i_add);
+        let (u_i, u_j) = (new_i as usize, new_j as usize);
         let b = new_j >= 0
             && new_i >= 0
-            && self.particles.get(new_j as usize).is_some()
-            && self.particles[new_j as usize].get(new_i as usize).is_some();
+            && self.particles.get(u_j).is_some()
+            && self.particles[u_j].get(u_i).is_some();
 
-        (b, new_i as usize, new_j as usize)
+        (b, u_i, u_j)
     }
 
     fn place_particles(&mut self, input: &Input, amt: usize, part_kind: PartKind) {
@@ -188,8 +225,8 @@ impl Simulation {
             vec.push((x_vec[i], y as isize))
         }
 
-        let i = (input.get_cursor_pos().x / PART_SIZE.x as f64) as usize;
-        let j = (input.get_cursor_pos().y / PART_SIZE.y as f64) as usize;
+        let i = (input.get_cursor_pos().x / PART_SIZE.x as f64).floor() as usize;
+        let j = (input.get_cursor_pos().y / PART_SIZE.y as f64).floor() as usize;
         // self.particles[j][i] = Particle::new(part_kind);
         // return;
 
