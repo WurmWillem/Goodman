@@ -5,12 +5,11 @@ use crate::particle::PartKind;
 
 mod particle;
 
-const WINDOW_SIZE: Vec32 = vec2(1100., 900.);
-const SCREEN_SIZE: Vec32 = vec2(1100., 900.);
-const PART_AMT: (usize, usize) = (300, 260);
+const WINDOW_SIZE: Vec32 = vec2(1200., 900.);
+const PART_AMT: (usize, usize) = (300, 225);
 const PART_SIZE: Vec32 = vec2(
-    SCREEN_SIZE.x / PART_AMT.0 as f32,
-    SCREEN_SIZE.y / PART_AMT.1 as f32,
+    WINDOW_SIZE.x / PART_AMT.0 as f32,
+    WINDOW_SIZE.y / PART_AMT.1 as f32,
 );
 
 const DISPERSION: isize = 5;
@@ -24,8 +23,6 @@ async fn run() {
     let mut engine = EngineBuilder::new(WINDOW_SIZE)
         .show_engine_ui()
         .with_target_fps(144)
-        .use_near_filter_mode()
-        // .with_target_tps(10)
         .build(&event_loop)
         .await;
 
@@ -46,7 +43,7 @@ impl Manager for Simulation {
         Self {
             particles: create_empty_part_vec(),
             textures,
-            circle_size: 15,
+            circle_size: 203,
         }
     }
 
