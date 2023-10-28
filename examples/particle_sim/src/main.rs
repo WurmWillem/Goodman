@@ -43,7 +43,7 @@ impl Manager for Simulation {
         Self {
             particles: create_empty_part_vec(),
             textures,
-            circle_size: 203,
+            circle_size: 20,
         }
     }
 
