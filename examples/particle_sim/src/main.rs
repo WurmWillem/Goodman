@@ -41,7 +41,7 @@ struct Simulation {
 impl Manager for Simulation {
     fn new(engine: &mut Engine) -> Self {
         let mut textures = vec![];
-        create_textures!(engine, textures, "assets/sand.png" "assets/water.png");
+        create_textures!(engine, textures, "assets/sand.png" "assets/water.png" "assets/wood.png");
 
         Self {
             particles: create_empty_part_vec(),
@@ -49,6 +49,12 @@ impl Manager for Simulation {
             circle_size: 15,
         }
     }
+
+    fn start(&mut self) {
+        self.place_part_line((PART_AMT.1 as f32 * 0.5));
+        self.place_part_line((PART_AMT.1 as f32 * 0.5 + 1.));
+    }
+
     fn update(&mut self, _frame_time: f64, input: &Input, _sound: &mut Sound) {
         if self.circle_size as i16 + input.get_wheel_movement() as i16 > 0 {
             self.circle_size =
@@ -56,10 +62,13 @@ impl Manager for Simulation {
         }
 
         if input.is_button_held(Button::LeftMouse) {
-            self.place_particles(input, self.circle_size, PartKind::Sand);
+            self.place_part_circle(input, self.circle_size, PartKind::Sand);
         }
         if input.is_button_held(Button::RightMouse) {
-            self.place_particles(input, self.circle_size, PartKind::Water);
+            self.place_part_circle(input, self.circle_size, PartKind::Water);
+        }
+        if input.is_button_held(Button::Three) {
+            // self.place_part_line(input);
         }
 
         if input.is_button_pressed(Button::R) {
@@ -74,14 +83,15 @@ impl Manager for Simulation {
             }
 
             let right_to_left = rand::random();
-
             for _i in 0..self.particles[y].len() {
                 let mut x = _i;
                 if right_to_left {
                     x = self.particles[y].len() - 1 - x;
                 }
 
-                if self.particles[y][x].kind == PartKind::Empty || self.particles[y][x].has_updated
+                if self.particles[y][x].kind == PartKind::Empty
+                    || self.particles[y][x].kind == PartKind::Wood
+                    || self.particles[y][x].has_updated
                 {
                     continue;
                 }
@@ -89,15 +99,15 @@ impl Manager for Simulation {
                 self.particles[y][x].update();
 
                 match self.particles[y][x].kind {
-                    PartKind::Empty => panic!("can't update empty particle"),
+                    PartKind::Empty | PartKind::Wood => panic!("can't update this particle"),
                     PartKind::Sand => {
                         let c = self.particles[y][x].vel.y as isize;
-                        self.update_particle(x, y, vec![(0, c), (-1, c), (1, c)]);
+                        self.update_particle(x, y, vec![(0, c), (-1, 1), (1, 1)]);
                     }
                     PartKind::Water => {
-                        let c = 1;
+                        let c = self.particles[y][x].vel.y as isize;
                         let moves =
-                            vec![(0, c), (-1, c), (1, c), (-DISPERSION, 0), (DISPERSION, 0)];
+                            vec![(0, c), (-1, 1), (1, 1), (-DISPERSION, 0), (DISPERSION, 0)];
                         self.update_particle(x, y, moves);
                     }
                 }
@@ -127,9 +137,7 @@ impl Manager for Simulation {
 }
 impl Simulation {
     fn update_particle(&mut self, i: usize, j: usize, mut moves: Vec<(isize, isize)>) {
-        // pr(j);
         for m in &mut moves {
-            // println!("{:?}", m)
             if rand::random() {
                 (*m).0 *= -1;
             }
@@ -140,6 +148,11 @@ impl Simulation {
                 k = -1
             };
             let add = k;
+
+            /*if m.1 == 0 {
+                // pr(m.0);
+                continue;
+            }*/
 
             let mut should_return = false;
             while k.abs() <= m.1.abs() {
@@ -161,6 +174,11 @@ impl Simulation {
             if should_return {
                 return;
             }
+        }
+        for m in &moves {
+            if m.0 == 0 || m.1 != 0 {
+                continue;
+            }
 
             let mut k: isize = 0;
             if m.0 > 0 {
@@ -168,33 +186,23 @@ impl Simulation {
             } else if m.0 < 0 {
                 k = -1
             };
-            let add = k;
-            let mut should_return = false;
+            let add = k; // k =
             while k.abs() <= m.0.abs() {
-                // pr(format!(" i = {} + k = {}", i, k));
                 let (is_safe, new_i, new_j) = self.get_new_pos(i, j, k, m.1);
                 k += add;
 
                 if is_safe && self.particles[new_j][new_i].kind == PartKind::Empty {
-                    // pr(format!("{} - {}", new_i, add));
                     let prev_i = (new_i as isize - add) as usize;
-                    // pr(prev_i);
 
                     self.particles[new_j][new_i] = self.particles[j][prev_i];
                     self.particles[new_j][new_i].has_updated = true;
                     self.particles[j][prev_i] = Particle::new(PartKind::Empty);
-
-                    // pr(k);
-
-                    should_return = true;
                 } else {
-                    break;
+                    return;
                 }
             }
-            if should_return {
-                return;
-            }
         }
+        
     }
 
     fn get_new_pos(&self, i: usize, j: usize, i_add: isize, j_add: isize) -> (bool, usize, usize) {
@@ -208,20 +216,34 @@ impl Simulation {
         (b, u_i, u_j)
     }
 
-    fn place_particles(&mut self, input: &Input, amt: usize, part_kind: PartKind) {
+    fn place_part_line(&mut self, j: f32) {
+        // let i = (input.get_cursor_pos().x / PART_SIZE.x as f64).floor() as usize;
+        let j = j as usize;
+
+        for c in 0..PART_AMT.0 {
+            let new_i = c;
+                if self.particles.get(j).is_some()
+                && self.particles[j].get(new_i).is_some()
+                && self.particles[j][new_i].kind == PartKind::Empty
+            {
+                self.particles[j][new_i] = Particle::new(PartKind::Wood);
+            }
+        }
+    }
+
+    fn place_part_circle(&mut self, input: &Input, size: usize, part_kind: PartKind) {
         use std::f32::consts::PI;
 
         let mut x_vec = vec![];
-        let d = 2. * PI / amt as f32;
-        for i in 0..amt {
-            let x = (i as f32 * d).cos() * amt as f32;
-            // pr(x);
+        let d = 2. * PI / size as f32;
+        for i in 0..size {
+            let x = (i as f32 * d).cos() * size as f32;
             x_vec.push(x as isize);
         }
 
         let mut vec = vec![];
-        for i in 0..amt {
-            let y = (i as f32 * d).sin() * amt as f32;
+        for i in 0..size {
+            let y = (i as f32 * d).sin() * size as f32;
             vec.push((x_vec[i], y as isize))
         }
 

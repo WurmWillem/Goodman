@@ -11,7 +11,8 @@ impl Particle {
         let y = match kind {
             PartKind::Empty => 0.,
             PartKind::Sand => 1.,
-            PartKind::Water => 0.,
+            PartKind::Water => 1.,
+            PartKind::Wood => 0.,
         };
 
         Self {
@@ -25,7 +26,8 @@ impl Particle {
         match self.kind {
             PartKind::Empty => panic!("can't update empty particle"),
             PartKind::Sand => self.vel.y += 0.05,
-            PartKind::Water => self.vel.y += 0.,
+            PartKind::Water => self.vel.y += 0.03,
+            PartKind::Wood => panic!("can't update wood particle"),
         }
     }
 
@@ -34,6 +36,7 @@ impl Particle {
             PartKind::Empty => panic!("can't render empty particle"),
             PartKind::Sand => 0,
             PartKind::Water => 1,
+            PartKind::Wood => 2,
         }
     }
 }
@@ -43,4 +46,5 @@ pub enum PartKind {
     Empty,
     Sand,
     Water,
+    Wood,
 }
