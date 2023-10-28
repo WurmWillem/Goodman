@@ -4,4 +4,4 @@ This is Goodman, a simple engine/framework for making 2D games. It is still in v
 
 Find examples of games in the examples folder. You can run an example by running "cargo run --bin name_of_example".
 
-![](https://github.com/WurmWillem/Goodman/blob/test/Screencast%20from%2028-10-23%2013:26:33.webm)
+![](https://github.com/WurmWillem/Goodman/blob/test/particle%20sim.mov)
