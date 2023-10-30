@@ -1,4 +1,3 @@
-use anyhow::*;
 use cgmath::vec2;
 use image::GenericImageView;
 use wgpu::Device;
@@ -25,8 +24,11 @@ impl Texture {
         index: u32,
         bytes: &[u8],
         use_near_filter_mode: bool,
-    ) -> Result<Self> {
-        let img = image::load_from_memory(bytes)?;
+    ) -> Result<Self, String> {
+        let img = match image::load_from_memory(bytes) {
+            Ok(img) => img,
+            Err(_) => return Err("could not load image from memory".to_string()),
+        };
         Ok(Self::from_image(
             device,
             queue,
