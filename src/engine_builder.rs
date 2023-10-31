@@ -257,7 +257,7 @@ async fn create_adapter(instance: &wgpu::Instance, surface: &wgpu::Surface) -> w
 
 async fn create_device_and_queue(adapter: &wgpu::Adapter) -> (wgpu::Device, wgpu::Queue) {
     let limits = wgpu::Limits {
-        max_sampled_textures_per_shader_stage: 512,
+        max_sampled_textures_per_shader_stage: 1024,
         ..Default::default()
     };
 
