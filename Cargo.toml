@@ -28,7 +28,9 @@ version = "0.24"
 default-features = false
 features = ["png", "jpeg"]
 
-
+[[example]] 
+name = "getting_started"
+path = "examples/getting_started/src/main.rs"
 [[example]]
 name = "pong"
 path = "examples/pong/src/main.rs"
