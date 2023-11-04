@@ -70,11 +70,11 @@ impl Ui {
         }
 
         egui::Window::new("Engine").show(&self.platform.context(), |ui| {
-            let tps_points: egui::plot::PlotPoints =
+            let tps_points: egui_plot::PlotPoints =
                 self.tps_graph.iter().map(|vec| [vec.x, vec.y]).collect();
-            let line = egui::plot::Line::new(tps_points);
+            let line = egui_plot::Line::new(tps_points);
 
-            egui::plot::Plot::new("sd")
+            egui_plot::Plot::new("sd")
                 .view_aspect(2.)
                 .include_y(0.)
                 .show(ui, |plot_ui| plot_ui.line(line));

@@ -98,6 +98,8 @@ impl EngineBuilder {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             dx12_shader_compiler: Default::default(), // sudo sysctl dev.i915.perf_stream_paranoid=0
+            flags: wgpu::InstanceFlags::default(),
+            gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
         });
 
         // State owns the window so this should be safe.
