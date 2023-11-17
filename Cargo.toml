@@ -44,4 +44,7 @@ path = "examples/chess/src/main.rs"
 [[example]] 
 name = "sim"
 path = "examples/particle_sim/src/main.rs"
+[[example]]
+name = "mario"
+path = "examples/mario/src/main.rs"
 

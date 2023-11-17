@@ -123,13 +123,11 @@ impl Texture {
 #[macro_export]
 macro_rules! create_textures {
     ($engine: expr, $textures: expr, $($name: expr)*) => {
-        let mut i = 0;
         $(
             let tex_bytes = include_bytes!($name);
             $textures.push($engine.create_texture(tex_bytes).unwrap());
-            i += 1;
         )*
-       $engine.use_textures(&$textures, i);
+       $engine.use_textures(&$textures);
     };
 }
 
@@ -179,6 +177,27 @@ pub fn create_bind_group(
             wgpu::BindGroupEntry {
                 binding: 1,
                 resource: wgpu::BindingResource::TextureViewArray(&views),
+            },
+        ],
+        label: Some("texture_bind_group"),
+    })
+}
+
+pub fn create_bind_group_single_tex(
+    device: &Device,
+    tex_bind_group_layout: &wgpu::BindGroupLayout,
+    tex: &Texture,
+) -> wgpu::BindGroup {
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: tex_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Sampler(&tex.sampler),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::TextureViewArray(&vec![&tex.view]),
             },
         ],
         label: Some("texture_bind_group"),
