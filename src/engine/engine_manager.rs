@@ -19,7 +19,7 @@ impl Engine {
         T: Manager + 'static,
     {
         manager.render(self);
-        self.update_instance_buffer();
+        self.update_buffers();
         match self.render() {
             Ok(_) => {}
             // Reconfigure the surface if lost
@@ -108,14 +108,7 @@ impl Engine {
         self.sound.play_sound(source)
     }
 
-    pub fn use_textures(&mut self, textures: &Vec<Texture>, tex_amt: u32) {
-        let tex_layout = texture::create_bind_group_layout(&self.device, tex_amt);
-        self.tex_bind = Some(texture::create_bind_group(
-            &self.device,
-            &tex_layout,
-            textures,
-        ));
-
+    fn generic_use_textures(&mut self, tex_layout: wgpu::BindGroupLayout) {
         let cam_layout = crate::camera::create_bind_group_layout(&self.device);
         let win_layout = create_win_layout(&self.device);
         let pipeline_layout =
@@ -124,6 +117,41 @@ impl Engine {
         let shader = crate::engine_builder::create_shader(&self.device);
         self.render_pipeline =
             create_render_pipeline(&self.device, &pipeline_layout, &shader, &self.config);
+    }
+
+    pub fn use_textures(&mut self, textures: &Vec<Texture>) {
+        let tex_layout = texture::create_bind_group_layout(&self.device, textures.len() as u32);
+        self.tex_bind = Some(texture::create_bind_group(
+            &self.device,
+            &tex_layout,
+            textures,
+        ));
+
+        self.generic_use_textures(tex_layout);
+    }
+
+    pub fn create_and_use_texture(&mut self, bytes: &[u8]) -> Result<Texture, &'static str> {
+        let tex = match Texture::from_bytes(
+            &self.device,
+            &self.queue,
+            self.texture_amt_created,
+            bytes,
+            self.use_near_filter_mode,
+        ) {
+            Ok(tex) => tex,
+            Err(_) => return Err("failed to create texture"),
+        };
+        self.texture_amt_created += 1;
+
+        let tex_layout = texture::create_bind_group_layout(&self.device, 1);
+        self.tex_bind = Some(texture::create_bind_group_single_tex(
+            &self.device,
+            &tex_layout,
+            &tex,
+        ));
+        self.generic_use_textures(tex_layout);
+
+        Ok(tex)
     }
 
     pub fn create_texture(&mut self, bytes: &[u8]) -> Result<Texture, &'static str> {

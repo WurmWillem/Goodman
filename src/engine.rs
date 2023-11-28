@@ -120,10 +120,12 @@ impl Engine {
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(self.win_background_color),
-                    store: true,
+                    store: wgpu::StoreOp::Store,
                 },
             })],
             depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
         });
 
         render_pass.set_pipeline(&self.render_pipeline);
@@ -192,7 +194,7 @@ impl Engine {
         self.instances_rendered += 1;
     }
 
-    fn update_instance_buffer(&mut self) {
+    fn update_buffers(&mut self) {
         if self.instance_buffer.size() == self.instances.len() as u64 * 28 {
             self.queue.write_buffer(
                 &self.instance_buffer,

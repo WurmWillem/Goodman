@@ -12,7 +12,7 @@ mod pieces;
 mod state;
 mod textures;
 
-pub const SCREENSIZE: f32 = 700.0;
+pub const SCREENSIZE: f32 = 900.0;
 pub const SQUARE: f32 = SCREENSIZE / 8.0;
 
 fn main() {

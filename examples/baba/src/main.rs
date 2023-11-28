@@ -42,7 +42,7 @@ pub struct Game {
 }
 impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
-        engine.use_sound(false);
+        // engine.use_sound(false);
 
         let background_music = engine
             .create_sound_source("examples/baba/src/assets/background.wav")
@@ -60,7 +60,7 @@ impl Manager for Game {
         create_textures!(engine, textures, "assets/sheet.png");
 
         let mut grid = vec![vec![]];
-        let current_level = Level::Level4;
+        let current_level = Level::Level1;
         current_level.load_level(&mut grid);
 
         let frames = vec![1, 11, 12]; //11

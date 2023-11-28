@@ -6,19 +6,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wgpu = "0.17"
+wgpu = "0.18"
 winit = "0.28"
 cgmath = "0.18"
-egui = "0.22"
-egui_wgpu_backend = "0.25"
-egui_winit_platform = "0.19"
+egui = "0.23"
+egui_wgpu_backend = "0.27"
+egui_winit_platform = "0.20"
 env_logger = "0.10"
 log = "0.4"
 pollster = "0.2"
 bytemuck = { version = "1.12", features = [ "derive" ] }
-anyhow = "1.0"
 spin_sleep = "1.1.1"
 rodio = "0.17"
+egui_plot = "0.23.0"
+# wgpu_glyph = { version = "0.20", git = "https://github.com/sotrh/wgpu_glyph.git" }
 
 [dev-dependencies]
 rand = "0.8.5"
@@ -46,4 +47,7 @@ path = "examples/chess/src/main.rs"
 [[example]] 
 name = "sim"
 path = "examples/particle_sim/src/main.rs"
+[[example]]
+name = "mario"
+path = "examples/mario/src/main.rs"
 

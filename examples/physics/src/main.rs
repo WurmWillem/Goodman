@@ -34,9 +34,9 @@ impl Manager for Physics {
         create_textures!(engine, textures, "assets/circle.png"); //10x10 circles, 37k tps
 
         let mut circles = vec![];
-        for j in 0..10 {
-            for i in 0..10 {
-                let radius = 16. + (j * i) as f64 * 0.5;
+        for j in 0..7 {
+            for i in 0..8 {
+                let radius = 16. + (j * i) as f64 * 1.;
                 let mass = radius / 16. * 2.;
                 let circle = Circle::new(
                     radius,
