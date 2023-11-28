@@ -19,7 +19,7 @@ impl Engine {
         T: Manager + 'static,
     {
         manager.render(self);
-        self.update_instance_buffer();
+        self.update_buffers();
         match self.render() {
             Ok(_) => {}
             // Reconfigure the surface if lost

@@ -194,7 +194,7 @@ impl Engine {
         self.instances_rendered += 1;
     }
 
-    fn update_instance_buffer(&mut self) {
+    fn update_buffers(&mut self) {
         if self.instance_buffer.size() == self.instances.len() as u64 * 28 {
             self.queue.write_buffer(
                 &self.instance_buffer,

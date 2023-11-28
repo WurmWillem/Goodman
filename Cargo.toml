@@ -19,6 +19,7 @@ bytemuck = { version = "1.12", features = [ "derive" ] }
 spin_sleep = "1.1.1"
 rodio = "0.17"
 egui_plot = "0.23.0"
+# wgpu_glyph = { version = "0.20", git = "https://github.com/sotrh/wgpu_glyph.git" }
 
 [dev-dependencies]
 rand = "0.8.5"
