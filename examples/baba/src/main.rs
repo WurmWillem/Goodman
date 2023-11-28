@@ -44,9 +44,12 @@ impl Manager for Game {
     fn new(engine: &mut Engine) -> Self {
         // engine.use_sound(false);
 
+        // create background music 
         let background_music = engine
             .create_sound_source("examples/baba/src/assets/background.wav")
             .unwrap();
+
+        // play background music and repeat when
         engine
             .play_sound(background_music.convert_samples().repeat_infinite())
             .unwrap();
@@ -63,7 +66,8 @@ impl Manager for Game {
         let current_level = Level::Level1;
         current_level.load_level(&mut grid);
 
-        let frames = vec![1, 11, 12]; //11
+        // indexes that get returned for indexing into texture atlas
+        let frames = vec![1, 11, 12]; 
         let baba_anim = Animation::new(frames, 0.3);
 
         Self {

@@ -1,3 +1,7 @@
+// example of a particle simulator
+// use left, right and middle mouse to place particles
+// scroll to make the area you place pixels in bigger or smaller
+
 use goodman::prelude::*;
 use particle::Particle;
 
@@ -48,6 +52,7 @@ impl Manager for Simulation {
     }
 
     fn update(&mut self, _frame_time: f64, input: &Input, _sound: &mut Sound) {
+        // input.get_wheel_movement() is 1 if scrolled up, -1 if scrolled down and 0 if not being scrolled
         if self.circle_size as i16 + input.get_wheel_movement() as i16 > 0 {
             self.circle_size =
                 (self.circle_size as i16 + input.get_wheel_movement() as i16) as usize;

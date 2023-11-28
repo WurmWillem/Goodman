@@ -1,4 +1,4 @@
-//WARNING: some of this code is really old, proceed with caution
+// WARNING: some of this code is really old and badly written, proceed with caution
 
 use goodman::prelude::*;
 use piece_data::Data;

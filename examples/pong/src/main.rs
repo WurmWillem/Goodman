@@ -1,5 +1,6 @@
 use goodman::prelude::*;
 
+// paddle.rs and ball.rs don't contain any engine related code and don't do anything special
 mod ball;
 use ball::Ball;
 mod paddle;
@@ -17,8 +18,8 @@ async fn run() {
     let window_size = vec2(WINDOW_SIZE.x as f32, WINDOW_SIZE.y as f32);
     let mut engine = EngineBuilder::new(window_size)
         .show_engine_ui()
-        // .with_target_fps(144)
-        // .with_target_tps(1000 * 1000)
+        .with_target_fps(144)
+        .with_target_tps(100 * 1000)
         .build(&event_loop)
         .await;
 
@@ -35,6 +36,8 @@ struct Pong {
 }
 impl Manager for Pong {
     fn new(engine: &mut Engine) -> Self {
+        // create textures like this with the create_textures! macro
+        // textures get safed into the "textures" vector, and get saved in the Pong struct
         let mut textures = vec![];
         create_textures!(engine, textures, "assets/Computer.png" "assets/Player.png" "assets/Ball.png");
 
@@ -51,6 +54,9 @@ impl Manager for Pong {
     }
 
     fn update(&mut self, delta_t: f64, input: &Input, _sound: &mut Sound) {
+        // input gets used to check if certain buttons are held
+        // if the button w is held down then input.is_button_held(Button::W) will returnt true, otherwise false
+        // delta_t is used to make the game run at a stable framerate
         self.left_paddle.update(
             input.is_button_held(Button::W),
             input.is_button_held(Button::S),
@@ -69,10 +75,13 @@ impl Manager for Pong {
     }
 
     fn render(&mut self, engine: &mut Engine) {
+        // uncomment this to show the ball position in the ui
         /*let mut ui = UserUi::new("Pong");
         ui.add_label(format!("ball position: {} {}", self.ball.pos.x as u32, self.ball.pos.y as u32));
         engine.set_user_ui(ui);*/
 
+        // this is how you render textures, you give a rect(x, y, width, height) for the position and size
+        // and you give a reference to the texture you want to use
         engine.render_texture(self.left_paddle.rect.into(), &self.textures[0]);
         engine.render_texture(self.right_paddle.rect.into(), &self.textures[1]);
         engine.render_texture(self.ball.to_rect(), &self.textures[2]);
