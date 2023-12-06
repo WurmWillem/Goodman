@@ -47,7 +47,7 @@ impl Manager for Simulation {
         Self {
             particles: create_empty_part_vec(),
             textures,
-            circle_size: 20,
+            circle_size: 10,
         }
     }
 
@@ -218,7 +218,7 @@ impl Simulation {
 
         for c in 0..10 {
             let new_i = i + c - 5;
-            for d in 0..4 {
+            for d in 0..10 {
                 let j = j + d;
                 if self.particles.get(j).is_some()
                     && self.particles[j].get(new_i).is_some()

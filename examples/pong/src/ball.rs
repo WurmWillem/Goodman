@@ -21,11 +21,13 @@ impl Ball {
         self.pos += self.vel * delta_t;
 
         if self.pos.x + DIAMETER > WINDOW_SIZE.x {
-            self.pos.x = WINDOW_SIZE.x - DIAMETER;
-            self.vel.x *= -1.;
+            let vel = self.vel;
+            *self = Ball::new();
+            self.vel = vel;
         } else if self.pos.x < 0. {
-            self.pos.x = 0.;
-            self.vel.x *= -1.;
+            let vel = self.vel;
+            *self = Ball::new();
+            self.vel = vel;
         }
         if self.pos.y + DIAMETER > WINDOW_SIZE.y {
             self.vel.y *= -1.;
