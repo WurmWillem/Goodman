@@ -4,6 +4,9 @@ This is Goodman, a simple engine/framework for making 2D games. Goodman is still
 
 You can find examples of games in the examples folder. You can run an example by running `cargo run --example name_of_example --release`.
 
+# install
+simply add `goodman = { git = "https://github.com/WurmWillem/Goodman" }` to cargo.toml under dependencies
+
 
 ## examples
 This is the Baba example, it is based on Baba Is You. Make sentences to change properties of the environment.
