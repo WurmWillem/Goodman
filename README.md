@@ -5,7 +5,7 @@ This is Goodman, a simple engine/framework for making 2D games. Goodman is still
 You can find examples of games in the examples folder. You can run an example by running `cargo run --example name_of_example --release`.
 
 # install
-simply add `goodman = { git = "https://github.com/WurmWillem/Goodman" }` to cargo.toml under dependencies
+simply add `goodman = { git = "https://github.com/WurmWillem/Goodman" }` to cargo.toml under dependencies to use the crate
 
 
 ## examples
