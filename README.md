@@ -9,15 +9,15 @@ simply add `goodman = { git = "https://github.com/WurmWillem/Goodman" }` to carg
 
 
 ## examples
-This is the Baba example, it is based on Baba Is You. Make sentences to change properties of the environment.
 
-[baba example](https://github.com/WurmWillem/Goodman/assets/84849889/4bfc296a-6ec7-4d81-97ba-34e03a9616f3)
-
-This is the chess example, it was originally created for the Macroquad framework but has been ported to Goodman.
+This is the chess example, it is simply 2 player chess.
 
 [chess example](https://github.com/WurmWillem/Goodman/assets/84849889/5a2fe5d8-99e8-49c5-8045-5667bcb2874f)
-
 
 This is the particle simulator example, place sand with the right mouse button, water with the left mouse button, and wood with the middle mouse button.
 
 [particle simulator example](https://github.com/WurmWillem/Goodman/assets/84849889/4d6125ed-a91d-4be3-91a8-2d42f4142fc7)
+
+This is the Baba example, it is based on Baba Is You. Make sentences to change properties of the environment.
+
+[baba example](https://github.com/WurmWillem/Goodman/assets/84849889/4bfc296a-6ec7-4d81-97ba-34e03a9616f3)
