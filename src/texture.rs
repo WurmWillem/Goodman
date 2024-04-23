@@ -197,7 +197,7 @@ pub fn create_bind_group_single_tex(
             },
             wgpu::BindGroupEntry {
                 binding: 1,
-                resource: wgpu::BindingResource::TextureViewArray(&vec![&tex.view]),
+                resource: wgpu::BindingResource::TextureViewArray(&[&tex.view]),
             },
         ],
         label: Some("texture_bind_group"),

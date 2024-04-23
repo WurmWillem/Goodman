@@ -18,7 +18,7 @@ impl State {
             selected_piece_index: (0, 0),
         }
     }
-    pub fn check_for_move(&mut self, pieces: &mut Vec<Vec<Piece>>, input: &Input) {
+    pub fn update_based_on_click(&mut self, pieces: &mut Vec<Vec<Piece>>, input: &Input) {
         let clicked_coords = get_clicked_square_coords(&input);
 
         if let Some(coords) = clicked_coords {
@@ -56,9 +56,11 @@ impl State {
                 && !moved_a_piece
             {
                 pieces[j][i].selected = true;
-                // pieces[j][i].moves = calculate_moves(pieces, &pieces[j][i], j, i);
+                
                 self.selected_piece_moves = calculate_moves(pieces, &pieces[j][i], j, i);
                 self.selected_piece_index = (j, i);
+            } else {
+                self.selected_piece_moves = vec![];
             }
         }
     }

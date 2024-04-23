@@ -65,7 +65,7 @@ impl Manager for Chess {
         }
     }
     fn update(&mut self, _frame_time: f64, input: &Input, _sound: &mut Sound) {
-        self.state.check_for_move(&mut self.pieces, input);
+        self.state.update_based_on_click(&mut self.pieces, input);
     }
     fn render(&mut self, engine: &mut Engine) {
         self.render_board(engine);
@@ -106,13 +106,15 @@ impl Chess {
         let moves = &self.state.selected_piece_moves;
         if moves.len() > 0 {
             for m in moves {
-                let rect = rect32(
-                    m.1 as f32 * SQUARE + SQUARE * 0.345,
-                    m.0 as f32 * SQUARE + SQUARE * 0.345,
-                    SQUARE * 0.33,
-                    SQUARE * 0.33,
-                );
-                engine.render_texture(rect, &self.textures[15]);
+                if self.pieces[m.0][m.1].kind == Kind::None {
+                    let rect = rect32(
+                        m.1 as f32 * SQUARE + SQUARE * 0.345,
+                        m.0 as f32 * SQUARE + SQUARE * 0.345,
+                        SQUARE * 0.33,
+                        SQUARE * 0.33,
+                    );
+                    engine.render_texture(rect, &self.textures[15]);
+                }
             }
         }
     }
@@ -126,7 +128,6 @@ fn get_textures(engine: &mut Engine) -> Vec<Texture> {
         "assets/white_square.png" "assets/green_square.png" "assets/selected.png" "assets/move.png");
     textures
 }
-
 
 fn create_row_of_pieces(side: Side) -> Vec<Piece> {
     vec![

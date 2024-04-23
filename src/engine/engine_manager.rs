@@ -88,7 +88,7 @@ impl Engine {
         };
         let file = BufReader::new(file);
         match Decoder::new(file) {
-            Err(e) => return Err(e.to_string()),
+            Err(e) => Err(e.to_string()),
             Ok(f) => Ok(f),
         }
     }

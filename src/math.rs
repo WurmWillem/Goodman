@@ -107,9 +107,9 @@ pub fn rect64_vec(pos: Vec64, size: Vec64) -> Rect64 {
         h: size.y,
     }
 }
-impl Into<Rect32> for Rect64 {
-    fn into(self) -> Rect32 {
-        rect32(self.x as f32, self.y as f32, self.w as f32, self.h as f32)
+impl From<Rect64> for Rect32 {
+    fn from(val: Rect64) -> Self {
+        rect32(val.x as f32, val.y as f32, val.w as f32, val.h as f32)
     }
 }
 impl From<Rect32> for Rect64 {

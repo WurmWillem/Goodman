@@ -116,9 +116,7 @@ impl EngineBuilder {
 
         // Swap target_fps and target_tps because this way we use loop_helper which is more consistent
         if self.target_fps.is_some() && self.target_tps.is_none() {
-            let temp = self.target_fps;
-            self.target_fps = self.target_tps;
-            self.target_tps = temp;
+            std::mem::swap(&mut self.target_fps, &mut self.target_tps);
         }
 
         // If target_fps is Some and target_tps is None then target_tps is fps
@@ -136,7 +134,7 @@ impl EngineBuilder {
             camera::create_bind_group(&device, &camera_buffer, &camera_bind_group_layout);
 
         let window_size_uniform = WindowUniform {
-            size: [1. / self.win_size.x as f32, 1. / self.win_size.y as f32],
+            size: [1. / self.win_size.x, 1. / self.win_size.y],
         };
         let window_size_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("window size buffer"),
