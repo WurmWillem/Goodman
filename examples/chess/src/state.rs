@@ -1,39 +1,5 @@
-use crate::{piece_data::Piece, pieces::*, SQUARE};
+use crate::{moves::*, types::{Kind, Piece, Side, Turn}, SQUARE};
 use goodman::prelude::*;
-
-#[derive(PartialEq, Debug)]
-enum Turn {
-    White,
-    Black,
-}
-impl Turn {
-    fn opposite(turn: &Turn) -> Turn {
-        if *turn == Turn::White {
-            Turn::Black
-        } else if *turn == Turn::Black {
-            Turn::White
-        } else {
-            panic!("tried to opposite None");
-        }
-    }
-}
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Side {
-    None,
-    White,
-    Black,
-}
-impl Side {
-    fn opposite(side: &Side) -> Side {
-        if *side == Side::White {
-            Side::Black
-        } else if *side == Side::Black {
-            Side::White
-        } else {
-            panic!("tried to opposite None");
-        }
-    }
-}
 
 pub struct State {
     turn: Turn,
@@ -62,7 +28,7 @@ impl State {
                 }
 
                 let mut moved_piece = false;
-                Kind::deselect_every_piece(pieces);
+                crate::types::deselect_every_piece(pieces);
 
                 if moves.len() > 0 {
                     let side_clicked = pieces[j][i].side;
@@ -74,7 +40,7 @@ impl State {
                                 || side_clicked == Side::None
                                 || side_original == Side::None)
                         {
-                            Kind::make_move(pieces, index, *m);
+                            make_move(pieces, index, *m);
                             self.turn = Turn::opposite(&self.turn);
                             moved_piece = true;
                             break;
@@ -92,7 +58,7 @@ impl State {
                 }
 
                 pieces[j][i].selected = true;
-                pieces[j][i].moves = Kind::calculate_moves(pieces, &pieces[j][i], j, i);
+                pieces[j][i].moves = calculate_moves(pieces, &pieces[j][i], j, i);
                 /*pieces[j][i] = Data::change_value(
                     &pieces[j][i],
                     Data {
@@ -184,6 +150,10 @@ fn square_clicked(x: usize, y: usize, input: &Input) -> bool {
         input.get_cursor_pos().x as f32,
         input.get_cursor_pos().y as f32,
     );
+
+    if input.is_button_pressed(Button::LeftMouse) {
+        println!("{} {}", cursor_pos.x / SQUARE, cursor_pos.y / SQUARE);
+    }
 
     return input.is_button_pressed(Button::LeftMouse)
         && cursor_pos.x > x * SQUARE

@@ -1,4 +1,3 @@
-use crate::{pieces::Kind, state::Side};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Piece {
@@ -34,6 +33,61 @@ impl Piece {
             Kind::Rook => 3 + side_increment,
             Kind::Queen => 4 + side_increment,
             Kind::King => 5 + side_increment,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Kind {
+    None,
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King,
+}
+
+pub fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
+    for j in 0..8 {
+        for i in 0..8 {
+            pieces[j][i].moves = vec![];
+            pieces[j][i].selected = false;
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum Turn {
+    White,
+    Black,
+}
+impl Turn {
+    pub fn opposite(turn: &Turn) -> Turn {
+        if *turn == Turn::White {
+            Turn::Black
+        } else if *turn == Turn::Black {
+            Turn::White
+        } else {
+            panic!("tried to opposite None");
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Side {
+    None,
+    White,
+    Black,
+}
+impl Side {
+    pub fn opposite(side: &Side) -> Side {
+        if *side == Side::White {
+            Side::Black
+        } else if *side == Side::Black {
+            Side::White
+        } else {
+            panic!("tried to opposite None");
         }
     }
 }

@@ -1,14 +1,14 @@
 //WARNING: some of this code is really old, proceed with caution
 
 use goodman::prelude::*;
-use piece_data::Piece;
-use pieces::Kind;
-use state::{Side, State};
+use types::{Piece, Side};
+use crate::types::Kind;
+use state::State;
 use textures::get_textures;
 
 mod consts;
-mod piece_data;
-mod pieces;
+mod types;
+mod moves;
 mod state;
 mod textures;
 
@@ -44,27 +44,8 @@ impl Manager for Chess {
         let none = vec![Piece::new_empty(); 8];
         let mut pieces = vec![none; 8];
 
-        let white_pieces = vec![
-            Piece::new(Kind::Rook, Side::White),
-            Piece::new(Kind::Knight, Side::White),
-            Piece::new(Kind::Bishop, Side::White),
-            Piece::new(Kind::Queen, Side::White),
-            Piece::new(Kind::King, Side::White),
-            Piece::new(Kind::Bishop, Side::White),
-            Piece::new(Kind::Knight, Side::White),
-            Piece::new(Kind::Rook, Side::White),
-        ];
-
-        let black_pieces = vec![
-            Piece::new(Kind::Rook, Side::Black),
-            Piece::new(Kind::Knight, Side::Black),
-            Piece::new(Kind::Bishop, Side::Black),
-            Piece::new(Kind::Queen, Side::Black),
-            Piece::new(Kind::King, Side::Black),
-            Piece::new(Kind::Bishop, Side::Black),
-            Piece::new(Kind::Knight, Side::Black),
-            Piece::new(Kind::Rook, Side::Black),
-        ];
+        let white_pieces = create_row_of_pieces(Side::White);
+        let black_pieces = create_row_of_pieces(Side::Black);
 
         for j in 0..8 {
             for i in 0..8 {
@@ -140,4 +121,17 @@ impl Chess {
             }
         }
     }
+}
+
+fn create_row_of_pieces(side: Side) -> Vec<Piece> {
+    vec![
+            Piece::new(Kind::Rook, side),
+            Piece::new(Kind::Knight, side),
+            Piece::new(Kind::Bishop, side),
+            Piece::new(Kind::Queen, side),
+            Piece::new(Kind::King, side),
+            Piece::new(Kind::Bishop, side),
+            Piece::new(Kind::Knight, side),
+            Piece::new(Kind::Rook, side),
+        ]
 }

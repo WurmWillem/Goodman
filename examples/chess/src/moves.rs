@@ -1,75 +1,55 @@
-use crate::{piece_data::Piece, state::Side};
+use crate::types::{Kind, Piece, Side};
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Kind {
-    None,
-    Pawn,
-    Knight,
-    Bishop,
-    Rook,
-    Queen,
-    King,
+pub fn make_move(pieces: &mut Vec<Vec<Piece>>, index: (usize, usize), m: (usize, usize)) {
+    pieces[m.0][m.1] = pieces[index.0][index.1].clone();
+    pieces[index.0][index.1] = Piece::new_empty();
+    pieces[m.0][m.1].selected = false;
+    pieces[m.0][m.1].moves = vec![];
 }
-impl Kind {
-    pub fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
-        for j in 0..8 {
-            for i in 0..8 {
-                pieces[j][i].moves = vec![];
-                pieces[j][i].selected = false;
-            }
+
+pub fn calculate_moves(
+    pieces: &Vec<Vec<Piece>>,
+    piece: &Piece,
+    j: usize,
+    i: usize,
+) -> Vec<(usize, usize)> {
+    let j = j as isize;
+    let i = i as isize;
+    match piece.kind {
+        Kind::Pawn => generate_pawn_moves(pieces, i, j),
+        Kind::Knight => return_safe_moves_vec(vec![
+            (j - 2, i + 1),
+            (j - 2, i - 1),
+            (j + 2, i + 1),
+            (j + 2, i - 1),
+            (j - 1, i - 2),
+            (j - 1, i + 2),
+            (j + 1, i - 2),
+            (j + 1, i + 2),
+        ]),
+        Kind::Bishop => generate_bishop_moves(pieces, i, j),
+        Kind::Rook => generate_rook_moves(pieces, i, j),
+        Kind::Queen => {
+            let mut bishop_moves = generate_bishop_moves(pieces, i, j);
+            let mut rook_moves = generate_rook_moves(pieces, i, j);
+
+            bishop_moves.append(&mut rook_moves);
+            bishop_moves
         }
-    }
-
-    pub fn make_move(pieces: &mut Vec<Vec<Piece>>, index: (usize, usize), m: (usize, usize)) {
-        pieces[m.0][m.1] = pieces[index.0][index.1].clone();
-        pieces[index.0][index.1] = Piece::new_empty();
-        pieces[m.0][m.1].selected = false;
-        pieces[m.0][m.1].moves = vec![];
-    }
-
-    pub fn calculate_moves(
-        pieces: &Vec<Vec<Piece>>,
-        piece: &Piece,
-        j: usize,
-        i: usize,
-    ) -> Vec<(usize, usize)> {
-        let j = j as isize;
-        let i = i as isize;
-        match piece.kind {
-            Kind::Pawn => generate_pawn_moves(pieces, i, j),
-            Kind::Knight => return_safe_moves_vec(vec![
-                (j - 2, i + 1),
-                (j - 2, i - 1),
-                (j + 2, i + 1),
-                (j + 2, i - 1),
-                (j - 1, i - 2),
-                (j - 1, i + 2),
-                (j + 1, i - 2),
-                (j + 1, i + 2),
-            ]),
-            Kind::Bishop => generate_bishop_moves(pieces, i, j),
-            Kind::Rook => generate_rook_moves(pieces, i, j),
-            Kind::Queen => {
-                let mut bishop_moves = generate_bishop_moves(pieces, i, j);
-                let mut rook_moves = generate_rook_moves(pieces, i, j);
-
-                bishop_moves.append(&mut rook_moves);
-                bishop_moves
-            }
-            Kind::King => return_safe_moves_vec(vec![
-                (j, i + 1),
-                (j, i - 1),
-                (j + 1, i),
-                (j - 1, i),
-                (j + 1, i + 1),
-                (j + 1, i - 1),
-                (j - 1, i + 1),
-                (j - 1, i - 1),
-            ]),
-            _ => Vec::new(),
-        }
+        Kind::King => return_safe_moves_vec(vec![
+            (j, i + 1),
+            (j, i - 1),
+            (j + 1, i),
+            (j - 1, i),
+            (j + 1, i + 1),
+            (j + 1, i - 1),
+            (j - 1, i + 1),
+            (j - 1, i - 1),
+        ]),
+        _ => Vec::new(),
     }
 }
+
 
 fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
     let mut moves: Vec<(usize, usize)> = Vec::new();
