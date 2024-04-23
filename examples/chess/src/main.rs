@@ -41,7 +41,7 @@ impl Manager for Chess {
     fn new(engine: &mut Engine) -> Self {
         let textures = get_textures(engine);
 
-        let  none = vec![Piece::new_empty(); 8];
+        let none = vec![Piece::new_empty(); 8];
         let mut pieces = vec![none; 8];
 
         let white_pieces = vec![

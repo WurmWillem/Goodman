@@ -25,7 +25,7 @@ impl Piece {
         }
     }
     pub fn get_tex_index(&self) -> usize {
-        let side_increment = if self.side == Side::Black {6} else {0};
+        let side_increment = if self.side == Side::Black { 6 } else { 0 };
         match self.kind {
             Kind::None => 0 + side_increment,
             Kind::Pawn => 0 + side_increment,

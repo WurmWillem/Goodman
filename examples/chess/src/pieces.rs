@@ -1,6 +1,6 @@
 use crate::{piece_data::Piece, state::Side};
 
-#[derive(Debug,Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     None,
     Pawn,
@@ -14,9 +14,7 @@ impl Kind {
     pub fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
         for j in 0..8 {
             for i in 0..8 {
-                if pieces[j][i].kind == Kind::None {
-                    continue;
-                }
+                pieces[j][i].moves = vec![];
                 pieces[j][i].selected = false;
             }
         }
@@ -26,6 +24,7 @@ impl Kind {
         pieces[m.0][m.1] = pieces[index.0][index.1].clone();
         pieces[index.0][index.1] = Piece::new_empty();
         pieces[m.0][m.1].selected = false;
+        pieces[m.0][m.1].moves = vec![];
     }
 
     pub fn calculate_moves(
