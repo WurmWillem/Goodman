@@ -50,7 +50,6 @@ pub fn calculate_moves(
     }
 }
 
-
 fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
     let mut moves: Vec<(usize, usize)> = Vec::new();
 

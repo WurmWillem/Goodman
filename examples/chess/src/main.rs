@@ -1,16 +1,16 @@
 //WARNING: some of this code is really old, proceed with caution
 
-use goodman::prelude::*;
-use types::{Piece, Side};
 use crate::types::Kind;
+use goodman::prelude::*;
 use state::State;
 use textures::get_textures;
+use types::{Piece, Side};
 
 mod consts;
-mod types;
 mod moves;
 mod state;
 mod textures;
+mod types;
 
 pub const SCREENSIZE: f32 = 900.0;
 pub const SQUARE: f32 = SCREENSIZE / 8.0;
@@ -125,13 +125,13 @@ impl Chess {
 
 fn create_row_of_pieces(side: Side) -> Vec<Piece> {
     vec![
-            Piece::new(Kind::Rook, side),
-            Piece::new(Kind::Knight, side),
-            Piece::new(Kind::Bishop, side),
-            Piece::new(Kind::Queen, side),
-            Piece::new(Kind::King, side),
-            Piece::new(Kind::Bishop, side),
-            Piece::new(Kind::Knight, side),
-            Piece::new(Kind::Rook, side),
-        ]
+        Piece::new(Kind::Rook, side),
+        Piece::new(Kind::Knight, side),
+        Piece::new(Kind::Bishop, side),
+        Piece::new(Kind::Queen, side),
+        Piece::new(Kind::King, side),
+        Piece::new(Kind::Bishop, side),
+        Piece::new(Kind::Knight, side),
+        Piece::new(Kind::Rook, side),
+    ]
 }
