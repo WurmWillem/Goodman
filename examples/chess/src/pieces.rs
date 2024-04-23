@@ -1,32 +1,31 @@
-use crate::{piece_data::Data, state::Side};
+use crate::{piece_data::Piece, state::Side};
 
-#[derive(Clone, PartialEq)]
-pub enum Piece {
+#[derive(Debug,Clone, PartialEq)]
+pub enum Kind {
     None,
-    Pawn(Data),
-    Knight(Data),
-    Bishop(Data),
-    Rook(Data),
-    Queen(Data),
-    King(Data),
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King,
 }
-impl Piece {
+impl Kind {
     pub fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
         for j in 0..8 {
             for i in 0..8 {
-                if pieces[j][i] == Piece::None {
+                if pieces[j][i].kind == Kind::None {
                     continue;
                 }
-                pieces[j][i] = Data::change_value(&pieces[j][i], Data::get_new(&pieces[j][i]));
+                pieces[j][i].selected = false;
             }
         }
     }
 
     pub fn make_move(pieces: &mut Vec<Vec<Piece>>, index: (usize, usize), m: (usize, usize)) {
         pieces[m.0][m.1] = pieces[index.0][index.1].clone();
-        pieces[index.0][index.1] = Piece::None;
-
-        pieces[m.0][m.1] = Data::change_value(&pieces[m.0][m.1], Data::get_new(&pieces[m.0][m.1]));
+        pieces[index.0][index.1] = Piece::new_empty();
+        pieces[m.0][m.1].selected = false;
     }
 
     pub fn calculate_moves(
@@ -37,9 +36,9 @@ impl Piece {
     ) -> Vec<(usize, usize)> {
         let j = j as isize;
         let i = i as isize;
-        match piece {
-            Piece::Pawn(_) => generate_pawn_moves(pieces, i, j),
-            Piece::Knight(_) => return_safe_moves_vec(vec![
+        match piece.kind {
+            Kind::Pawn => generate_pawn_moves(pieces, i, j),
+            Kind::Knight => return_safe_moves_vec(vec![
                 (j - 2, i + 1),
                 (j - 2, i - 1),
                 (j + 2, i + 1),
@@ -49,16 +48,16 @@ impl Piece {
                 (j + 1, i - 2),
                 (j + 1, i + 2),
             ]),
-            Piece::Bishop(_) => generate_bishop_moves(pieces, i, j),
-            Piece::Rook(_) => generate_rook_moves(pieces, i, j),
-            Piece::Queen(_) => {
+            Kind::Bishop => generate_bishop_moves(pieces, i, j),
+            Kind::Rook => generate_rook_moves(pieces, i, j),
+            Kind::Queen => {
                 let mut bishop_moves = generate_bishop_moves(pieces, i, j);
                 let mut rook_moves = generate_rook_moves(pieces, i, j);
 
                 bishop_moves.append(&mut rook_moves);
                 bishop_moves
             }
-            Piece::King(_) => return_safe_moves_vec(vec![
+            Kind::King => return_safe_moves_vec(vec![
                 (j, i + 1),
                 (j, i - 1),
                 (j + 1, i),
@@ -76,53 +75,53 @@ impl Piece {
 fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
     let mut moves: Vec<(usize, usize)> = Vec::new();
 
-    if Data::get_side(&pieces[j as usize][i as usize]) == Side::White {
+    if pieces[j as usize][i as usize].side == Side::White {
         let (safe, forward) = return_if_safe(j - 1, i);
         if safe {
-            if pieces[forward.0][forward.1] == Piece::None {
+            if pieces[forward.0][forward.1].kind == Kind::None {
                 moves.append(&mut return_safe_moves_vec(vec![(j - 1, i)]));
             }
         }
         let (safe, forward) = return_if_safe(j - 2, i);
         if safe && j == 6 {
-            if pieces[forward.0][forward.1] == Piece::None {
+            if pieces[forward.0][forward.1].kind == Kind::None {
                 moves.append(&mut return_safe_moves_vec(vec![(j - 2, i)]));
             }
         }
         let (safe, right_forward) = return_if_safe(j - 1, i + 1);
         if safe {
-            if Data::get_side(&pieces[right_forward.0][right_forward.1]) == Side::Black {
+            if pieces[right_forward.0][right_forward.1].side == Side::Black {
                 moves.append(&mut return_safe_moves_vec(vec![(j - 1, i + 1)]));
             }
         }
         let (safe, left_forward) = return_if_safe(j - 1, i - 1);
         if safe {
-            if Data::get_side(&pieces[left_forward.0][left_forward.1]) == Side::Black {
+            if pieces[left_forward.0][left_forward.1].side == Side::Black {
                 moves.append(&mut return_safe_moves_vec(vec![(j - 1, i - 1)]));
             }
         }
-    } else if Data::get_side(&pieces[j as usize][i as usize]) == Side::Black {
+    } else if pieces[j as usize][i as usize].side == Side::Black {
         let (safe, forward) = return_if_safe(j + 1, i);
         if safe {
-            if pieces[forward.0][forward.1] == Piece::None {
+            if pieces[forward.0][forward.1].kind == Kind::None {
                 moves.append(&mut return_safe_moves_vec(vec![(j + 1, i)]));
             }
         }
         let (safe, forward) = return_if_safe(j + 2, i);
         if safe && j == 1 {
-            if pieces[forward.0][forward.1] == Piece::None {
+            if pieces[forward.0][forward.1].kind == Kind::None {
                 moves.append(&mut return_safe_moves_vec(vec![(j + 2, i)]));
             }
         }
         let (safe, right_forward) = return_if_safe(j + 1, i + 1);
         if safe {
-            if Data::get_side(&pieces[right_forward.0][right_forward.1]) == Side::White {
+            if pieces[right_forward.0][right_forward.1].side == Side::White {
                 moves.append(&mut return_safe_moves_vec(vec![(j + 1, i + 1)]));
             }
         }
         let (safe, left_forward) = return_if_safe(j + 1, i - 1);
         if safe {
-            if Data::get_side(&pieces[left_forward.0][left_forward.1]) == Side::White {
+            if pieces[left_forward.0][left_forward.1].side == Side::White {
                 moves.append(&mut return_safe_moves_vec(vec![(j + 1, i - 1)]));
             }
         }
@@ -215,7 +214,7 @@ fn return_non_blocked_moves(
     let mut vec_safe: Vec<(usize, usize)> = Vec::new();
 
     for v in &vec {
-        if pieces[v.0][v.1] != Piece::None {
+        if pieces[v.0][v.1].kind != Kind::None {
             vec_safe.push(*v);
             break;
         }

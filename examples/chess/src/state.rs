@@ -1,4 +1,4 @@
-use crate::{piece_data::Data, pieces::*, SQUARE};
+use crate::{piece_data::{Piece}, pieces::*, SQUARE};
 use goodman::prelude::*;
 
 #[derive(PartialEq, Debug)]
@@ -17,7 +17,7 @@ impl Turn {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Side {
     None,
     White,
@@ -48,8 +48,8 @@ impl State {
 
         for j in 0..8 {
             for i in 0..8 {
-                if Data::get_moves(&pieces[j][i]).len() > 0 {
-                    moves = Data::get_moves(&pieces[j][i]);
+                if pieces[j][i].moves.len() > 0 {
+                    moves = pieces[j][i].moves.clone();
                     index = (j, i);
                     break;
                 }
@@ -62,11 +62,11 @@ impl State {
                 }
 
                 let mut moved_piece = false;
-                Piece::deselect_every_piece(pieces);
+                Kind::deselect_every_piece(pieces);
 
                 if moves.len() > 0 {
-                    let side_clicked = Data::get_side(&pieces[j][i]);
-                    let side_original = Data::get_side(&pieces[index.0][index.1]);
+                    let side_clicked = pieces[j][i].side;
+                    let side_original = pieces[index.0][index.1].side;
 
                     for m in &moves {
                         if (j, i) == *m
@@ -74,7 +74,7 @@ impl State {
                                 || side_clicked == Side::None
                                 || side_original == Side::None)
                         {
-                            Piece::make_move(pieces, index, *m);
+                            Kind::make_move(pieces, index, *m);
                             self.turn = Turn::opposite(&self.turn);
                             moved_piece = true;
                             break;
@@ -82,25 +82,27 @@ impl State {
                     }
                 }
 
-                let side = Data::get_side(&pieces[j][i]);
+                let side = pieces[j][i].side;
                 if (side == Side::White && self.turn == Turn::Black)
                     || (side == Side::Black && self.turn == Turn::White)
-                    || pieces[j][i] == Piece::None
+                    || pieces[j][i].kind == Kind::None
                     || moved_piece
                 {
                     continue;
                 }
 
-                pieces[j][i] = Data::change_value(
+                pieces[j][i].selected = true;
+                pieces[j][i].moves = Kind::calculate_moves(pieces, &pieces[j][i], j, i);
+                /*pieces[j][i] = Data::change_value(
                     &pieces[j][i],
                     Data {
                         index: Data::get_index(&pieces[j][i]),
                         side: Data::get_side(&pieces[j][i]),
                         selected: true,
-                        moves: Piece::calculate_moves(pieces, &pieces[j][i], j, i),
+                        moves: PieceKind::calculate_moves(pieces, &pieces[j][i], j, i),
                         ..Default::default()
                     },
-                );
+                );*/
             }
         }
     }

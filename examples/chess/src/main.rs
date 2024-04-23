@@ -1,8 +1,8 @@
 //WARNING: some of this code is really old, proceed with caution
 
 use goodman::prelude::*;
-use piece_data::Data;
-use pieces::Piece;
+use piece_data::Piece;
+use pieces::Kind;
 use state::{Side, State};
 use textures::get_textures;
 
@@ -41,46 +41,37 @@ impl Manager for Chess {
     fn new(engine: &mut Engine) -> Self {
         let textures = get_textures(engine);
 
-        let mut none = Vec::new();
-        for _ in 0..8 {
-            none.push(Piece::None);
-        }
-
-        let mut pieces = Vec::new();
-        for _ in 0..8 {
-            pieces.push(none.to_vec());
-        }
+        let  none = vec![Piece::new_empty(); 8];
+        let mut pieces = vec![none; 8];
 
         let white_pieces = vec![
-            Piece::Rook(Data::new(3, Side::White)),
-            Piece::Knight(Data::new(1, Side::White)),
-            Piece::Bishop(Data::new(2, Side::White)),
-            Piece::Queen(Data::new(4, Side::White)),
-            Piece::King(Data::new(5, Side::White)),
-            Piece::Bishop(Data::new(2, Side::White)),
-            Piece::Knight(Data::new(1, Side::White)),
-            Piece::Rook(Data::new(3, Side::White)),
+            Piece::new(Kind::Rook, Side::White),
+            Piece::new(Kind::Knight, Side::White),
+            Piece::new(Kind::Bishop, Side::White),
+            Piece::new(Kind::Queen, Side::White),
+            Piece::new(Kind::King, Side::White),
+            Piece::new(Kind::Bishop, Side::White),
+            Piece::new(Kind::Knight, Side::White),
+            Piece::new(Kind::Rook, Side::White),
         ];
 
         let black_pieces = vec![
-            Piece::Rook(Data::new(9, Side::Black)),
-            Piece::Knight(Data::new(7, Side::Black)),
-            Piece::Bishop(Data::new(8, Side::Black)),
-            Piece::Queen(Data::new(10, Side::Black)),
-            Piece::King(Data::new(11, Side::Black)),
-            Piece::Bishop(Data::new(8, Side::Black)),
-            Piece::Knight(Data::new(7, Side::Black)),
-            Piece::Rook(Data::new(9, Side::Black)),
+            Piece::new(Kind::Rook, Side::Black),
+            Piece::new(Kind::Knight, Side::Black),
+            Piece::new(Kind::Bishop, Side::Black),
+            Piece::new(Kind::Queen, Side::Black),
+            Piece::new(Kind::King, Side::Black),
+            Piece::new(Kind::Bishop, Side::Black),
+            Piece::new(Kind::Knight, Side::Black),
+            Piece::new(Kind::Rook, Side::Black),
         ];
 
         for j in 0..8 {
             for i in 0..8 {
-                if j == 2 || j == 3 || j == 4 || j == 5 {
-                    pieces[j][i] = Piece::None;
-                } else if j == 6 {
-                    pieces[j][i] = Piece::Pawn(Data::new(0, Side::White));
+                if j == 6 {
+                    pieces[j][i] = Piece::new(Kind::Pawn, Side::White);
                 } else if j == 1 {
-                    pieces[j][i] = Piece::Pawn(Data::new(6, Side::Black));
+                    pieces[j][i] = Piece::new(Kind::Pawn, Side::Black);
                 } else if j == 7 {
                     pieces[j] = white_pieces.to_vec();
                 } else if j == 0 {
@@ -102,10 +93,10 @@ impl Manager for Chess {
 
         for j in 0..8 {
             for i in 0..8 {
-                if self.pieces[j][i] == Piece::None {
+                if self.pieces[j][i].kind == Kind::None {
                     continue;
                 }
-                let index = Data::get_index(&self.pieces[j][i]);
+                let index = self.pieces[j][i].get_tex_index();
                 let rect = rect32(
                     i as f32 * SQUARE + 1.0,
                     j as f32 * SQUARE + 3.0,
@@ -123,7 +114,7 @@ impl Chess {
             for i in 0..8 {
                 let rect = rect32(i as f32 * SQUARE, j as f32 * SQUARE, SQUARE, SQUARE);
 
-                if Data::get_if_selected(&self.pieces[j][i]) {
+                if self.pieces[j][i].selected {
                     engine.render_texture(rect, &self.textures[14]);
                     continue;
                 }
@@ -134,7 +125,7 @@ impl Chess {
         }
         for j in 0..8 {
             for i in 0..8 {
-                let moves = Data::get_moves(&self.pieces[j][i]);
+                let moves = &self.pieces[j][i].moves;
                 if moves.len() > 0 {
                     for m in moves {
                         let rect = rect32(
