@@ -1,16 +1,16 @@
 // WARNING: some of this code is really old and badly written, proceed with caution
 
+use crate::types::Kind;
 use goodman::prelude::*;
-use piece_data::Data;
-use pieces::Piece;
-use state::{Side, State};
+use state::State;
 use textures::get_textures;
+use types::{Piece, Side};
 
 mod consts;
-mod piece_data;
-mod pieces;
+mod moves;
 mod state;
 mod textures;
+mod types;
 
 pub const SCREENSIZE: f32 = 900.0;
 pub const SQUARE: f32 = SCREENSIZE / 8.0;
@@ -41,46 +41,18 @@ impl Manager for Chess {
     fn new(engine: &mut Engine) -> Self {
         let textures = get_textures(engine);
 
-        let mut none = Vec::new();
-        for _ in 0..8 {
-            none.push(Piece::None);
-        }
+        let none = vec![Piece::new_empty(); 8];
+        let mut pieces = vec![none; 8];
 
-        let mut pieces = Vec::new();
-        for _ in 0..8 {
-            pieces.push(none.to_vec());
-        }
-
-        let white_pieces = vec![
-            Piece::Rook(Data::new(3, Side::White)),
-            Piece::Knight(Data::new(1, Side::White)),
-            Piece::Bishop(Data::new(2, Side::White)),
-            Piece::Queen(Data::new(4, Side::White)),
-            Piece::King(Data::new(5, Side::White)),
-            Piece::Bishop(Data::new(2, Side::White)),
-            Piece::Knight(Data::new(1, Side::White)),
-            Piece::Rook(Data::new(3, Side::White)),
-        ];
-
-        let black_pieces = vec![
-            Piece::Rook(Data::new(9, Side::Black)),
-            Piece::Knight(Data::new(7, Side::Black)),
-            Piece::Bishop(Data::new(8, Side::Black)),
-            Piece::Queen(Data::new(10, Side::Black)),
-            Piece::King(Data::new(11, Side::Black)),
-            Piece::Bishop(Data::new(8, Side::Black)),
-            Piece::Knight(Data::new(7, Side::Black)),
-            Piece::Rook(Data::new(9, Side::Black)),
-        ];
+        let white_pieces = create_row_of_pieces(Side::White);
+        let black_pieces = create_row_of_pieces(Side::Black);
 
         for j in 0..8 {
             for i in 0..8 {
-                if j == 2 || j == 3 || j == 4 || j == 5 {
-                    pieces[j][i] = Piece::None;
-                } else if j == 6 {
-                    pieces[j][i] = Piece::Pawn(Data::new(0, Side::White));
+                if j == 6 {
+                    pieces[j][i] = Piece::new(Kind::Pawn, Side::White);
                 } else if j == 1 {
-                    pieces[j][i] = Piece::Pawn(Data::new(6, Side::Black));
+                    pieces[j][i] = Piece::new(Kind::Pawn, Side::Black);
                 } else if j == 7 {
                     pieces[j] = white_pieces.to_vec();
                 } else if j == 0 {
@@ -98,14 +70,14 @@ impl Manager for Chess {
         self.state.check_for_move(&mut self.pieces, input);
     }
     fn render(&mut self, engine: &mut Engine) {
-        self.draw_board(engine);
+        self.render_board(engine);
 
         for j in 0..8 {
             for i in 0..8 {
-                if self.pieces[j][i] == Piece::None {
+                if self.pieces[j][i].kind == Kind::None {
                     continue;
                 }
-                let index = Data::get_index(&self.pieces[j][i]);
+                let index = self.pieces[j][i].get_tex_index();
                 let rect = rect32(
                     i as f32 * SQUARE + 1.0,
                     j as f32 * SQUARE + 3.0,
@@ -118,12 +90,12 @@ impl Manager for Chess {
     }
 }
 impl Chess {
-    fn draw_board(&self, engine: &mut Engine) {
+    fn render_board(&self, engine: &mut Engine) {
         for j in 0..8 {
             for i in 0..8 {
                 let rect = rect32(i as f32 * SQUARE, j as f32 * SQUARE, SQUARE, SQUARE);
 
-                if Data::get_if_selected(&self.pieces[j][i]) {
+                if self.pieces[j][i].selected {
                     engine.render_texture(rect, &self.textures[14]);
                     continue;
                 }
@@ -132,21 +104,31 @@ impl Chess {
                 engine.render_texture(rect, &self.textures[index]);
             }
         }
-        for j in 0..8 {
-            for i in 0..8 {
-                let moves = Data::get_moves(&self.pieces[j][i]);
-                if moves.len() > 0 {
-                    for m in moves {
-                        let rect = rect32(
-                            m.1 as f32 * SQUARE + SQUARE * 0.345,
-                            m.0 as f32 * SQUARE + SQUARE * 0.345,
-                            SQUARE * 0.33,
-                            SQUARE * 0.33,
-                        );
-                        engine.render_texture(rect, &self.textures[15]);
-                    }
-                }
+
+        let moves = &self.state.selected_piece_moves;
+        if moves.len() > 0 {
+            for m in moves {
+                let rect = rect32(
+                    m.1 as f32 * SQUARE + SQUARE * 0.345,
+                    m.0 as f32 * SQUARE + SQUARE * 0.345,
+                    SQUARE * 0.33,
+                    SQUARE * 0.33,
+                );
+                engine.render_texture(rect, &self.textures[15]);
             }
         }
     }
+}
+
+fn create_row_of_pieces(side: Side) -> Vec<Piece> {
+    vec![
+        Piece::new(Kind::Rook, side),
+        Piece::new(Kind::Knight, side),
+        Piece::new(Kind::Bishop, side),
+        Piece::new(Kind::Queen, side),
+        Piece::new(Kind::King, side),
+        Piece::new(Kind::Bishop, side),
+        Piece::new(Kind::Knight, side),
+        Piece::new(Kind::Rook, side),
+    ]
 }
