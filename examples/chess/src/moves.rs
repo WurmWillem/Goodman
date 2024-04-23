@@ -4,7 +4,6 @@ pub fn make_move(pieces: &mut Vec<Vec<Piece>>, index: (usize, usize), m: (usize,
     pieces[m.0][m.1] = pieces[index.0][index.1].clone();
     pieces[index.0][index.1] = Piece::new_empty();
     pieces[m.0][m.1].selected = false;
-    pieces[m.0][m.1].moves = vec![];
 }
 
 pub fn calculate_moves(

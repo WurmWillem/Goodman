@@ -7,12 +7,16 @@ use goodman::prelude::*;
 
 pub struct State {
     turn: Turn,
-    selected_piece_moves: Vec<(usize, usize)>,
+    pub selected_piece_moves: Vec<(usize, usize)>,
     selected_piece_index: (usize, usize),
 }
 impl State {
     pub fn new() -> Self {
-        Self { turn: Turn::White, selected_piece_moves: vec![], selected_piece_index: (0, 0)}
+        Self {
+            turn: Turn::White,
+            selected_piece_moves: vec![],
+            selected_piece_index: (0, 0),
+        }
     }
     pub fn check_for_move(&mut self, pieces: &mut Vec<Vec<Piece>>, input: &Input) {
         let clicked_coords = get_clicked_square_coords(&input);
@@ -57,7 +61,6 @@ impl State {
                 self.selected_piece_index = (j, i);
             }
 
-            
             /*pieces[j][i] = Data::change_value(
                 &pieces[j][i],
                 Data {
@@ -122,6 +125,22 @@ impl State {
             }
         }*/
     }
+
+    pub fn render_moves(&self, engine: &mut Engine, textures: &Vec<Texture>) {
+        let moves = &self.selected_piece_moves;
+        if moves.len() > 0 {
+            for m in moves {
+                let rect = rect32(
+                    m.1 as f32 * SQUARE + SQUARE * 0.345,
+                    m.0 as f32 * SQUARE + SQUARE * 0.345,
+                    SQUARE * 0.33,
+                    SQUARE * 0.33,
+                );
+                engine.render_texture(rect, &textures[15]);
+            }
+        }
+    }
+
     /*
     pub fn check_for_move(&mut self, pieces: &mut Vec<Vec<Piece>>, input: &Input) {
         let mut moves: Vec<(usize, usize)> = Vec::new();

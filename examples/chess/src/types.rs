@@ -2,7 +2,6 @@
 pub struct Piece {
     pub kind: Kind,
     pub selected: bool,
-    pub moves: Vec<(usize, usize)>,
     pub side: Side,
 }
 impl Piece {
@@ -10,7 +9,6 @@ impl Piece {
         Self {
             kind,
             selected: false,
-            moves: Vec::new(),
             side,
         }
     }
@@ -18,7 +16,6 @@ impl Piece {
         Self {
             kind: Kind::None,
             selected: false,
-            moves: Vec::new(),
             side: Side::None,
         }
     }
@@ -50,7 +47,6 @@ pub enum Kind {
 pub fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
     for j in 0..8 {
         for i in 0..8 {
-            pieces[j][i].moves = vec![];
             pieces[j][i].selected = false;
         }
     }

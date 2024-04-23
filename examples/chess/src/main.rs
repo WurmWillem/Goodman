@@ -70,7 +70,7 @@ impl Manager for Chess {
         self.state.check_for_move(&mut self.pieces, input);
     }
     fn render(&mut self, engine: &mut Engine) {
-        self.draw_board(engine);
+        self.render_board(engine);
 
         for j in 0..8 {
             for i in 0..8 {
@@ -90,7 +90,7 @@ impl Manager for Chess {
     }
 }
 impl Chess {
-    fn draw_board(&self, engine: &mut Engine) {
+    fn render_board(&self, engine: &mut Engine) {
         for j in 0..8 {
             for i in 0..8 {
                 let rect = rect32(i as f32 * SQUARE, j as f32 * SQUARE, SQUARE, SQUARE);
@@ -104,20 +104,17 @@ impl Chess {
                 engine.render_texture(rect, &self.textures[index]);
             }
         }
-        for j in 0..8 {
-            for i in 0..8 {
-                let moves = &self.pieces[j][i].moves;
-                if moves.len() > 0 {
-                    for m in moves {
-                        let rect = rect32(
-                            m.1 as f32 * SQUARE + SQUARE * 0.345,
-                            m.0 as f32 * SQUARE + SQUARE * 0.345,
-                            SQUARE * 0.33,
-                            SQUARE * 0.33,
-                        );
-                        engine.render_texture(rect, &self.textures[15]);
-                    }
-                }
+
+        let moves = &self.state.selected_piece_moves;
+        if moves.len() > 0 {
+            for m in moves {
+                let rect = rect32(
+                    m.1 as f32 * SQUARE + SQUARE * 0.345,
+                    m.0 as f32 * SQUARE + SQUARE * 0.345,
+                    SQUARE * 0.33,
+                    SQUARE * 0.33,
+                );
+                engine.render_texture(rect, &self.textures[15]);
             }
         }
     }
