@@ -3,13 +3,11 @@
 use crate::types::Kind;
 use goodman::prelude::*;
 use state::State;
-use textures::get_textures;
 use types::{Piece, Side};
 
 mod consts;
 mod moves;
 mod state;
-mod textures;
 mod types;
 
 pub const SCREENSIZE: f32 = 900.0;
@@ -119,6 +117,16 @@ impl Chess {
         }
     }
 }
+
+fn get_textures(engine: &mut Engine) -> Vec<Texture> {
+    let mut textures = vec![];
+    create_textures!(engine, textures, 
+        "assets/white-pawn.png" "assets/white-knight.png" "assets/white-bishop.png" "assets/white-rook.png" "assets/white-queen.png" "assets/white-king.png" 
+        "assets/black-pawn.png" "assets/black-knight.png" "assets/black-bishop.png" "assets/black-rook.png" "assets/black-queen.png" "assets/black-king.png"
+        "assets/white_square.png" "assets/green_square.png" "assets/selected.png" "assets/move.png");
+    textures
+}
+
 
 fn create_row_of_pieces(side: Side) -> Vec<Piece> {
     vec![
