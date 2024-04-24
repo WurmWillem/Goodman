@@ -23,7 +23,7 @@ impl Piece {
         let side_increment = if self.side == Side::Black { 6 } else { 0 };
         match self.kind {
             Kind::None => 0 + side_increment,
-            Kind::Pawn => 0 + side_increment,
+            Kind::Pawn(_) => 0 + side_increment,
             Kind::Knight => 1 + side_increment,
             Kind::Bishop => 2 + side_increment,
             Kind::Rook => 3 + side_increment,
@@ -36,7 +36,7 @@ impl Piece {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     None,
-    Pawn,
+    Pawn(bool),
     Knight,
     Bishop,
     Rook,
@@ -48,6 +48,9 @@ pub fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
     for j in 0..8 {
         for i in 0..8 {
             pieces[j][i].selected = false;
+            // if let Kind::Pawn(true) = pieces[j][i].kind {
+            // pieces[j][i].kind = Kind::Pawn(false);
+            // }
         }
     }
 }

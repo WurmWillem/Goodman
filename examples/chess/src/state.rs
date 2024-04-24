@@ -24,7 +24,6 @@ impl State {
         if let Some(coords) = clicked_coords {
             let (i, j) = coords;
 
-            let mut moved_a_piece = false;
             crate::types::deselect_every_piece(pieces);
 
             // make move if clicked square is in moves
@@ -39,11 +38,20 @@ impl State {
                             || side_clicked == Side::None
                             || side_original == Side::None)
                     {
+                        for j in 0..8 {
+                            for i in 0..8 {
+                                // pieces[j][i].selected = false;
+                                if let Kind::Pawn(true) = pieces[j][i].kind {
+                                    pieces[j][i].kind = Kind::Pawn(false);
+                                }
+                            }
+                        }
+
                         make_move(pieces, index, *m);
                         self.turn = Turn::opposite(&self.turn);
                         self.selected_piece_moves = vec![];
-                        moved_a_piece = true;
-                        break;
+
+                        return;
                     }
                 }
             }
@@ -53,10 +61,9 @@ impl State {
             if ((side == Side::White && self.turn == Turn::White)
                 || (side == Side::Black && self.turn == Turn::Black))
                 && pieces[j][i].kind != Kind::None
-                && !moved_a_piece
             {
                 pieces[j][i].selected = true;
-                
+
                 self.selected_piece_moves = calculate_moves(pieces, &pieces[j][i], j, i);
                 self.selected_piece_index = (j, i);
             } else {

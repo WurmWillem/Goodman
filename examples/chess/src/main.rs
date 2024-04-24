@@ -20,7 +20,7 @@ fn main() {
 async fn run() {
     let event_loop = EventLoop::new();
     let mut engine = EngineBuilder::new(vec2(SCREENSIZE, SCREENSIZE))
-        // .show_engine_ui()
+        //        .show_engine_ui()
         .with_window_title("Chess".to_string())
         .with_target_fps(144)
         .build(&event_loop)
@@ -48,9 +48,9 @@ impl Manager for Chess {
         for j in 0..8 {
             for i in 0..8 {
                 if j == 6 {
-                    pieces[j][i] = Piece::new(Kind::Pawn, Side::White);
+                    pieces[j][i] = Piece::new(Kind::Pawn(false), Side::White);
                 } else if j == 1 {
-                    pieces[j][i] = Piece::new(Kind::Pawn, Side::Black);
+                    pieces[j][i] = Piece::new(Kind::Pawn(false), Side::Black);
                 } else if j == 7 {
                     pieces[j] = white_pieces.to_vec();
                 } else if j == 0 {

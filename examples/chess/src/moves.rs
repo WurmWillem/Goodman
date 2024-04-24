@@ -1,9 +1,21 @@
 use crate::types::{Kind, Piece, Side};
 
 pub fn make_move(pieces: &mut Vec<Vec<Piece>>, index: (usize, usize), m: (usize, usize)) {
-    pieces[m.0][m.1] = pieces[index.0][index.1].clone();
+    let mut orig_piece = pieces[index.0][index.1].clone();
+
+    // remove pawn if en passant was done
+    if matches!(orig_piece.kind, Kind::Pawn(_)) && m.1 != 0 {
+        pieces[index.0][m.1] = Piece::new_empty();
+    }
+
+    // make pawn true if it moved 2 spaces forward
+    if matches!(orig_piece.kind, Kind::Pawn(_)) && (m.0 as i32 - index.0 as i32).abs() == 2 {
+        orig_piece.kind = Kind::Pawn(true);
+    }
+
+    pieces[m.0][m.1] = orig_piece;
     pieces[index.0][index.1] = Piece::new_empty();
-    pieces[m.0][m.1].selected = false;
+    // pieces[m.0][m.1].selected = false;
 }
 
 pub fn calculate_moves(
@@ -15,7 +27,7 @@ pub fn calculate_moves(
     let j = j as isize;
     let i = i as isize;
     match piece.kind {
-        Kind::Pawn => generate_pawn_moves(pieces, i, j),
+        Kind::Pawn(_) => generate_pawn_moves(pieces, i, j),
         Kind::Knight => return_safe_moves_vec(vec![
             (j - 2, i + 1),
             (j - 2, i - 1),
@@ -53,6 +65,23 @@ fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
     let mut moves: Vec<(usize, usize)> = Vec::new();
 
     if pieces[j as usize][i as usize].side == Side::White {
+        let (safe, en_pass) = return_if_safe(j - 1, i - 1);
+        if safe
+            && matches!(pieces[j as usize][en_pass.1].kind, Kind::Pawn(true))
+            && pieces[en_pass.0][en_pass.1].kind == Kind::None
+            && pieces[j as usize][en_pass.1].side == Side::Black
+        {
+            moves.append(&mut vec![(en_pass.0, en_pass.1)])
+        }
+        let (safe, en_pass) = return_if_safe(j - 1, i + 1);
+        if safe
+            && matches!(pieces[j as usize][en_pass.1].kind, Kind::Pawn(true))
+            && pieces[en_pass.0][en_pass.1].kind == Kind::None
+            && pieces[j as usize][en_pass.1].side == Side::Black
+        {
+            moves.append(&mut vec![(en_pass.0, en_pass.1)])
+        }
+
         let (safe, forward) = return_if_safe(j - 1, i);
         if safe {
             if pieces[forward.0][forward.1].kind == Kind::None {
@@ -78,6 +107,23 @@ fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
             }
         }
     } else if pieces[j as usize][i as usize].side == Side::Black {
+        let (safe, en_pass) = return_if_safe(j + 1, i - 1);
+        if safe
+            && matches!(pieces[j as usize][en_pass.1].kind, Kind::Pawn(true))
+            && pieces[en_pass.0][en_pass.1].kind == Kind::None
+            && pieces[j as usize][en_pass.1].side == Side::White
+        {
+            moves.append(&mut vec![(en_pass.0, en_pass.1)])
+        }
+        let (safe, en_pass) = return_if_safe(j + 1, i + 1);
+        if safe
+            && matches!(pieces[j as usize][en_pass.1].kind, Kind::Pawn(true))
+            && pieces[en_pass.0][en_pass.1].kind == Kind::None
+            && pieces[j as usize][en_pass.1].side == Side::White
+        {
+            moves.append(&mut vec![(en_pass.0, en_pass.1)])
+        }
+
         let (safe, forward) = return_if_safe(j + 1, i);
         if safe {
             if pieces[forward.0][forward.1].kind == Kind::None {
