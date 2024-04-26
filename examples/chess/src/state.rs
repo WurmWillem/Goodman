@@ -47,8 +47,29 @@ impl State {
                         }
 
                         make_move(pieces, selected_index, *m);
+                        
+                        let mut all_moves = vec![];
+                        for j in 0..8 {
+                            for i in 0..8 {
+                                if pieces[j][i].side == pieces[m.0][m.1].side {
+                                    all_moves.append(&mut calculate_moves(pieces, j, i));
+                                }
+                            }
+                        }
+                        println!("ds");
+                        for mov in &all_moves {
+                            if pieces[mov.0][mov.1].kind == Kind::King && pieces[mov.0][mov.1].side != pieces[m.0][m.1].side {
+                                println!("in check {:?}", 0);
+                            }
+                        }
+
                         self.turn = Turn::opposite(&self.turn);
                         self.selected_piece_moves = vec![];
+
+                        /*let moved_piece_moves = calculate_moves(pieces, m.0, m.1);
+                        for m in moved_piece_moves {
+                            if 
+                        }*/
 
                         return;
                     }
@@ -62,7 +83,7 @@ impl State {
             // select piece and generate moves for it
             if pieces[j][i].side == Side::as_turn_color(self.turn) 
             {
-                self.selected_piece_moves = calculate_moves(pieces, &pieces[j][i], j, i);
+                self.selected_piece_moves = calculate_moves(pieces, j, i);
                 self.selected_piece_index = (j, i);
             } else {
                 self.selected_piece_moves = vec![];

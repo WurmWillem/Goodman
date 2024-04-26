@@ -27,13 +27,12 @@ pub fn make_move(pieces: &mut Vec<Vec<Piece>>, index: (usize, usize), m: (usize,
 
 pub fn calculate_moves(
     pieces: &Vec<Vec<Piece>>,
-    piece: &Piece,
     j: usize,
     i: usize,
 ) -> Vec<(usize, usize)> {
     let j = j as isize;
     let i = i as isize;
-    let moves = match piece.kind {
+    let moves = match pieces[j as usize][i as usize].kind {
         Kind::Pawn(_) => generate_pawn_moves(pieces, i, j),
         Kind::Knight => return_safe_moves_vec(vec![
             (j - 2, i + 1),
@@ -66,7 +65,7 @@ pub fn calculate_moves(
         ]),
         _ => Vec::new(),
     };
-    return_moves_not_on_same_side(pieces, moves, piece.side)
+    return_moves_not_on_same_side(pieces, moves, pieces[j as usize][i as usize].side)
 }
 
 fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
