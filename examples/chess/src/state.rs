@@ -47,6 +47,26 @@ impl State {
 
                         make_move(board, selected_index, *m);
 
+                        // check for checkmate
+                        for j in 0..8 {
+                            for i in 0..8 {
+                                if board[j][i].side == board[m.0][m.1].side {
+                                    continue;
+                                } 
+                                let pseudo_legal_moves = calculate_moves(board, j, i);
+
+                                for pseudo in &pseudo_legal_moves {
+                                    let mut board_clone = board.clone();
+                                    make_move(&mut board_clone, (j, i), *pseudo);
+
+                                    if !king_of_side_can_be_taken(&board_clone, board[j][i].side) {
+                                        println!("checkmate");
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                
                         self.turn = Turn::opposite(&self.turn);
                         self.selected_piece_moves = vec![];
 
@@ -63,7 +83,6 @@ impl State {
             if board[j][i].side == Side::as_turn_color(self.turn) {
                 let pseudo_legal_moves = calculate_moves(board, j, i);
                 let mut legal_moves = vec![];
-
                 /*
                 go through pseudo legal moves
                 make psuedo move
