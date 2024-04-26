@@ -32,7 +32,7 @@ async fn run() {
 }
 
 struct Chess {
-    pieces: Vec<Vec<Piece>>,
+    board: Vec<Vec<Piece>>,
     state: State,
     textures: Vec<Texture>,
 }
@@ -60,23 +60,23 @@ impl Manager for Chess {
             }
         }
         Self {
-            pieces,
+            board: pieces,
             state: State::new(),
             textures,
         }
     }
     fn update(&mut self, _frame_time: f64, input: &Input, _sound: &mut Sound) {
-        self.state.update_based_on_click(&mut self.pieces, input);
+        self.state.update_based_on_click(&mut self.board, input);
     }
     fn render(&mut self, engine: &mut Engine) {
         self.render_board(engine);
 
         for j in 0..8 {
             for i in 0..8 {
-                if self.pieces[j][i].kind == Kind::None {
+                if self.board[j][i].kind == Kind::None {
                     continue;
                 }
-                let index = self.pieces[j][i].get_tex_index();
+                let index = self.board[j][i].get_tex_index();
                 let rect = rect32(
                     i as f32 * SQUARE + 1.0,
                     j as f32 * SQUARE + 3.0,
@@ -108,7 +108,7 @@ impl Chess {
             for i in 0..8 {
                 let rect = rect32(i as f32 * SQUARE, j as f32 * SQUARE, SQUARE, SQUARE);
 
-                if self.pieces[j][i].selected {
+                if self.board[j][i].selected {
                     engine.render_texture(rect, &self.textures[14]);
                     continue;
                 }

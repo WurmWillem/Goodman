@@ -18,78 +18,89 @@ impl State {
             selected_piece_index: (0, 0),
         }
     }
-    pub fn update_based_on_click(&mut self, pieces: &mut Vec<Vec<Piece>>, input: &Input) {
+    pub fn update_based_on_click(&mut self, board: &mut Vec<Vec<Piece>>, input: &Input) {
         let clicked_coords = get_clicked_square_coords(&input);
 
         if let Some(coords) = clicked_coords {
             let (i, j) = coords;
 
-            crate::types::deselect_every_piece(pieces);
+            crate::types::deselect_every_piece(board);
 
             // make move if clicked square is in moves
             if self.selected_piece_moves.len() > 0 {
                 let selected_index = self.selected_piece_index;
-                let side_clicked = pieces[j][i].side;
-                let side_original = pieces[selected_index.0][selected_index.1].side;
+                let side_clicked = board[j][i].side;
+                let side_original = board[selected_index.0][selected_index.1].side;
 
                 for m in &self.selected_piece_moves {
                     if (j, i) == *m
-                        && (side_clicked == side_original.opposite()
-                            || side_clicked == Side::None)
+                        && (side_clicked == side_original.opposite() || side_clicked == Side::None)
                     {
                         for j in 0..8 {
                             for i in 0..8 {
                                 // pieces[j][i].selected = false;
-                                if let Kind::Pawn(true) = pieces[j][i].kind {
-                                    pieces[j][i].kind = Kind::Pawn(false);
+                                if let Kind::Pawn(true) = board[j][i].kind {
+                                    board[j][i].kind = Kind::Pawn(false);
                                 }
                             }
                         }
 
-                        make_move(pieces, selected_index, *m);
-                        
-                        let mut all_moves = vec![];
-                        for j in 0..8 {
-                            for i in 0..8 {
-                                if pieces[j][i].side == pieces[m.0][m.1].side {
-                                    all_moves.append(&mut calculate_moves(pieces, j, i));
-                                }
-                            }
-                        }
-                        println!("ds");
-                        for mov in &all_moves {
-                            if pieces[mov.0][mov.1].kind == Kind::King && pieces[mov.0][mov.1].side != pieces[m.0][m.1].side {
-                                println!("in check {:?}", 0);
-                            }
-                        }
+                        make_move(board, selected_index, *m);
 
                         self.turn = Turn::opposite(&self.turn);
                         self.selected_piece_moves = vec![];
-
-                        /*let moved_piece_moves = calculate_moves(pieces, m.0, m.1);
-                        for m in moved_piece_moves {
-                            if 
-                        }*/
 
                         return;
                     }
                 }
             }
 
-            if pieces[j][i].kind == Kind::None {
-                return
+            if board[j][i].kind == Kind::None {
+                return;
             }
-            pieces[j][i].selected = true;
-            // select piece and generate moves for it
-            if pieces[j][i].side == Side::as_turn_color(self.turn) 
-            {
-                self.selected_piece_moves = calculate_moves(pieces, j, i);
+            board[j][i].selected = true;
+            // select piece and generate legal moves for it
+            if board[j][i].side == Side::as_turn_color(self.turn) {
+                let pseudo_legal_moves = calculate_moves(board, j, i);
+                let mut legal_moves = vec![];
+
+                /*
+                go through pseudo legal moves
+                make psuedo move
+                check if opp can take king
+                if not, add to legal moves
+                 */
+                for pseudo in &pseudo_legal_moves {
+                    let mut board_clone = board.clone();
+                    make_move(&mut board_clone, (j, i), *pseudo);
+
+                    if !king_of_side_can_be_taken(&board_clone, board[j][i].side) {
+                        legal_moves.push(*pseudo);
+                    }
+                }
+
+                self.selected_piece_moves = legal_moves;
                 self.selected_piece_index = (j, i);
             } else {
                 self.selected_piece_moves = vec![];
             }
         }
     }
+}
+
+fn king_of_side_can_be_taken(board: &Vec<Vec<Piece>>, side: Side) -> bool {
+    for j in 0..8 {
+        for i in 0..8 {
+            if board[j][i].side == side.opposite() {
+                for mov in &calculate_moves(board, j, i) {
+                    if board[mov.0][mov.1].kind == Kind::King {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    false
 }
 
 fn get_clicked_square_coords(input: &Input) -> Option<(usize, usize)> {

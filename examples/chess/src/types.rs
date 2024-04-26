@@ -83,7 +83,7 @@ impl Side {
         match *self {
             Side::White => Side::Black,
             Side::Black => Side::White,
-            _ => panic!("tried to opposite None")
+            _ => panic!("tried to opposite None"),
         }
     }
 

@@ -1,35 +1,31 @@
 use crate::types::{Kind, Piece, Side};
 
-pub fn make_move(pieces: &mut Vec<Vec<Piece>>, index: (usize, usize), m: (usize, usize)) {
-    let mut orig_piece = pieces[index.0][index.1].clone();
+pub fn make_move(pieces: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize, usize)) {
+    let mut orig_piece = pieces[from.0][from.1].clone();
 
     if matches!(orig_piece.kind, Kind::Pawn(_)) {
         // remove pawn if en passant was done
-        if pieces[m.0][m.1].kind == Kind::None {
-            pieces[index.0][m.1] = Piece::new_empty();
+        if pieces[to.0][to.1].kind == Kind::None {
+            pieces[from.0][to.1] = Piece::new_empty();
         }
 
         // make pawn true if it moved 2 spaces forward
-        if (m.0 as i32 - index.0 as i32).abs() == 2 {
+        if (to.0 as i32 - from.0 as i32).abs() == 2 {
             orig_piece.kind = Kind::Pawn(true);
         }
 
         // make pawn a queen if it crossed the board
-        if m.0 == 7 || m.0 == 0 {
+        if to.0 == 7 || to.0 == 0 {
             orig_piece = Piece::new(Kind::Queen, orig_piece.side);
         }
     }
 
-    pieces[m.0][m.1] = orig_piece;
-    pieces[index.0][index.1] = Piece::new_empty();
+    pieces[to.0][to.1] = orig_piece;
+    pieces[from.0][from.1] = Piece::new_empty();
     // pieces[m.0][m.1].selected = false;
 }
 
-pub fn calculate_moves(
-    pieces: &Vec<Vec<Piece>>,
-    j: usize,
-    i: usize,
-) -> Vec<(usize, usize)> {
+pub fn calculate_moves(pieces: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usize, usize)> {
     let j = j as isize;
     let i = i as isize;
     let moves = match pieces[j as usize][i as usize].kind {
