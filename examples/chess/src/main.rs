@@ -21,6 +21,7 @@ async fn run() {
     let event_loop = EventLoop::new();
     let mut engine = EngineBuilder::new(vec2(SCREENSIZE, SCREENSIZE))
         //        .show_engine_ui()
+        .with_background_color(Color::BLUE)
         .with_window_title("Chess".to_string())
         .with_target_fps(144)
         .build(&event_loop)
@@ -89,6 +90,20 @@ impl Manager for Chess {
 }
 impl Chess {
     fn render_board(&self, engine: &mut Engine) {
+        /*let moves = &self.state.selected_piece_moves;
+        if moves.len() > 0 {
+            for m in moves {
+                // if self.pieces[m.0][m.1].kind == Kind::None {
+                    let rect = rect32(
+                        m.1 as f32 * SQUARE + SQUARE * 0.345,
+                        m.0 as f32 * SQUARE + SQUARE * 0.345,
+                        SQUARE * 0.33,
+                        SQUARE * 0.33,
+                    );
+                    engine.render_texture(rect, &self.textures[15]);
+                // }
+            }
+        }*/
         for j in 0..8 {
             for i in 0..8 {
                 let rect = rect32(i as f32 * SQUARE, j as f32 * SQUARE, SQUARE, SQUARE);
@@ -106,15 +121,15 @@ impl Chess {
         let moves = &self.state.selected_piece_moves;
         if moves.len() > 0 {
             for m in moves {
-                if self.pieces[m.0][m.1].kind == Kind::None {
-                    let rect = rect32(
-                        m.1 as f32 * SQUARE + SQUARE * 0.345,
-                        m.0 as f32 * SQUARE + SQUARE * 0.345,
-                        SQUARE * 0.33,
-                        SQUARE * 0.33,
-                    );
-                    engine.render_texture(rect, &self.textures[15]);
-                }
+                // if self.pieces[m.0][m.1].kind == Kind::None {
+                let rect = rect32(
+                    m.1 as f32 * SQUARE + SQUARE * 0.345,
+                    m.0 as f32 * SQUARE + SQUARE * 0.345,
+                    SQUARE * 0.33,
+                    SQUARE * 0.33,
+                );
+                engine.render_texture(rect, &self.textures[15]);
+                // }
             }
         }
     }

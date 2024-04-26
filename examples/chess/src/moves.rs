@@ -13,7 +13,7 @@ pub fn make_move(pieces: &mut Vec<Vec<Piece>>, index: (usize, usize), m: (usize,
         if (m.0 as i32 - index.0 as i32).abs() == 2 {
             orig_piece.kind = Kind::Pawn(true);
         }
-        
+
         // make pawn a queen if it crossed the board
         if m.0 == 7 || m.0 == 0 {
             orig_piece = Piece::new(Kind::Queen, orig_piece.side);
@@ -33,7 +33,7 @@ pub fn calculate_moves(
 ) -> Vec<(usize, usize)> {
     let j = j as isize;
     let i = i as isize;
-    match piece.kind {
+    let moves = match piece.kind {
         Kind::Pawn(_) => generate_pawn_moves(pieces, i, j),
         Kind::Knight => return_safe_moves_vec(vec![
             (j - 2, i + 1),
@@ -65,7 +65,8 @@ pub fn calculate_moves(
             (j - 1, i - 1),
         ]),
         _ => Vec::new(),
-    }
+    };
+    return_moves_not_on_same_side(pieces, moves, piece.side)
 }
 
 fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
@@ -162,6 +163,7 @@ fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
 }
 
 fn generate_bishop_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
+    let side = pieces[j as usize][i as usize].side;
     let mut right_up: Vec<(isize, isize)> = Vec::new();
     let mut left_up: Vec<(isize, isize)> = Vec::new();
     let mut left_down: Vec<(isize, isize)> = Vec::new();
@@ -181,20 +183,21 @@ fn generate_bishop_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(u
         x += 1;
     }
 
-    let mut right_up = return_non_blocked_moves(pieces, return_safe_moves_vec(right_up));
-    let mut right_down = return_non_blocked_moves(pieces, return_safe_moves_vec(right_down));
-    let mut left_up = return_non_blocked_moves(pieces, return_safe_moves_vec(left_up));
-    let mut left_down = return_non_blocked_moves(pieces, return_safe_moves_vec(left_down));
+    let right_up = return_non_blocked_moves(pieces, return_safe_moves_vec(right_up), side);
+    let mut right_down = return_non_blocked_moves(pieces, return_safe_moves_vec(right_down), side);
+    let mut left_up = return_non_blocked_moves(pieces, return_safe_moves_vec(left_up), side);
+    let mut left_down = return_non_blocked_moves(pieces, return_safe_moves_vec(left_down), side);
 
-    right_up.append(&mut left_up);
-    right_down.append(&mut left_down);
-    right_up.append(&mut right_down);
+    let mut vec_all = right_up;
+    vec_all.append(&mut right_down);
+    vec_all.append(&mut left_up);
+    vec_all.append(&mut left_down);
 
-    let vec_all = right_up.clone();
     vec_all
 }
 
 fn generate_rook_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
+    let side = pieces[j as usize][i as usize].side;
     let mut vec_right: Vec<(isize, isize)> = Vec::new();
     let mut vec_left: Vec<(isize, isize)> = Vec::new();
     let mut vec_up: Vec<(isize, isize)> = Vec::new();
@@ -224,31 +227,52 @@ fn generate_rook_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
         x += 1;
     }
 
-    let mut vec_right = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_right));
-    let mut vec_left = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_left));
-    let mut vec_up = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_up));
-    let mut vec_down = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_down));
+    let vec_right = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_right), side);
+    let mut vec_left = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_left), side);
+    let mut vec_up = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_up), side);
+    let mut vec_down = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_down), side);
 
-    vec_right.append(&mut vec_left);
-    vec_up.append(&mut vec_down);
-    vec_right.append(&mut vec_up);
+    let mut vec_all = vec_right;
+    vec_all.append(&mut vec_left);
+    vec_all.append(&mut vec_down);
+    vec_all.append(&mut vec_up);
 
-    let vec_all = vec_right.clone();
     vec_all
 }
 
-fn return_non_blocked_moves(
+// returns only the moves that dont hit pieces on the same side, so a white bishop wont hit a white pawn for example
+fn return_moves_not_on_same_side(
     pieces: &Vec<Vec<Piece>>,
-    vec: Vec<(usize, usize)>,
+    moves: Vec<(usize, usize)>,
+    piece_side: Side,
 ) -> Vec<(usize, usize)> {
     let mut vec_safe: Vec<(usize, usize)> = Vec::new();
 
-    for v in &vec {
-        if pieces[v.0][v.1].kind != Kind::None {
-            vec_safe.push(*v);
+    for m in &moves {
+        if pieces[m.0][m.1].side != piece_side {
+            vec_safe.push(*m);
+        }
+    }
+    vec_safe
+}
+
+// used for bishop, rook and queen, for each diagonal/horizontal
+fn return_non_blocked_moves(
+    pieces: &Vec<Vec<Piece>>,
+    moves: Vec<(usize, usize)>,
+    piece_side: Side,
+) -> Vec<(usize, usize)> {
+    let mut vec_safe: Vec<(usize, usize)> = Vec::new();
+
+    for m in &moves {
+        if pieces[m.0][m.1].side == piece_side {
+            break;
+        } else if pieces[m.0][m.1].side == piece_side.opposite() {
+            vec_safe.push(*m);
             break;
         }
-        vec_safe.push(*v);
+
+        vec_safe.push(*m);
     }
     vec_safe
 }

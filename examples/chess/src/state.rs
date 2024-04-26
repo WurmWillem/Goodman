@@ -28,15 +28,14 @@ impl State {
 
             // make move if clicked square is in moves
             if self.selected_piece_moves.len() > 0 {
-                let index = self.selected_piece_index;
+                let selected_index = self.selected_piece_index;
                 let side_clicked = pieces[j][i].side;
-                let side_original = pieces[index.0][index.1].side;
+                let side_original = pieces[selected_index.0][selected_index.1].side;
 
                 for m in &self.selected_piece_moves {
                     if (j, i) == *m
-                        && (side_clicked == Side::opposite(&side_original)
-                            || side_clicked == Side::None
-                            || side_original == Side::None)
+                        && (side_clicked == side_original.opposite()
+                            || side_clicked == Side::None)
                     {
                         for j in 0..8 {
                             for i in 0..8 {
@@ -47,7 +46,7 @@ impl State {
                             }
                         }
 
-                        make_move(pieces, index, *m);
+                        make_move(pieces, selected_index, *m);
                         self.turn = Turn::opposite(&self.turn);
                         self.selected_piece_moves = vec![];
 
@@ -56,14 +55,13 @@ impl State {
                 }
             }
 
+            if pieces[j][i].kind == Kind::None {
+                return
+            }
+            pieces[j][i].selected = true;
             // select piece and generate moves for it
-            let side = pieces[j][i].side;
-            if ((side == Side::White && self.turn == Turn::White)
-                || (side == Side::Black && self.turn == Turn::Black))
-                && pieces[j][i].kind != Kind::None
+            if pieces[j][i].side == Side::as_turn_color(self.turn) 
             {
-                pieces[j][i].selected = true;
-
                 self.selected_piece_moves = calculate_moves(pieces, &pieces[j][i], j, i);
                 self.selected_piece_index = (j, i);
             } else {

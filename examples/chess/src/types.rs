@@ -55,7 +55,7 @@ pub fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Turn {
     White,
     Black,
@@ -79,13 +79,18 @@ pub enum Side {
     Black,
 }
 impl Side {
-    pub fn opposite(side: &Side) -> Side {
-        if *side == Side::White {
-            Side::Black
-        } else if *side == Side::Black {
-            Side::White
-        } else {
-            panic!("tried to opposite None");
+    pub fn opposite(&self) -> Self {
+        match *self {
+            Side::White => Side::Black,
+            Side::Black => Side::White,
+            _ => panic!("tried to opposite None")
+        }
+    }
+
+    pub fn as_turn_color(turn: Turn) -> Side {
+        match turn {
+            Turn::White => Side::White,
+            Turn::Black => Side::Black,
         }
     }
 }
