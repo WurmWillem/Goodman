@@ -56,7 +56,7 @@ impl State {
                 // piece is on correct side, generate legal moves
                 self.selected_piece_moves = calculate_legal_moves(board, j, i);
                 self.selected_piece_index = (j, i);
-            } 
+            }
         }
     }
 }

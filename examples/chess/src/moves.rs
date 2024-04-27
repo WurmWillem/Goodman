@@ -1,13 +1,13 @@
 use crate::types::{Kind, Piece, Side};
 
-pub fn make_move(pieces: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize, usize)) {
-    let mut orig_piece = pieces[from.0][from.1].clone();
+pub fn make_move(board: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize, usize)) {
+    let mut orig_piece = board[from.0][from.1].clone();
 
     match orig_piece.kind {
         Kind::Pawn(_) => {
             // remove pawn if en passant was done
-            if pieces[to.0][to.1].kind == Kind::None {
-                pieces[from.0][to.1] = Piece::new_empty();
+            if board[to.0][to.1].kind == Kind::None {
+                board[from.0][to.1] = Piece::new_empty();
             }
             // make pawn true if it moved 2 spaces forward
             if (to.0 as i32 - from.0 as i32).abs() == 2 {
@@ -19,12 +19,24 @@ pub fn make_move(pieces: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize,
             }
         }
         Kind::Rook(_) => orig_piece.kind = Kind::Rook(true),
-        Kind::King(_) => orig_piece.kind = Kind::King(true),
+        Kind::King(_) => {
+            orig_piece.kind = Kind::King(true);
+            if (to.1 as isize - from.1 as isize).abs() > 1 {
+                let diff = if to.1 > from.1 { -1 } else { 1 };
+                board[to.0][(to.1 as isize + diff) as usize] =
+                    Piece::new(Kind::Rook(true), board[from.0][from.1].side);
+                if to.1 > 3 {
+                    board[to.0][7] = Piece::new_empty();
+                } else {
+                    board[to.0][0] = Piece::new_empty();
+                }
+            }
+        }
         _ => (),
     }
 
-    pieces[to.0][to.1] = orig_piece;
-    pieces[from.0][from.1] = Piece::new_empty();
+    board[to.0][to.1] = orig_piece;
+    board[from.0][from.1] = Piece::new_empty();
     // pieces[m.0][m.1].selected = false;
 }
 
@@ -50,14 +62,14 @@ pub fn calculate_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usiz
             bishop_moves.append(&mut generate_rook_moves(board, i, j));
             bishop_moves
         }
-        Kind::King(_) => generate_king_moves(board, j, i),
+        Kind::King(_) => return_safe_moves_vec(generate_king_moves(board, j, i)),
         _ => Vec::new(),
     };
     return_moves_not_on_same_side(board, moves, board[j as usize][i as usize].side)
 }
 
-fn generate_king_moves(board: &Vec<Vec<Piece>>, j: isize, i: isize) -> Vec<(usize, usize)> {
-    let mut m = return_safe_moves_vec(vec![
+fn generate_king_moves(board: &Vec<Vec<Piece>>, j: isize, i: isize) -> Vec<(isize, isize)> {
+    let mut m = vec![
         (j, i + 1),
         (j, i - 1),
         (j + 1, i),
@@ -66,19 +78,32 @@ fn generate_king_moves(board: &Vec<Vec<Piece>>, j: isize, i: isize) -> Vec<(usiz
         (j + 1, i - 1),
         (j - 1, i + 1),
         (j - 1, i - 1),
-    ]);
-    let j = j as usize;
-    let i = i as usize;
-    if king(board, j, i) {
-        m.push((j, 1));
+    ];
+    // let j = j as usize;
+    // let i = i as usize;
+    if can_castle(board, j as usize, i as usize, 0) {
+        m.push((j, i - 2));
+    }
+    if can_castle(board, j as usize, i as usize, 7) {
+        m.push((j, i + 2));
     }
     m
 }
 
-fn king(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> bool {
-    if matches!(board[j][i].kind, Kind::King(false)) && matches!(board[j][0].kind, Kind::Rook(false)) {
-        for x in i..0 {
-            if board[j as usize][x as usize].kind != Kind::None { return false;}
+fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool {
+    if matches!(board[j][i].kind, Kind::King(false))
+        && matches!(board[j][edge].kind, Kind::Rook(false))
+    {
+        let iter = if edge as isize - i as isize > 0 {
+            i + 1
+        } else {
+            i - 1
+        };
+        for x in iter..edge {
+            if board[j as usize][x as usize].kind != Kind::None {
+                // println!("{:?}", board[j as usize][x as usize].kind);
+                return false;
+            }
         }
     }
     true
@@ -262,8 +287,9 @@ fn return_moves_not_on_same_side(
     piece_side: Side,
 ) -> Vec<(usize, usize)> {
     let mut vec_safe: Vec<(usize, usize)> = Vec::new();
-
+    // println!("eh");
     for m in &moves {
+        // println!("{:?}", m);
         if pieces[m.0][m.1].side != piece_side {
             vec_safe.push(*m);
         }
