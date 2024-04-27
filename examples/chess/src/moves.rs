@@ -101,17 +101,15 @@ fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool 
     if matches!(board[j][i].kind, Kind::King(false))
         && matches!(board[j][edge].kind, Kind::Rook(false))
     {
-        let iter = if edge as isize - i as isize > 0 {
-            i + 1
+        let iter = if edge > i {
+            (i+1)..edge
         } else {
-            i - 1
+            (edge+1)..i
         };
-        println!("iter {}, edge {}", iter, edge);
-        let d = if iter < edge {iter..edge} else {(edge + 1)..(iter+1)};
-        for x in d {
-            println!("x {}", x);
+        // println!("range {:?}", iter);
+        for x in iter {
+            // println!("x {}", x);
             if board[j][x as usize].kind != Kind::None {
-                // println!("{:?}", board[j as usize][x as usize].kind);
                 return false;
             }
         }
