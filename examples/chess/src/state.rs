@@ -45,6 +45,7 @@ impl State {
                 }
             }
 
+            self.selected_piece_moves = vec![];
             // return if square clicked is empty
             if board[j][i].kind == Kind::None {
                 return;
@@ -52,13 +53,10 @@ impl State {
             board[j][i].selected = true;
 
             if board[j][i].side == Side::as_turn_color(self.turn) {
-                // generate legal moves
+                // piece is on correct side, generate legal moves
                 self.selected_piece_moves = calculate_legal_moves(board, j, i);
                 self.selected_piece_index = (j, i);
-            } else {
-                // piece on wrong side, dont generate moves for it
-                self.selected_piece_moves = vec![];
-            }
+            } 
         }
     }
 }
