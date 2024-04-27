@@ -3,21 +3,24 @@ use crate::types::{Kind, Piece, Side};
 pub fn make_move(pieces: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize, usize)) {
     let mut orig_piece = pieces[from.0][from.1].clone();
 
-    if matches!(orig_piece.kind, Kind::Pawn(_)) {
-        // remove pawn if en passant was done
-        if pieces[to.0][to.1].kind == Kind::None {
-            pieces[from.0][to.1] = Piece::new_empty();
+    match orig_piece.kind {
+        Kind::Pawn(_) => {
+            // remove pawn if en passant was done
+            if pieces[to.0][to.1].kind == Kind::None {
+                pieces[from.0][to.1] = Piece::new_empty();
+            }
+            // make pawn true if it moved 2 spaces forward
+            if (to.0 as i32 - from.0 as i32).abs() == 2 {
+                orig_piece.kind = Kind::Pawn(true);
+            }
+            // make pawn a queen if it crossed the board
+            if to.0 == 7 || to.0 == 0 {
+                orig_piece = Piece::new(Kind::Queen, orig_piece.side);
+            }
         }
-
-        // make pawn true if it moved 2 spaces forward
-        if (to.0 as i32 - from.0 as i32).abs() == 2 {
-            orig_piece.kind = Kind::Pawn(true);
-        }
-
-        // make pawn a queen if it crossed the board
-        if to.0 == 7 || to.0 == 0 {
-            orig_piece = Piece::new(Kind::Queen, orig_piece.side);
-        }
+        Kind::Rook(_) => orig_piece.kind = Kind::Rook(true),
+        Kind::King(_) => orig_piece.kind = Kind::King(true),
+        _ => (),
     }
 
     pieces[to.0][to.1] = orig_piece;
@@ -25,11 +28,11 @@ pub fn make_move(pieces: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize,
     // pieces[m.0][m.1].selected = false;
 }
 
-pub fn calculate_moves(pieces: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usize, usize)> {
+pub fn calculate_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usize, usize)> {
     let j = j as isize;
     let i = i as isize;
-    let moves = match pieces[j as usize][i as usize].kind {
-        Kind::Pawn(_) => generate_pawn_moves(pieces, i, j),
+    let moves = match board[j as usize][i as usize].kind {
+        Kind::Pawn(_) => generate_pawn_moves(board, i, j),
         Kind::Knight => return_safe_moves_vec(vec![
             (j - 2, i + 1),
             (j - 2, i - 1),
@@ -40,28 +43,45 @@ pub fn calculate_moves(pieces: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usi
             (j + 1, i - 2),
             (j + 1, i + 2),
         ]),
-        Kind::Bishop => generate_bishop_moves(pieces, i, j),
-        Kind::Rook => generate_rook_moves(pieces, i, j),
+        Kind::Bishop => generate_bishop_moves(board, i, j),
+        Kind::Rook(_) => generate_rook_moves(board, i, j),
         Kind::Queen => {
-            let mut bishop_moves = generate_bishop_moves(pieces, i, j);
-            let mut rook_moves = generate_rook_moves(pieces, i, j);
-
-            bishop_moves.append(&mut rook_moves);
+            let mut bishop_moves = generate_bishop_moves(board, i, j);
+            bishop_moves.append(&mut generate_rook_moves(board, i, j));
             bishop_moves
         }
-        Kind::King => return_safe_moves_vec(vec![
-            (j, i + 1),
-            (j, i - 1),
-            (j + 1, i),
-            (j - 1, i),
-            (j + 1, i + 1),
-            (j + 1, i - 1),
-            (j - 1, i + 1),
-            (j - 1, i - 1),
-        ]),
+        Kind::King(_) => generate_king_moves(board, j, i),
         _ => Vec::new(),
     };
-    return_moves_not_on_same_side(pieces, moves, pieces[j as usize][i as usize].side)
+    return_moves_not_on_same_side(board, moves, board[j as usize][i as usize].side)
+}
+
+fn generate_king_moves(board: &Vec<Vec<Piece>>, j: isize, i: isize) -> Vec<(usize, usize)> {
+    let mut m = return_safe_moves_vec(vec![
+        (j, i + 1),
+        (j, i - 1),
+        (j + 1, i),
+        (j - 1, i),
+        (j + 1, i + 1),
+        (j + 1, i - 1),
+        (j - 1, i + 1),
+        (j - 1, i - 1),
+    ]);
+    let j = j as usize;
+    let i = i as usize;
+    if king(board, j, i) {
+        m.push((j, 1));
+    }
+    m
+}
+
+fn king(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> bool {
+    if matches!(board[j][i].kind, Kind::King(false)) && matches!(board[j][0].kind, Kind::Rook(false)) {
+        for x in i..0 {
+            if board[j as usize][x as usize].kind != Kind::None { return false;}
+        }
+    }
+    true
 }
 
 fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {

@@ -26,9 +26,9 @@ impl Piece {
             Kind::Pawn(_) => 0 + side_increment,
             Kind::Knight => 1 + side_increment,
             Kind::Bishop => 2 + side_increment,
-            Kind::Rook => 3 + side_increment,
+            Kind::Rook(_) => 3 + side_increment,
             Kind::Queen => 4 + side_increment,
-            Kind::King => 5 + side_increment,
+            Kind::King(_) => 5 + side_increment,
         }
     }
 }
@@ -36,12 +36,12 @@ impl Piece {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     None,
-    Pawn(bool),
+    Pawn(bool), // bool = has just moved 2 spaces, so can be en passanted
     Knight,
     Bishop,
-    Rook,
+    Rook(bool), // bool = has moved, so cannot castle anymore
     Queen,
-    King,
+    King(bool), // bool = has moved, so cannot castle anymore
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]

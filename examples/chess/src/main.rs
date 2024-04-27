@@ -146,13 +146,13 @@ fn get_textures(engine: &mut Engine) -> Vec<Texture> {
 
 fn create_row_of_pieces(side: Side) -> Vec<Piece> {
     vec![
-        Piece::new(Kind::Rook, side),
+        Piece::new(Kind::Rook(false), side),
         Piece::new(Kind::Knight, side),
         Piece::new(Kind::Bishop, side),
         Piece::new(Kind::Queen, side),
-        Piece::new(Kind::King, side),
+        Piece::new(Kind::King(false), side),
         Piece::new(Kind::Bishop, side),
         Piece::new(Kind::Knight, side),
-        Piece::new(Kind::Rook, side),
+        Piece::new(Kind::Rook(false), side),
     ]
 }

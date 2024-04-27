@@ -84,8 +84,6 @@ fn calculate_legal_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(us
 }
 
 fn is_checkmate(board: &Vec<Vec<Piece>>, to: (usize, usize)) -> bool {
-    let mut legal_moves = vec![];
-    // check for checkmate
     for j in 0..8 {
         for i in 0..8 {
             if board[j][i].side == board[to.0][to.1].side {
@@ -98,17 +96,12 @@ fn is_checkmate(board: &Vec<Vec<Piece>>, to: (usize, usize)) -> bool {
                 make_move(&mut board_clone, (j, i), *pseudo);
 
                 if !king_of_side_can_be_taken(&board_clone, board[j][i].side) {
-                    // legal move found, no checkmate
-                    legal_moves.push(*pseudo);
+                    return false;
                 }
             }
         }
     }
-    if legal_moves.len() == 0 {
-        println!("checkmate");
-        return true;
-    }
-    false
+    true
 }
 
 fn king_of_side_can_be_taken(board: &Vec<Vec<Piece>>, side: Side) -> bool {
@@ -116,7 +109,7 @@ fn king_of_side_can_be_taken(board: &Vec<Vec<Piece>>, side: Side) -> bool {
         for i in 0..8 {
             if board[j][i].side == side.opposite() {
                 for mov in &calculate_moves(board, j, i) {
-                    if board[mov.0][mov.1].kind == Kind::King {
+                    if let Kind::King(_) = board[mov.0][mov.1].kind {
                         return true;
                     }
                 }
