@@ -40,14 +40,15 @@ impl State {
                     // no legal moves found, no checkmate
                     self.turn = Turn::opposite(&self.turn);
                     self.selected_piece_moves = vec![];
+                    return;
                 }*/
-                let selected_index = self.selected_piece_index;
-                let side_clicked = board[j][i].side;
-                let side_original = board[selected_index.0][selected_index.1].side;
+                let from = self.selected_piece_index;
+                let side_to = board[j][i].side;
+                let side_from = board[from.0][from.1].side;
 
-                for m in &self.selected_piece_moves {
-                    if (j, i) == *m
-                        && (side_clicked == side_original.opposite() || side_clicked == Side::None)
+                for to in &self.selected_piece_moves {
+                    if (j, i) == *to
+                        && (side_to == side_from.opposite() || side_to == Side::None)
                     {
                         for j in 0..8 {
                             for i in 0..8 {
@@ -57,32 +58,12 @@ impl State {
                                 }
                             }
                         }
-                        make_move(board, selected_index, *m);
+                        make_move(board, from, *to);
 
-                        let mut legal_moves = vec![];
-                        // check for checkmate
-                        for j in 0..8 {
-                            for i in 0..8 {
-                                if board[j][i].side == board[m.0][m.1].side {
-                                    continue;
-                                }
-                                let pseudo_legal_moves = calculate_moves(board, j, i);
-
-                                for pseudo in &pseudo_legal_moves {
-                                    let mut board_clone = board.clone();
-                                    make_move(&mut board_clone, (j, i), *pseudo);
-
-                                    if !king_of_side_can_be_taken(&board_clone, board[j][i].side) {
-                                        // legal move found, no checkmate
-                                        legal_moves.push(*pseudo);
-                                    }
-                                }
-                            }
-                        }
-                        if legal_moves.len() == 0 {
+                        if is_checkmate(board, *to) {
                             println!("checkmate");
-                            return;
-                        }
+                        } 
+
                         self.turn = Turn::opposite(&self.turn);
                         self.selected_piece_moves = vec![];
                         //checkmate
@@ -123,6 +104,34 @@ impl State {
     }
 }
 
+fn is_checkmate(board: &Vec<Vec<Piece>>, to: (usize, usize)) -> bool {
+    let mut legal_moves = vec![];
+    // check for checkmate
+    for j in 0..8 {
+        for i in 0..8 {
+            if board[j][i].side == board[to.0][to.1].side {
+                continue;
+            }
+            let pseudo_legal_moves = calculate_moves(board, j, i);
+
+            for pseudo in &pseudo_legal_moves {
+                let mut board_clone = board.clone();
+                make_move(&mut board_clone, (j, i), *pseudo);
+
+                if !king_of_side_can_be_taken(&board_clone, board[j][i].side) {
+                    // legal move found, no checkmate
+                    legal_moves.push(*pseudo);
+                }
+            }
+        }
+    }
+    if legal_moves.len() == 0 {
+        println!("checkmate");
+        return true;
+    }
+    false
+}
+
 fn make_move_if_needed(
     j: usize,
     i: usize,
@@ -132,6 +141,7 @@ fn make_move_if_needed(
 ) -> bool {
     let side_clicked = board[j][i].side;
     let side_original = board[selected_index.0][selected_index.1].side;
+    let mut move_made = false;
 
     for m in selected_moves {
         if (j, i) == *m && (side_clicked == side_original.opposite() || side_clicked == Side::None)
@@ -145,6 +155,7 @@ fn make_move_if_needed(
                 }
             }
             make_move(board, selected_index, *m);
+            move_made = true;
 
             // check for checkmate
             for j in 0..8 {
