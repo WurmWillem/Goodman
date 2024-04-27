@@ -24,84 +24,63 @@ impl State {
         if let Some(coords) = clicked_coords {
             let (i, j) = coords;
 
-            crate::types::deselect_every_piece(board);
+            deselect_every_piece(board);
 
             // make move if clicked square is in moves
             if self.selected_piece_moves.len() > 0 {
-                /*if make_move_if_needed(
-                    j,
-                    i,
-                    self.selected_piece_index,
-                    &self.selected_piece_moves,
-                    board,
-                ) {
-                    println!("checkmate");
-                } else {
-                    // no legal moves found, no checkmate
-                    self.turn = Turn::opposite(&self.turn);
-                    self.selected_piece_moves = vec![];
-                    return;
-                }*/
                 let from = self.selected_piece_index;
-                let side_to = board[j][i].side;
-                let side_from = board[from.0][from.1].side;
-
                 for to in &self.selected_piece_moves {
-                    if (j, i) == *to
-                        && (side_to == side_from.opposite() || side_to == Side::None)
-                    {
-                        for j in 0..8 {
-                            for i in 0..8 {
-                                // pieces[j][i].selected = false;
-                                if let Kind::Pawn(true) = board[j][i].kind {
-                                    board[j][i].kind = Kind::Pawn(false);
-                                }
-                            }
-                        }
+                    if (j, i) == *to {
+                        make_pawns_not_en_passantable(board);
                         make_move(board, from, *to);
 
                         if is_checkmate(board, *to) {
                             println!("checkmate");
-                        } 
+                        }
 
                         self.turn = Turn::opposite(&self.turn);
                         self.selected_piece_moves = vec![];
-                        //checkmate
                         return;
                     }
                 }
             }
 
+            // return if square clicked is empty
             if board[j][i].kind == Kind::None {
                 return;
             }
             board[j][i].selected = true;
-            // select piece and generate legal moves for it
+
             if board[j][i].side == Side::as_turn_color(self.turn) {
-                let pseudo_legal_moves = calculate_moves(board, j, i);
-                let mut legal_moves = vec![];
-                /*
-                go through pseudo legal moves
-                make psuedo move
-                check if opp can take king
-                if not, add to legal moves
-                 */
-                for pseudo in &pseudo_legal_moves {
-                    let mut board_clone = board.clone();
-                    make_move(&mut board_clone, (j, i), *pseudo);
-
-                    if !king_of_side_can_be_taken(&board_clone, board[j][i].side) {
-                        legal_moves.push(*pseudo);
-                    }
-                }
-
-                self.selected_piece_moves = legal_moves;
+                // generate legal moves
+                self.selected_piece_moves = calculate_legal_moves(board, j, i);
                 self.selected_piece_index = (j, i);
             } else {
+                // piece on wrong side, dont generate moves for it
                 self.selected_piece_moves = vec![];
             }
         }
     }
+}
+
+fn calculate_legal_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usize, usize)> {
+    let pseudo_legal_moves = calculate_moves(board, j, i);
+    let mut legal_moves = vec![];
+    /*
+    go through pseudo legal moves
+    make psuedo move
+    check if opp can take king
+    if not, add to legal moves
+     */
+    for pseudo in &pseudo_legal_moves {
+        let mut board_clone = board.clone();
+        make_move(&mut board_clone, (j, i), *pseudo);
+
+        if !king_of_side_can_be_taken(&board_clone, board[j][i].side) {
+            legal_moves.push(*pseudo);
+        }
+    }
+    legal_moves
 }
 
 fn is_checkmate(board: &Vec<Vec<Piece>>, to: (usize, usize)) -> bool {
@@ -132,57 +111,6 @@ fn is_checkmate(board: &Vec<Vec<Piece>>, to: (usize, usize)) -> bool {
     false
 }
 
-fn make_move_if_needed(
-    j: usize,
-    i: usize,
-    selected_index: (usize, usize),
-    selected_moves: &Vec<(usize, usize)>,
-    board: &mut Vec<Vec<Piece>>,
-) -> bool {
-    let side_clicked = board[j][i].side;
-    let side_original = board[selected_index.0][selected_index.1].side;
-    let mut move_made = false;
-
-    for m in selected_moves {
-        if (j, i) == *m && (side_clicked == side_original.opposite() || side_clicked == Side::None)
-        {
-            for j in 0..8 {
-                for i in 0..8 {
-                    // pieces[j][i].selected = false;
-                    if let Kind::Pawn(true) = board[j][i].kind {
-                        board[j][i].kind = Kind::Pawn(false);
-                    }
-                }
-            }
-            make_move(board, selected_index, *m);
-            move_made = true;
-
-            // check for checkmate
-            for j in 0..8 {
-                for i in 0..8 {
-                    if board[j][i].side == board[m.0][m.1].side {
-                        continue;
-                    }
-                    let pseudo_legal_moves = calculate_moves(board, j, i);
-
-                    for pseudo in &pseudo_legal_moves {
-                        let mut board_clone = board.clone();
-                        make_move(&mut board_clone, (j, i), *pseudo);
-
-                        if !king_of_side_can_be_taken(&board_clone, board[j][i].side) {
-                            // legal move found, no checkmate
-                            return false;
-                        }
-                    }
-                }
-            }
-            //checkmate
-            return true;
-        }
-    }
-    false
-}
-
 fn king_of_side_can_be_taken(board: &Vec<Vec<Piece>>, side: Side) -> bool {
     for j in 0..8 {
         for i in 0..8 {
@@ -196,6 +124,24 @@ fn king_of_side_can_be_taken(board: &Vec<Vec<Piece>>, side: Side) -> bool {
         }
     }
     false
+}
+
+fn make_pawns_not_en_passantable(board: &mut Vec<Vec<Piece>>) {
+    for j in 0..8 {
+        for i in 0..8 {
+            if let Kind::Pawn(true) = board[j][i].kind {
+                board[j][i].kind = Kind::Pawn(false);
+            }
+        }
+    }
+}
+
+fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
+    for j in 0..8 {
+        for i in 0..8 {
+            pieces[j][i].selected = false;
+        }
+    }
 }
 
 fn get_clicked_square_coords(input: &Input) -> Option<(usize, usize)> {

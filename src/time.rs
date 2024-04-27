@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use crate::ui::Ui;
 use spin_sleep::LoopHelper;
 

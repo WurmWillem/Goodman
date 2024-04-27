@@ -44,17 +44,6 @@ pub enum Kind {
     King,
 }
 
-pub fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
-    for j in 0..8 {
-        for i in 0..8 {
-            pieces[j][i].selected = false;
-            // if let Kind::Pawn(true) = pieces[j][i].kind {
-            // pieces[j][i].kind = Kind::Pawn(false);
-            // }
-        }
-    }
-}
-
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Turn {
     White,
