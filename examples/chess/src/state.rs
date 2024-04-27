@@ -23,7 +23,6 @@ impl State {
 
         if let Some(coords) = clicked_coords {
             let (i, j) = coords;
-
             deselect_every_piece(board);
 
             // make move if clicked square is in moves
@@ -44,7 +43,7 @@ impl State {
                     }
                 }
             }
-
+            // no moves made
             self.selected_piece_moves = vec![];
             // return if square clicked is empty
             if board[j][i].kind == Kind::None {

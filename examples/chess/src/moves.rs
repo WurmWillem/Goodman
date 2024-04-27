@@ -21,10 +21,13 @@ pub fn make_move(board: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize, 
         Kind::Rook(_) => orig_piece.kind = Kind::Rook(true),
         Kind::King(_) => {
             orig_piece.kind = Kind::King(true);
+
+            // king has moved 2 spaces, so castle
             if (to.1 as isize - from.1 as isize).abs() > 1 {
                 let diff = if to.1 > from.1 { -1 } else { 1 };
-                board[to.0][(to.1 as isize + diff) as usize] =
-                    Piece::new(Kind::Rook(true), board[from.0][from.1].side);
+                let i = (to.1 as isize + diff) as usize;
+                board[to.0][i] = Piece::new(Kind::Rook(true), board[from.0][from.1].side);
+
                 if to.1 > 3 {
                     board[to.0][7] = Piece::new_empty();
                 } else {
@@ -45,16 +48,7 @@ pub fn calculate_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usiz
     let i = i as isize;
     let moves = match board[j as usize][i as usize].kind {
         Kind::Pawn(_) => generate_pawn_moves(board, i, j),
-        Kind::Knight => return_safe_moves_vec(vec![
-            (j - 2, i + 1),
-            (j - 2, i - 1),
-            (j + 2, i + 1),
-            (j + 2, i - 1),
-            (j - 1, i - 2),
-            (j - 1, i + 2),
-            (j + 1, i - 2),
-            (j + 1, i + 2),
-        ]),
+        Kind::Knight => generate_knight_moves(i, j),
         Kind::Bishop => generate_bishop_moves(board, i, j),
         Kind::Rook(_) => generate_rook_moves(board, i, j),
         Kind::Queen => {
@@ -62,14 +56,28 @@ pub fn calculate_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usiz
             bishop_moves.append(&mut generate_rook_moves(board, i, j));
             bishop_moves
         }
-        Kind::King(_) => return_safe_moves_vec(generate_king_moves(board, j, i)),
+        Kind::King(_) => generate_king_moves(board, i, j),
         _ => Vec::new(),
     };
+
     return_moves_not_on_same_side(board, moves, board[j as usize][i as usize].side)
 }
 
-fn generate_king_moves(board: &Vec<Vec<Piece>>, j: isize, i: isize) -> Vec<(isize, isize)> {
-    let mut m = vec![
+fn generate_knight_moves(i: isize, j: isize) -> Vec<(usize, usize)> {
+    return_safe_moves(vec![
+        (j - 2, i + 1),
+        (j - 2, i - 1),
+        (j + 2, i + 1),
+        (j + 2, i - 1),
+        (j - 1, i - 2),
+        (j - 1, i + 2),
+        (j + 1, i - 2),
+        (j + 1, i + 2),
+    ])
+}
+
+fn generate_king_moves(board: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
+    let mut moves = vec![
         (j, i + 1),
         (j, i - 1),
         (j + 1, i),
@@ -79,15 +87,14 @@ fn generate_king_moves(board: &Vec<Vec<Piece>>, j: isize, i: isize) -> Vec<(isiz
         (j - 1, i + 1),
         (j - 1, i - 1),
     ];
-    // let j = j as usize;
-    // let i = i as usize;
+
     if can_castle(board, j as usize, i as usize, 0) {
-        m.push((j, i - 2));
+        moves.push((j, i - 2));
     }
     if can_castle(board, j as usize, i as usize, 7) {
-        m.push((j, i + 2));
+        moves.push((j, i + 2));
     }
-    m
+    return_safe_moves(moves)
 }
 
 fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool {
@@ -99,14 +106,18 @@ fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool 
         } else {
             i - 1
         };
-        for x in iter..edge {
-            if board[j as usize][x as usize].kind != Kind::None {
+        println!("iter {}, edge {}", iter, edge);
+        let d = if iter < edge {iter..edge} else {(edge + 1)..(iter+1)};
+        for x in d {
+            println!("x {}", x);
+            if board[j][x as usize].kind != Kind::None {
                 // println!("{:?}", board[j as usize][x as usize].kind);
                 return false;
             }
         }
+        return true;
     }
-    true
+    false
 }
 
 fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
@@ -133,25 +144,25 @@ fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
         let (safe, forward) = return_if_safe(j - 1, i);
         if safe {
             if pieces[forward.0][forward.1].kind == Kind::None {
-                moves.append(&mut return_safe_moves_vec(vec![(j - 1, i)]));
+                moves.append(&mut return_safe_moves(vec![(j - 1, i)]));
             }
         }
         let (safe, forward) = return_if_safe(j - 2, i);
         if safe && j == 6 {
             if pieces[forward.0][forward.1].kind == Kind::None {
-                moves.append(&mut return_safe_moves_vec(vec![(j - 2, i)]));
+                moves.append(&mut return_safe_moves(vec![(j - 2, i)]));
             }
         }
         let (safe, right_forward) = return_if_safe(j - 1, i + 1);
         if safe {
             if pieces[right_forward.0][right_forward.1].side == Side::Black {
-                moves.append(&mut return_safe_moves_vec(vec![(j - 1, i + 1)]));
+                moves.append(&mut return_safe_moves(vec![(j - 1, i + 1)]));
             }
         }
         let (safe, left_forward) = return_if_safe(j - 1, i - 1);
         if safe {
             if pieces[left_forward.0][left_forward.1].side == Side::Black {
-                moves.append(&mut return_safe_moves_vec(vec![(j - 1, i - 1)]));
+                moves.append(&mut return_safe_moves(vec![(j - 1, i - 1)]));
             }
         }
     } else if pieces[j as usize][i as usize].side == Side::Black {
@@ -175,25 +186,25 @@ fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
         let (safe, forward) = return_if_safe(j + 1, i);
         if safe {
             if pieces[forward.0][forward.1].kind == Kind::None {
-                moves.append(&mut return_safe_moves_vec(vec![(j + 1, i)]));
+                moves.append(&mut return_safe_moves(vec![(j + 1, i)]));
             }
         }
         let (safe, forward) = return_if_safe(j + 2, i);
         if safe && j == 1 {
             if pieces[forward.0][forward.1].kind == Kind::None {
-                moves.append(&mut return_safe_moves_vec(vec![(j + 2, i)]));
+                moves.append(&mut return_safe_moves(vec![(j + 2, i)]));
             }
         }
         let (safe, right_forward) = return_if_safe(j + 1, i + 1);
         if safe {
             if pieces[right_forward.0][right_forward.1].side == Side::White {
-                moves.append(&mut return_safe_moves_vec(vec![(j + 1, i + 1)]));
+                moves.append(&mut return_safe_moves(vec![(j + 1, i + 1)]));
             }
         }
         let (safe, left_forward) = return_if_safe(j + 1, i - 1);
         if safe {
             if pieces[left_forward.0][left_forward.1].side == Side::White {
-                moves.append(&mut return_safe_moves_vec(vec![(j + 1, i - 1)]));
+                moves.append(&mut return_safe_moves(vec![(j + 1, i - 1)]));
             }
         }
     } else {
@@ -223,10 +234,10 @@ fn generate_bishop_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(u
         x += 1;
     }
 
-    let right_up = return_non_blocked_moves(pieces, return_safe_moves_vec(right_up), side);
-    let mut right_down = return_non_blocked_moves(pieces, return_safe_moves_vec(right_down), side);
-    let mut left_up = return_non_blocked_moves(pieces, return_safe_moves_vec(left_up), side);
-    let mut left_down = return_non_blocked_moves(pieces, return_safe_moves_vec(left_down), side);
+    let right_up = return_non_blocked_moves(pieces, return_safe_moves(right_up), side);
+    let mut right_down = return_non_blocked_moves(pieces, return_safe_moves(right_down), side);
+    let mut left_up = return_non_blocked_moves(pieces, return_safe_moves(left_up), side);
+    let mut left_down = return_non_blocked_moves(pieces, return_safe_moves(left_down), side);
 
     let mut vec_all = right_up;
     vec_all.append(&mut right_down);
@@ -267,10 +278,10 @@ fn generate_rook_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
         x += 1;
     }
 
-    let vec_right = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_right), side);
-    let mut vec_left = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_left), side);
-    let mut vec_up = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_up), side);
-    let mut vec_down = return_non_blocked_moves(pieces, return_safe_moves_vec(vec_down), side);
+    let vec_right = return_non_blocked_moves(pieces, return_safe_moves(vec_right), side);
+    let mut vec_left = return_non_blocked_moves(pieces, return_safe_moves(vec_left), side);
+    let mut vec_up = return_non_blocked_moves(pieces, return_safe_moves(vec_up), side);
+    let mut vec_down = return_non_blocked_moves(pieces, return_safe_moves(vec_down), side);
 
     let mut vec_all = vec_right;
     vec_all.append(&mut vec_left);
@@ -325,7 +336,7 @@ fn return_if_safe(x: isize, y: isize) -> (bool, (usize, usize)) {
     (false, (99, 99))
 }
 
-fn return_safe_moves_vec(vec: Vec<(isize, isize)>) -> Vec<(usize, usize)> {
+fn return_safe_moves(vec: Vec<(isize, isize)>) -> Vec<(usize, usize)> {
     let mut vec_safe: Vec<(usize, usize)> = Vec::new();
 
     for v in &vec {
