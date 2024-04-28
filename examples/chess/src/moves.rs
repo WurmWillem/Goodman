@@ -118,101 +118,96 @@ fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool 
     false
 }
 
-fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
+fn generate_pawn_moves(board: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
     let mut moves: Vec<(usize, usize)> = Vec::new();
 
-    if pieces[j as usize][i as usize].side == Side::White {
+    if board[j as usize][i as usize].side == Side::White {
         let (safe, en_pass) = return_if_safe(j - 1, i - 1);
         if safe
-            && matches!(pieces[j as usize][en_pass.1].kind, Kind::Pawn(true))
-            && pieces[en_pass.0][en_pass.1].kind == Kind::None
-            && pieces[j as usize][en_pass.1].side == Side::Black
+            && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
+            && board[en_pass.0][en_pass.1].kind == Kind::None
+            && board[j as usize][en_pass.1].side == Side::Black
         {
             moves.append(&mut vec![(en_pass.0, en_pass.1)])
         }
         let (safe, en_pass) = return_if_safe(j - 1, i + 1);
         if safe
-            && matches!(pieces[j as usize][en_pass.1].kind, Kind::Pawn(true))
-            && pieces[en_pass.0][en_pass.1].kind == Kind::None
-            && pieces[j as usize][en_pass.1].side == Side::Black
+            && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
+            && board[en_pass.0][en_pass.1].kind == Kind::None
+            && board[j as usize][en_pass.1].side == Side::Black
         {
             moves.append(&mut vec![(en_pass.0, en_pass.1)])
         }
 
         let (safe, forward) = return_if_safe(j - 1, i);
         if safe {
-            if pieces[forward.0][forward.1].kind == Kind::None {
+            if board[forward.0][forward.1].kind == Kind::None {
                 moves.append(&mut return_safe_moves(vec![(j - 1, i)]));
 
                 let (safe, forward) = return_if_safe(j - 2, i);
                 if safe && j == 6 {
-                    if pieces[forward.0][forward.1].kind == Kind::None {
+                    if board[forward.0][forward.1].kind == Kind::None {
                         moves.append(&mut return_safe_moves(vec![(j - 2, i)]));
                     }
                 }
             }
         }
+        append_move_if_safe(board, &mut moves, i + 1, j - 1, Side::Black);
+        append_move_if_safe(board, &mut moves, i - 1, j - 1, Side::Black);
 
-        let (safe, right_forward) = return_if_safe(j - 1, i + 1);
-        if safe {
-            if pieces[right_forward.0][right_forward.1].side == Side::Black {
-                moves.append(&mut return_safe_moves(vec![(j - 1, i + 1)]));
-            }
-        }
-        let (safe, left_forward) = return_if_safe(j - 1, i - 1);
-        if safe {
-            if pieces[left_forward.0][left_forward.1].side == Side::Black {
-                moves.append(&mut return_safe_moves(vec![(j - 1, i - 1)]));
-            }
-        }
-    } else if pieces[j as usize][i as usize].side == Side::Black {
+    } else if board[j as usize][i as usize].side == Side::Black {
         let (safe, en_pass) = return_if_safe(j + 1, i - 1);
         if safe
-            && matches!(pieces[j as usize][en_pass.1].kind, Kind::Pawn(true))
-            && pieces[en_pass.0][en_pass.1].kind == Kind::None
-            && pieces[j as usize][en_pass.1].side == Side::White
+            && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
+            && board[en_pass.0][en_pass.1].kind == Kind::None
+            && board[j as usize][en_pass.1].side == Side::White
         {
             moves.append(&mut vec![(en_pass.0, en_pass.1)])
         }
         let (safe, en_pass) = return_if_safe(j + 1, i + 1);
         if safe
-            && matches!(pieces[j as usize][en_pass.1].kind, Kind::Pawn(true))
-            && pieces[en_pass.0][en_pass.1].kind == Kind::None
-            && pieces[j as usize][en_pass.1].side == Side::White
+            && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
+            && board[en_pass.0][en_pass.1].kind == Kind::None
+            && board[j as usize][en_pass.1].side == Side::White
         {
             moves.append(&mut vec![(en_pass.0, en_pass.1)])
         }
 
         let (safe, forward) = return_if_safe(j + 1, i);
         if safe {
-            if pieces[forward.0][forward.1].kind == Kind::None {
+            if board[forward.0][forward.1].kind == Kind::None {
                 moves.append(&mut return_safe_moves(vec![(j + 1, i)]));
 
                 let (safe, forward) = return_if_safe(j + 2, i);
                 if safe && j == 1 {
-                    if pieces[forward.0][forward.1].kind == Kind::None {
+                    if board[forward.0][forward.1].kind == Kind::None {
                         moves.append(&mut return_safe_moves(vec![(j + 2, i)]));
                     }
                 }
             }
         }
-
-        let (safe, right_forward) = return_if_safe(j + 1, i + 1);
-        if safe {
-            if pieces[right_forward.0][right_forward.1].side == Side::White {
-                moves.append(&mut return_safe_moves(vec![(j + 1, i + 1)]));
-            }
-        }
-        let (safe, left_forward) = return_if_safe(j + 1, i - 1);
-        if safe {
-            if pieces[left_forward.0][left_forward.1].side == Side::White {
-                moves.append(&mut return_safe_moves(vec![(j + 1, i - 1)]));
-            }
-        }
+        append_move_if_safe(board, &mut moves, i + 1, j + 1, Side::White);
+        append_move_if_safe(board, &mut moves, i - 1, j + 1, Side::White);
+        
     } else {
         panic!("side is unknown");
     }
     moves
+}
+
+fn append_move_if_safe(
+    board: &Vec<Vec<Piece>>,
+    moves: &mut Vec<(usize, usize)>,
+    i: isize,
+    j: isize,
+    side: Side,
+) {
+    let (safe, left_forward) = return_if_safe(j, i);
+    if safe {
+        if board[left_forward.0][left_forward.1].side == side {
+            moves.append(&mut return_safe_moves(vec![(j, i)]));
+        }
+    }
 }
 
 fn generate_bishop_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
