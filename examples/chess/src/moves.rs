@@ -102,9 +102,9 @@ fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool 
         && matches!(board[j][edge].kind, Kind::Rook(false))
     {
         let iter = if edge > i {
-            (i+1)..edge
+            (i + 1)..edge
         } else {
-            (edge+1)..i
+            (edge + 1)..i
         };
         // println!("range {:?}", iter);
         for x in iter {
@@ -143,14 +143,16 @@ fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
         if safe {
             if pieces[forward.0][forward.1].kind == Kind::None {
                 moves.append(&mut return_safe_moves(vec![(j - 1, i)]));
+
+                let (safe, forward) = return_if_safe(j - 2, i);
+                if safe && j == 6 {
+                    if pieces[forward.0][forward.1].kind == Kind::None {
+                        moves.append(&mut return_safe_moves(vec![(j - 2, i)]));
+                    }
+                }
             }
         }
-        let (safe, forward) = return_if_safe(j - 2, i);
-        if safe && j == 6 {
-            if pieces[forward.0][forward.1].kind == Kind::None {
-                moves.append(&mut return_safe_moves(vec![(j - 2, i)]));
-            }
-        }
+
         let (safe, right_forward) = return_if_safe(j - 1, i + 1);
         if safe {
             if pieces[right_forward.0][right_forward.1].side == Side::Black {
@@ -185,14 +187,16 @@ fn generate_pawn_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
         if safe {
             if pieces[forward.0][forward.1].kind == Kind::None {
                 moves.append(&mut return_safe_moves(vec![(j + 1, i)]));
+
+                let (safe, forward) = return_if_safe(j + 2, i);
+                if safe && j == 1 {
+                    if pieces[forward.0][forward.1].kind == Kind::None {
+                        moves.append(&mut return_safe_moves(vec![(j + 2, i)]));
+                    }
+                }
             }
         }
-        let (safe, forward) = return_if_safe(j + 2, i);
-        if safe && j == 1 {
-            if pieces[forward.0][forward.1].kind == Kind::None {
-                moves.append(&mut return_safe_moves(vec![(j + 2, i)]));
-            }
-        }
+
         let (safe, right_forward) = return_if_safe(j + 1, i + 1);
         if safe {
             if pieces[right_forward.0][right_forward.1].side == Side::White {
