@@ -121,93 +121,57 @@ fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool 
 fn generate_pawn_moves(board: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
     let mut moves: Vec<(usize, usize)> = Vec::new();
 
-    if board[j as usize][i as usize].side == Side::White {
-        let (safe, en_pass) = return_if_safe(j - 1, i - 1);
-        if safe
-            && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
-            && board[en_pass.0][en_pass.1].kind == Kind::None
-            && board[j as usize][en_pass.1].side == Side::Black
-        {
-            moves.append(&mut vec![(en_pass.0, en_pass.1)])
-        }
-        let (safe, en_pass) = return_if_safe(j - 1, i + 1);
-        if safe
-            && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
-            && board[en_pass.0][en_pass.1].kind == Kind::None
-            && board[j as usize][en_pass.1].side == Side::Black
-        {
-            moves.append(&mut vec![(en_pass.0, en_pass.1)])
-        }
-
-        let (safe, forward) = return_if_safe(j - 1, i);
-        if safe {
-            if board[forward.0][forward.1].kind == Kind::None {
-                moves.append(&mut return_safe_moves(vec![(j - 1, i)]));
-
-                let (safe, forward) = return_if_safe(j - 2, i);
-                if safe && j == 6 {
-                    if board[forward.0][forward.1].kind == Kind::None {
-                        moves.append(&mut return_safe_moves(vec![(j - 2, i)]));
-                    }
-                }
-            }
-        }
-        append_move_if_safe(board, &mut moves, i + 1, j - 1, Side::Black);
-        append_move_if_safe(board, &mut moves, i - 1, j - 1, Side::Black);
-
-    } else if board[j as usize][i as usize].side == Side::Black {
-        let (safe, en_pass) = return_if_safe(j + 1, i - 1);
-        if safe
-            && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
-            && board[en_pass.0][en_pass.1].kind == Kind::None
-            && board[j as usize][en_pass.1].side == Side::White
-        {
-            moves.append(&mut vec![(en_pass.0, en_pass.1)])
-        }
-        let (safe, en_pass) = return_if_safe(j + 1, i + 1);
-        if safe
-            && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
-            && board[en_pass.0][en_pass.1].kind == Kind::None
-            && board[j as usize][en_pass.1].side == Side::White
-        {
-            moves.append(&mut vec![(en_pass.0, en_pass.1)])
-        }
-
-        let (safe, forward) = return_if_safe(j + 1, i);
-        if safe {
-            if board[forward.0][forward.1].kind == Kind::None {
-                moves.append(&mut return_safe_moves(vec![(j + 1, i)]));
-
-                let (safe, forward) = return_if_safe(j + 2, i);
-                if safe && j == 1 {
-                    if board[forward.0][forward.1].kind == Kind::None {
-                        moves.append(&mut return_safe_moves(vec![(j + 2, i)]));
-                    }
-                }
-            }
-        }
-        append_move_if_safe(board, &mut moves, i + 1, j + 1, Side::White);
-        append_move_if_safe(board, &mut moves, i - 1, j + 1, Side::White);
-        
+    let (offset, side, j_start) = if board[j as usize][i as usize].side == Side::White {
+        (-1, Side::Black, 6)
     } else {
-        panic!("side is unknown");
-    }
-    moves
-}
+        (1, Side::White, 1)
+    };
 
-fn append_move_if_safe(
-    board: &Vec<Vec<Piece>>,
-    moves: &mut Vec<(usize, usize)>,
-    i: isize,
-    j: isize,
-    side: Side,
-) {
-    let (safe, left_forward) = return_if_safe(j, i);
+    let (safe, en_pass) = return_if_safe(j + offset, i - 1);
+    if safe
+        && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
+        && board[en_pass.0][en_pass.1].kind == Kind::None
+        && board[j as usize][en_pass.1].side == side
+    {
+        moves.append(&mut vec![(en_pass.0, en_pass.1)])
+    }
+    let (safe, en_pass) = return_if_safe(j + offset, i + 1);
+    if safe
+        && matches!(board[j as usize][en_pass.1].kind, Kind::Pawn(true))
+        && board[en_pass.0][en_pass.1].kind == Kind::None
+        && board[j as usize][en_pass.1].side == side
+    {
+        moves.append(&mut vec![(en_pass.0, en_pass.1)])
+    }
+
+    let (safe, forward) = return_if_safe(j + offset, i);
+    if safe {
+        if board[forward.0][forward.1].kind == Kind::None {
+            moves.append(&mut return_safe_moves(vec![(j + offset, i)]));
+
+            let (safe, forward) = return_if_safe(j + offset * 2, i);
+            if safe && j == j_start {
+                if board[forward.0][forward.1].kind == Kind::None {
+                    moves.append(&mut return_safe_moves(vec![(j + offset * 2, i)]));
+                }
+            }
+        }
+    }
+
+    let (safe, left_forward) = return_if_safe(j + offset, i + 1);
     if safe {
         if board[left_forward.0][left_forward.1].side == side {
-            moves.append(&mut return_safe_moves(vec![(j, i)]));
+            moves.append(&mut return_safe_moves(vec![(j + offset, i + 1)]));
         }
     }
+    let (safe, left_forward) = return_if_safe(j + offset, i - 1);
+    if safe {
+        if board[left_forward.0][left_forward.1].side == side {
+            moves.append(&mut return_safe_moves(vec![(j + offset, i - 1)]));
+        }
+    }
+
+    moves
 }
 
 fn generate_bishop_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
