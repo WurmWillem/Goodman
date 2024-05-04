@@ -1,6 +1,6 @@
 use crate::{
     moves::*,
-    types::{Kind, Piece, Side, Turn},
+    types::{Board, Kind, Side, Turn},
     SQUARE,
 };
 use goodman::prelude::*;
@@ -18,7 +18,7 @@ impl State {
             selected_piece_index: (0, 0),
         }
     }
-    pub fn update_based_on_click(&mut self, board: &mut Vec<Vec<Piece>>, input: &Input) {
+    pub fn update_based_on_click(&mut self, board: &mut Board, input: &Input) {
         let clicked_coords = get_clicked_square_coords(&input);
 
         if let Some(coords) = clicked_coords {
@@ -60,7 +60,7 @@ impl State {
     }
 }
 
-fn calculate_legal_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usize, usize)> {
+fn calculate_legal_moves(board: &Board, j: usize, i: usize) -> Vec<(usize, usize)> {
     let pseudo_legal_moves = calculate_moves(board, j, i);
     let mut legal_moves = vec![];
     /*
@@ -80,7 +80,7 @@ fn calculate_legal_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(us
     legal_moves
 }
 
-fn is_checkmate(board: &Vec<Vec<Piece>>, to: (usize, usize)) -> bool {
+fn is_checkmate(board: &Board, to: (usize, usize)) -> bool {
     for j in 0..8 {
         for i in 0..8 {
             if board[j][i].side == board[to.0][to.1].side {
@@ -101,7 +101,7 @@ fn is_checkmate(board: &Vec<Vec<Piece>>, to: (usize, usize)) -> bool {
     true
 }
 
-fn king_of_side_can_be_taken(board: &Vec<Vec<Piece>>, side: Side) -> bool {
+fn king_of_side_can_be_taken(board: &Board, side: Side) -> bool {
     for j in 0..8 {
         for i in 0..8 {
             if board[j][i].side == side.opposite() {
@@ -116,7 +116,7 @@ fn king_of_side_can_be_taken(board: &Vec<Vec<Piece>>, side: Side) -> bool {
     false
 }
 
-fn make_pawns_not_en_passantable(board: &mut Vec<Vec<Piece>>) {
+fn make_pawns_not_en_passantable(board: &mut Board) {
     for j in 0..8 {
         for i in 0..8 {
             if let Kind::Pawn(true) = board[j][i].kind {
@@ -126,7 +126,7 @@ fn make_pawns_not_en_passantable(board: &mut Vec<Vec<Piece>>) {
     }
 }
 
-fn deselect_every_piece(pieces: &mut Vec<Vec<Piece>>) {
+fn deselect_every_piece(pieces: &mut Board) {
     for j in 0..8 {
         for i in 0..8 {
             pieces[j][i].selected = false;

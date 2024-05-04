@@ -1,11 +1,8 @@
-//WARNING: some of this code is really old, proceed with caution
-
 use crate::types::Kind;
 use goodman::prelude::*;
 use state::State;
 use types::{Piece, Side};
 
-mod consts;
 mod moves;
 mod state;
 mod types;

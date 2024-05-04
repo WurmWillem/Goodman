@@ -1,6 +1,6 @@
-use crate::types::{Kind, Piece, Side};
+use crate::types::{Board, Kind, Piece, Side};
 
-pub fn make_move(board: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize, usize)) {
+pub fn make_move(board: &mut Board, from: (usize, usize), to: (usize, usize)) {
     let mut orig_piece = board[from.0][from.1].clone();
 
     match orig_piece.kind {
@@ -43,7 +43,7 @@ pub fn make_move(board: &mut Vec<Vec<Piece>>, from: (usize, usize), to: (usize, 
     // pieces[m.0][m.1].selected = false;
 }
 
-pub fn calculate_moves(board: &Vec<Vec<Piece>>, j: usize, i: usize) -> Vec<(usize, usize)> {
+pub fn calculate_moves(board: &Board, j: usize, i: usize) -> Vec<(usize, usize)> {
     let j = j as isize;
     let i = i as isize;
     let moves = match board[j as usize][i as usize].kind {
@@ -76,7 +76,7 @@ fn generate_knight_moves(i: isize, j: isize) -> Vec<(usize, usize)> {
     ])
 }
 
-fn generate_king_moves(board: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
+fn generate_king_moves(board: &Board, i: isize, j: isize) -> Vec<(usize, usize)> {
     let mut moves = vec![
         (j, i + 1),
         (j, i - 1),
@@ -97,7 +97,7 @@ fn generate_king_moves(board: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usiz
     return_safe_moves(moves)
 }
 
-fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool {
+fn can_castle(board: &Board, j: usize, i: usize, edge: usize) -> bool {
     if matches!(board[j][i].kind, Kind::King(false))
         && matches!(board[j][edge].kind, Kind::Rook(false))
     {
@@ -118,7 +118,7 @@ fn can_castle(board: &Vec<Vec<Piece>>, j: usize, i: usize, edge: usize) -> bool 
     false
 }
 
-fn generate_pawn_moves(board: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
+fn generate_pawn_moves(board: &Board, i: isize, j: isize) -> Vec<(usize, usize)> {
     let mut moves: Vec<(usize, usize)> = Vec::new();
 
     let (offset, side, j_start) = if board[j as usize][i as usize].side == Side::White {
@@ -174,7 +174,7 @@ fn generate_pawn_moves(board: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usiz
     moves
 }
 
-fn generate_bishop_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
+fn generate_bishop_moves(pieces: &Board, i: isize, j: isize) -> Vec<(usize, usize)> {
     let side = pieces[j as usize][i as usize].side;
     let mut right_up: Vec<(isize, isize)> = Vec::new();
     let mut left_up: Vec<(isize, isize)> = Vec::new();
@@ -208,7 +208,7 @@ fn generate_bishop_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(u
     vec_all
 }
 
-fn generate_rook_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usize, usize)> {
+fn generate_rook_moves(pieces: &Board, i: isize, j: isize) -> Vec<(usize, usize)> {
     let side = pieces[j as usize][i as usize].side;
     let mut vec_right: Vec<(isize, isize)> = Vec::new();
     let mut vec_left: Vec<(isize, isize)> = Vec::new();
@@ -254,7 +254,7 @@ fn generate_rook_moves(pieces: &Vec<Vec<Piece>>, i: isize, j: isize) -> Vec<(usi
 
 // returns only the moves that dont hit pieces on the same side, so a white bishop wont hit a white pawn for example
 fn return_moves_not_on_same_side(
-    pieces: &Vec<Vec<Piece>>,
+    pieces: &Board,
     moves: Vec<(usize, usize)>,
     piece_side: Side,
 ) -> Vec<(usize, usize)> {
@@ -271,7 +271,7 @@ fn return_moves_not_on_same_side(
 
 // used for bishop, rook and queen, for each diagonal/horizontal
 fn return_non_blocked_moves(
-    pieces: &Vec<Vec<Piece>>,
+    pieces: &Board,
     moves: Vec<(usize, usize)>,
     piece_side: Side,
 ) -> Vec<(usize, usize)> {

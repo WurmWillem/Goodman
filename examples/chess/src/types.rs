@@ -1,3 +1,5 @@
+pub type Board = Vec<Vec<Piece>>;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Piece {
     pub kind: Kind,
