@@ -43,7 +43,12 @@ pub fn make_move(board: &mut Board, from: (usize, usize), to: (usize, usize)) {
     // pieces[m.0][m.1].selected = false;
 }
 
-pub fn calculate_moves(board: &Board, j: usize, i: usize) -> Vec<(usize, usize)> {
+pub fn calculate_moves_of_piece(
+    board: &Board,
+    j: usize,
+    i: usize,
+    can_castle: bool,
+) -> Vec<(usize, usize)> {
     let j = j as isize;
     let i = i as isize;
     let moves = match board[j as usize][i as usize].kind {
@@ -56,7 +61,7 @@ pub fn calculate_moves(board: &Board, j: usize, i: usize) -> Vec<(usize, usize)>
             bishop_moves.append(&mut generate_rook_moves(board, i, j));
             bishop_moves
         }
-        Kind::King(_) => generate_king_moves(board, i, j),
+        Kind::King(_) => generate_king_moves(board, i, j, can_castle),
         _ => Vec::new(),
     };
 
@@ -76,7 +81,12 @@ fn generate_knight_moves(i: isize, j: isize) -> Vec<(usize, usize)> {
     ])
 }
 
-fn generate_king_moves(board: &Board, i: isize, j: isize) -> Vec<(usize, usize)> {
+fn generate_king_moves(
+    board: &Board,
+    i: isize,
+    j: isize,
+    not_in_check: bool,
+) -> Vec<(usize, usize)> {
     let mut moves = vec![
         (j, i + 1),
         (j, i - 1),
@@ -88,10 +98,10 @@ fn generate_king_moves(board: &Board, i: isize, j: isize) -> Vec<(usize, usize)>
         (j - 1, i - 1),
     ];
 
-    if can_castle(board, j as usize, i as usize, 0) {
+    if not_in_check && can_castle(board, j as usize, i as usize, 0) {
         moves.push((j, i - 2));
     }
-    if can_castle(board, j as usize, i as usize, 7) {
+    if not_in_check && can_castle(board, j as usize, i as usize, 7) {
         moves.push((j, i + 2));
     }
     return_safe_moves(moves)
