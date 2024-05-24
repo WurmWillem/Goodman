@@ -50,8 +50,10 @@ impl State {
                                 }
                             }
                         }
-                        println!("{}", self.white_in_check);
+                        // println!("white is {}", self.white_in_check);
+                        // println!("black is {}", self.black_in_check);
 
+                        // depht = 2, calc move for every move of opponent, then calc every move of you
                         if is_checkmate(board, *to) {
                             println!("checkmate");
                         }
@@ -72,18 +74,49 @@ impl State {
 
             if board[j][i].side == Side::as_turn_color(self.turn) {
                 // piece is on correct side, generate legal moves
-                let can_castle = if board[j][i].side == Side::White {
+                /*let can_castle = if board[j][i].side == Side::White {
                     !self.white_in_check
                 } else {
                     !self.black_in_check
-                };
-                let moves = calculate_legal_moves(board, j, i, can_castle);
-                /*for m in &moves {
-                    if matches!(board[m.0][m.1].kind, Kind::King(_)) && (m.1 as isize - m.0 as isize)  {
+                };*/
+                let mut moves = calculate_legal_moves(board, j, i, true);
+                
+                if matches!(board[j][i].kind, Kind::King(_)) {
+                    let mut castle_moves = vec![];
+                    let mut remove_castle_moves = false;
 
+                    for i in 0..moves.len() {
+                        if (moves[i].0 as isize - i as isize).abs() > 1 {
+                            castle_moves.push(i);
+                            /* for enemy piece, check if moves of piece control castle squares
+                             */
+                            for opp_mov in get_opp_moves(board, board[j][i].side.opposite()) {
+                                let inc = if i > opp_mov.1 { -1 } else { 1 };
+                                let opp_i = opp_mov.1 as isize;
+                                let king_i = i as isize;
+                                println!("opp i = {}", opp_i);
+                                println!("king i = {}", king_i);
+
+                                if opp_mov.0 == j
+                                    && (opp_i == king_i || opp_i == king_i + inc || opp_i == king_i + 2 * inc)
+                                {
+                                    println!("fake move found");
+                                    remove_castle_moves = true;
+                                }
+                            }
+                        }
                     }
 
-                }*/
+                    if remove_castle_moves {
+                        println!("ds");
+                        for mov in castle_moves {
+                            println!("{:?}", moves[mov]);
+                            moves.remove(mov);
+                        }
+                    }
+                }
+                
+                
 
                 self.selected_piece_moves = moves;
                 self.selected_piece_index = (j, i);
@@ -92,7 +125,20 @@ impl State {
     }
 }
 
+fn get_opp_moves(board: &Board, opp_side: Side) -> Vec<(usize, usize)> {
+    let mut moves = vec![];
+    for j in 0..8 {
+        for i in 0..8 {
+            if board[j][i].side == opp_side {
+                moves.append(&mut calculate_moves_of_piece(board, j, i, true))
+            }
+        }
+    }
+    moves
+}
+
 fn calculate_legal_moves(
+    // depth of fn = 1, calc moves for piece, then calc all responses
     board: &Board,
     j: usize,
     i: usize,
@@ -118,6 +164,7 @@ fn calculate_legal_moves(
 }
 
 fn is_checkmate(board: &Board, to: (usize, usize)) -> bool {
+    // depth = 2
     for j in 0..8 {
         for i in 0..8 {
             if board[j][i].side == board[to.0][to.1].side {
@@ -139,6 +186,7 @@ fn is_checkmate(board: &Board, to: (usize, usize)) -> bool {
 }
 
 fn king_of_side_can_be_taken(board: &Board, side: Side) -> bool {
+    // depht = 1
     for j in 0..8 {
         for i in 0..8 {
             if board[j][i].side == side.opposite() {
