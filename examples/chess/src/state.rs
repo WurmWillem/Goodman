@@ -80,13 +80,13 @@ impl State {
                     !self.black_in_check
                 };*/
                 let mut moves = calculate_legal_moves(board, j, i, true);
-                
-                if matches!(board[j][i].kind, Kind::King(_)) {
+
+                /*if matches!(board[j][i].kind, Kind::King(_)) {
                     let mut castle_moves = vec![];
                     let mut remove_castle_moves = false;
 
                     for i in 0..moves.len() {
-                        if (moves[i].0 as isize - i as isize).abs() > 1 {
+                        if moves[i].0 == 2 || moves {
                             castle_moves.push(i);
                             /* for enemy piece, check if moves of piece control castle squares
                              */
@@ -98,7 +98,9 @@ impl State {
                                 println!("king i = {}", king_i);
 
                                 if opp_mov.0 == j
-                                    && (opp_i == king_i || opp_i == king_i + inc || opp_i == king_i + 2 * inc)
+                                    && (opp_i == king_i
+                                        || opp_i == king_i + inc
+                                        || opp_i == king_i + 2 * inc)
                                 {
                                     println!("fake move found");
                                     remove_castle_moves = true;
@@ -114,9 +116,7 @@ impl State {
                             moves.remove(mov);
                         }
                     }
-                }
-                
-                
+                }*/
 
                 self.selected_piece_moves = moves;
                 self.selected_piece_index = (j, i);
@@ -125,7 +125,7 @@ impl State {
     }
 }
 
-fn get_opp_moves(board: &Board, opp_side: Side) -> Vec<(usize, usize)> {
+pub fn get_opp_moves(board: &Board, opp_side: Side) -> Vec<(usize, usize)> {
     let mut moves = vec![];
     for j in 0..8 {
         for i in 0..8 {
