@@ -40,7 +40,7 @@ impl State {
                         self.white_in_check = false;
                         self.black_in_check = false;
 
-                        let moves = calculate_moves_of_piece(board, to.0, to.1, true);
+                        let moves = calculate_moves_of_piece(board, to.0, to.1);
                         for m in &moves {
                             if matches!(board[m.0][m.1].kind, Kind::King(_)) {
                                 if board[to.0][to.1].side == Side::White {
@@ -72,6 +72,7 @@ impl State {
             }
             board[j][i].selected = true;
 
+            // calculate legal moves of piece clicked
             if board[j][i].side == Side::as_turn_color(self.turn) {
                 // piece is on correct side, generate legal moves
                 /*let can_castle = if board[j][i].side == Side::White {
@@ -79,44 +80,7 @@ impl State {
                 } else {
                     !self.black_in_check
                 };*/
-                let mut moves = calculate_legal_moves(board, j, i, true);
-
-                /*if matches!(board[j][i].kind, Kind::King(_)) {
-                    let mut castle_moves = vec![];
-                    let mut remove_castle_moves = false;
-
-                    for i in 0..moves.len() {
-                        if moves[i].0 == 2 || moves {
-                            castle_moves.push(i);
-                            /* for enemy piece, check if moves of piece control castle squares
-                             */
-                            for opp_mov in get_opp_moves(board, board[j][i].side.opposite()) {
-                                let inc = if i > opp_mov.1 { -1 } else { 1 };
-                                let opp_i = opp_mov.1 as isize;
-                                let king_i = i as isize;
-                                println!("opp i = {}", opp_i);
-                                println!("king i = {}", king_i);
-
-                                if opp_mov.0 == j
-                                    && (opp_i == king_i
-                                        || opp_i == king_i + inc
-                                        || opp_i == king_i + 2 * inc)
-                                {
-                                    println!("fake move found");
-                                    remove_castle_moves = true;
-                                }
-                            }
-                        }
-                    }
-
-                    if remove_castle_moves {
-                        println!("ds");
-                        for mov in castle_moves {
-                            println!("{:?}", moves[mov]);
-                            moves.remove(mov);
-                        }
-                    }
-                }*/
+                let moves = calculate_legal_moves(board, j, i);
 
                 self.selected_piece_moves = moves;
                 self.selected_piece_index = (j, i);
@@ -125,7 +89,7 @@ impl State {
     }
 }
 
-pub fn get_opp_moves(board: &Board, opp_side: Side) -> Vec<(usize, usize)> {
+/*pub fn get_opp_moves(board: &Board, opp_side: Side) -> Vec<(usize, usize)> {
     let mut moves = vec![];
     for j in 0..8 {
         for i in 0..8 {
@@ -135,16 +99,15 @@ pub fn get_opp_moves(board: &Board, opp_side: Side) -> Vec<(usize, usize)> {
         }
     }
     moves
-}
+}*/
 
 fn calculate_legal_moves(
     // depth of fn = 1, calc moves for piece, then calc all responses
     board: &Board,
     j: usize,
     i: usize,
-    can_castle: bool,
 ) -> Vec<(usize, usize)> {
-    let pseudo_legal_moves = calculate_moves_of_piece(board, j, i, can_castle);
+    let pseudo_legal_moves = calculate_moves_of_piece(board, j, i);
     let mut legal_moves = vec![];
     /*
     go through pseudo legal moves
@@ -170,7 +133,7 @@ fn is_checkmate(board: &Board, to: (usize, usize)) -> bool {
             if board[j][i].side == board[to.0][to.1].side {
                 continue;
             }
-            let pseudo_legal_moves = calculate_moves_of_piece(board, j, i, true);
+            let pseudo_legal_moves = calculate_moves_of_piece(board, j, i);
 
             for pseudo in &pseudo_legal_moves {
                 let mut board_clone = board.clone();
@@ -186,11 +149,11 @@ fn is_checkmate(board: &Board, to: (usize, usize)) -> bool {
 }
 
 fn king_of_side_can_be_taken(board: &Board, side: Side) -> bool {
-    // depht = 1
+    // depth = 1
     for j in 0..8 {
         for i in 0..8 {
             if board[j][i].side == side.opposite() {
-                for mov in &calculate_moves_of_piece(board, j, i, true) {
+                for mov in &calculate_moves_of_piece(board, j, i) {
                     if let Kind::King(_) = board[mov.0][mov.1].kind {
                         return true;
                     }

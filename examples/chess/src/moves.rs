@@ -47,7 +47,6 @@ pub fn calculate_moves_of_piece(
     board: &Board,
     j: usize,
     i: usize,
-    can_castle: bool,
 ) -> Vec<(usize, usize)> {
     let j = j as isize;
     let i = i as isize;
@@ -61,7 +60,7 @@ pub fn calculate_moves_of_piece(
             bishop_moves.append(&mut generate_rook_moves(board, i, j));
             bishop_moves
         }
-        Kind::King(_) => generate_king_moves(board, i, j, can_castle),
+        Kind::King(_) => generate_king_moves(board, i, j),
         _ => Vec::new(),
     };
 
@@ -86,7 +85,7 @@ fn get_opp_non_king_moves(board: &Board, opp_side: Side) -> Vec<(usize, usize)> 
     for j in 0..8 {
         for i in 0..8 {
             if board[j][i].side == opp_side && !matches!(board[j][i].kind, Kind::King(_)) {
-                moves.append(&mut calculate_moves_of_piece(board, j, i, true))
+                moves.append(&mut calculate_moves_of_piece(board, j, i))
             }
         }
     }
@@ -97,7 +96,6 @@ fn generate_king_moves(
     board: &Board,
     i: isize,
     j: isize,
-    not_in_check: bool,
 ) -> Vec<(usize, usize)> {
     let mut moves = vec![
         (j, i + 1),
@@ -110,27 +108,10 @@ fn generate_king_moves(
         (j - 1, i - 1),
     ];
 
-    /*let mut allow_castle = true;
-    for opp_mov in get_opp_non_king_moves(board, board[j_u][i_u].side.opposite()) {
-        let inc = 1;
-        let opp_i = opp_mov.1 as isize;
-        let king_i = i as isize;
-        // println!("opp i = {}", opp_i);
-        // println!("king i = {}", king_i);
-
-        if opp_mov.0 == j_u
-            && (opp_i == king_i || opp_i == king_i + inc || opp_i == king_i + 2 * inc)
-        {
-            println!("fake move found");
-            allow_castle = false;
-            // remove_castle_moves = true;
-        }
-    }*/
-
-    if not_in_check && piece_in_way_of_castle(board, j, i, 0) && safe_to_castle(board, j, i) {
+    if piece_in_way_of_castle(board, j, i, 0) && safe_to_castle(board, j, i) {
         moves.push((j, i - 2));
     }
-    if not_in_check && piece_in_way_of_castle(board, j, i, 7) && safe_to_castle(board, j, i) {
+    if piece_in_way_of_castle(board, j, i, 7) && safe_to_castle(board, j, i) {
         moves.push((j, i + 2));
     }
     return_safe_moves(moves)
@@ -144,15 +125,11 @@ fn safe_to_castle(board: &Board, j: isize, i: isize) -> bool {
         let inc = if i > 3 {1} else {-1};
         let opp_i = opp_mov.1 as isize;
         let king_i = i as isize;
-        // println!("opp i = {}", opp_i);
-        // println!("king i = {}", king_i);
 
         if opp_mov.0 == j
             && (opp_i == king_i || opp_i == king_i + inc || opp_i == king_i + 2 * inc)
         {
-            println!("fake move found");
             return false;
-            // remove_castle_moves = true;
         }
     }
 
