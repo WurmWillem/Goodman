@@ -52,10 +52,10 @@ pub enum Turn {
     Black,
 }
 impl Turn {
-    pub fn opposite(turn: &Turn) -> Turn {
-        if *turn == Turn::White {
+    pub fn opposite(&self) -> Turn {
+        if *self == Turn::White {
             Turn::Black
-        } else if *turn == Turn::Black {
+        } else if *self == Turn::Black {
             Turn::White
         } else {
             panic!("tried to opposite None");
